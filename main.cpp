@@ -13,16 +13,14 @@ class Matrix
 public:
 	long size;
 	vector<double> matrix;
-	vector<double> aux;
 
 	Matrix(long size, int type) : size(size){
 		if (type == 0){
 			matrix.resize(size*size);
-			aux.resize(size);
 		}
 	}
 
-	double& at (long i, long j) {
+	double& at(long i, long j) {
 		return matrix.at(i*size + j);
 	}
 
@@ -53,33 +51,57 @@ public:
 	}
 };
 
-void subst(Matrix& coefs, vector<double>& indTerms, vector<double>& var_x, bool forward) {
+void subst(Matrix& coefs, vector<double>& var_x, vector<double>& indTerms, bool forward, vector<long>& perm) {
 	double sum;
 	long i, j;
 	int step;
 	long size = coefs.size;
-
+    
 	if (forward){
 		i = 1;
 		step = +1;
-		var_x[0] = indTerms[0] / coefs.at(0, 0);
+		var_x.at(0) = indTerms.at(perm.at(0)) / coefs.at(0, 0);
 	} else {
 		i = size-2;
 		step = -1;
-		var_x[size-1] = indTerms[size-1] / coefs.at(size-1, size-1);
+		var_x.at(size-1) = indTerms.at(perm.at(size-1)) / coefs.at(size-1, size-1);
 	}
 
 	for (; i >= 0 && i <= size-1 ; i += step) {
-		sum = indTerms[i];
+		sum = indTerms.at(perm.at(i));
 		if(forward) {j = 0;} else {j = size-1;}
 		for (; j != i; j += step) {
-			sum -= var_x[j] * coefs.at(i, j);
+			sum -= var_x.at(j) * coefs.at(i, j);
 		}
-		var_x[i] = sum / coefs.at(i, i);
+		var_x.at(i) = sum / coefs.at(i, i);
 	}
 }
 /* */
+void subst(Matrix& coefs, vector<double>& var_x, vector<double>& indTerms, bool forward) {
+	double sum;
+	long i, j;
+	int step;
+	long size = coefs.size;
+    
+	if (forward){
+		i = 1;
+		step = +1;
+		var_x.at(0) = indTerms.at(0) / coefs.at(0, 0);
+	} else {
+		i = size-2;
+		step = -1;
+		var_x.at(size-1) = indTerms.at(size-1) / coefs.at(size-1, size-1);
+	}
 
+	for (; i >= 0 && i <= size-1 ; i += step) {
+		sum = indTerms.at(i);
+		if(forward) {j = 0;} else {j = size-1;}
+		for (; j != i; j += step) {
+			sum -= var_x.at(j) * coefs.at(i, j);
+		}
+		var_x.at(i) = sum / coefs.at(i, i);
+	}
+}
 /**/
 void printm(Matrix& matrix){
 	for(long i = 0; i <= matrix.size-1; i++){
@@ -88,14 +110,15 @@ void printm(Matrix& matrix){
 		cout<< '\n';
 	}
 }
-void printv(vector<double>& x){
-	for(double& vx : x)
+
+template <class T>
+void printv(vector<T>& x){
+	for(T& vx : x)
 		cout << vx <<'\t';
 }
-#include <chrono>
-#include <thread>
+
 /**/
-void GaussEl(Matrix& coefs, Matrix& L, Matrix& U, vector<double>& P) {
+void GaussEl(Matrix& coefs, Matrix& L, Matrix& U, vector<long>& P) {
 	TestTimer t("GaussEl");
 	long size = coefs.size;
 
@@ -198,22 +221,72 @@ void crout(Matrix& a, Matrix& l, Matrix& u) {
 	}
 	/**/
 }
-/* */
 
-/* */
-int main() {
+void JacobiIt(Matrix& coefs, vector<double>& indTerms, vector<double>& x){
+    int total;
+    vector<double> new_x;
+    // for each line
+    for(long i = 0; i <= coefs.size; ++i){
+        total = 0;
+        // substitute each x
+        for(long j = 0; j <= x.size(); j++) {
+            if(j != i){
+                total = total + coefs.at(i, j) * x.at(j);
+            }
+        }
+        new_x.at(i) = (indTerms.at(i) - total) / coefs.at(i, i);
+    }
+}
+
+vector<double> found_values(Matrix coefs, vector<double> x){
+    vector<double> values(x.size());
+    
+    for(long i=0; i <= x.size()-1; i++){
+        values.at(i) = 0;
+        for(long j=0; j <= x.size()-1; j++){
+            values.at(i) += coefs.at(i, j)*x.at(j);
+        }
+    }
+    return values;
+}
+
+void solve_lu(Matrix l, Matrix u, vector<double>& x, vector<double>& b, vector<long>& P){
+	vector<double> z(x.size());
+	//* find z; LZ=b *
+    subst(l, z, b, true, P);
+
+	cout<< endl <<"Z is"<< endl;
+	printv(z);
+	cout<< endl;
+	
+    subst(u, x, z, false);
+}
+
+template <class T>
+vector<T> add_vec(vector<T> a, vector<T> b, int sign = 1){
+    vector<T> x(a > b ? a.size() : b.size());
+    
+    for(long i=0; i <= x.size(); i++){
+        x.at(i) = a.at(i) + sign*b.at(i);
+    }
+    
+    return x;
+}
+
+int main(int argc, char **argv) {
 	fstream file;
 	file.open("in.txt");
 
-	long size,i,j,p;
-	double sum;
+	long size,i,j;
 
 	cout<<"Enter the order of matrix ! ";
 	file>> size;
 
-	// double a[10][10],l[10][10]={0},u[10][10]={0},sum,b[10],z[10]={0},x[10]={0};
 	Matrix coef(size, 0), l(size, 0), u(size, 0);
-	vector<double> b(size), z(size), x(size), P(size);
+	vector<double> b(size), z(size);
+	vector<long> P(size);
+	vector<vector<double>> x(5);
+	x.at(0).resize(size);
 
 	cout<<"Enter all coefficients of matrix : ";
 	for(i=0; i<=size-1; i++){
@@ -228,7 +301,6 @@ int main() {
 	//crout(coef, l, u);
 	//Cholesky(coef, l, u);
 	GaussEl(coef, l, u, P);
-	//double auxx = b.at()
 	/* *
 	for (i = 0; i <= size-1; i++){
 		for (j = 0; j <= size-1; j++){
@@ -256,73 +328,35 @@ int main() {
 	}
 	/**/
 
-	/* Displaying LU matrix */
-	cout<< endl << endl <<"LU matrix is "<< endl;
+	//* Displaying LU matrix *
+	cout<< endl << endl <<"L matrix is "<< endl;
 	printm(l);
-	cout<< endl;
+	cout<< endl <<"U matrix is "<< endl;
 	printm(u);
-	cout<< endl;
+	cout<< endl <<"Pivoting Permutaton is "<< endl;
 	printv(P);
 
-	/* FINDING Z; LZ=b */
-	for(i=0; i<=size-1; i++){
-		//forward subtitution method
-		sum = 0;
-		for(p=0; p<i; p++)
-		sum += l.at(i,p)*z[p];
-		z[i] = (b.at(P.at(i))-sum)/l.at(i,i);
+	//* find first iteration of x *
+	solve_lu(l, u, x.at(0), b, P);
+	
+	vector<double> values(x.size()), r(x.size()), w(x.size());
+	for(long i=1; i <= 3 ; i++) {
+    	values = found_values(coef, x.at(i));
+    	// r: residue of x
+    	r = add_vec(b, values, -1);
+    	
+    	// w: residues of each variable of x
+    	solve_lu(l, u, w, r, P);
+    	
+    	x.at(i+1).resize(size);
+    	// adjust x with found errors
+    	x.at(i+1) = add_vec(x.at(i), w);
 	}
+	
 
-	cout<<endl<<"Z is"<<endl;
-	printv(z);
-
-	cout << endl;
-	/* FINDING X; UX=Z */
-	for(i=size-1; i>=0; i--){
-		sum=0;
-		for(p=size-1; p>=i; p--)
-			sum += u.at(i,p)*x[p];
-		x[i] = (z[i]-sum)/u.at(i,i);
-	}
-
-	/* DISPLAYING SOLUTION */
 	cout<<endl<<"Set of solution is"<<endl;
-	printv(x);
+	//printv(x.at(x.size()-1));
 	cout << endl;
 
 	return 0;
 }
-/* */
-/* *
-int main(int argc, char **argv)
-{
-	fstream file;
-	file.open("in.txt");
-
-	long size;
-
-	file >> size;
-
-	vector<double> indTerms(size);
-	vector<double> var_x(size);
-
-	Matrix coefs(size, 0);
-
-	for(long i = 0; i <= size-1; i++)
-		for(long j = 0;j <= size-1; j++)
-			file >> coefs.at(i, j);
-
-	for(long i = 0; i <= size-1; i++)
-		file >> indTerms[i];
-
-	coefs.print(indTerms);
-
-	subst(coefs, indTerms, var_x, false);
-
-	for(long i = 0; i <= size-1; i++)
-		cout<< var_x[i] <<'\t';
-	cout<< endl;
-
-	return 0;
-}
-/* */

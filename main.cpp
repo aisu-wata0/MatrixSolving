@@ -92,8 +92,7 @@ void printv(vector<double>& x){
 	for(double& vx : x)
 		cout << vx <<'\t';
 }
-#include <chrono>
-#include <thread>
+
 /**/
 void GaussEl(Matrix& coefs, Matrix& L, Matrix& U, vector<double>& P) {
 	TestTimer t("GaussEl");
@@ -122,11 +121,12 @@ void GaussEl(Matrix& coefs, Matrix& L, Matrix& U, vector<double>& P) {
 			if (U.at(i, j) != 0){ // TODO: comparison with 0
 				// find pivot multiplier
 				L.at(i, j) = U.at(i, j)/U.at(j, j);
-				// subtract pivot
+				// subtract pivot from current line
 				for (long k = 0; k <= size-1; k++) {
 					U.at(i, k) -= U.at(j, k) * L.at(i, j);
 				}
 			} else {
+				cout<<"Found a pivot == 0, system is not solvable with partial pivoting"<< endl;
 				L.at(i,j) = 0;
 			}
 		}

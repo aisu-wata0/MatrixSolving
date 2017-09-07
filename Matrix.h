@@ -9,13 +9,37 @@
 namespace std {
 
 #define EPSILON 1e-7
+#define E_FACTOR 16
+
+union Double {
+	double f;
+	long long exp : 11;
+	long long mant : 53;
+}; 
 
 bool close_zero(double x){
 	return fabs(x) < EPSILON;
 }
 
+double inc(double x, int i){
+	Double y;
+	y.f = x;
+	y.mant += i;
+	return y.f;
+}
+
 /**
- * @class Matrix
+ * @brief  uses a factor of the epsilon of 'a' to compare if b is in it's range
+ * @return true if they are close enough,
+ */
+bool near(double a, double b){
+	double min_a = a - (a - inc(a, -1)) * E_FACTOR;
+	double max_a = a + (inc(a, +1) - a) * E_FACTOR;
+
+	return (min_a <= b && max_a >= b);
+}
+
+/**
  * @brief Stores values from specified type of matrix, can be acessed using conventional indexing .at(i,j)
  */
 class Matrix

@@ -207,7 +207,7 @@ vector<T> add_vec(vector<T> a, vector<T> b, int sign = 1){
     return x;
 }
 
-void lu_refining(Matrix A, Matrix LU, vector<vector<double>>& X, vector<double>& B, vector<long>& P){
+void lu_refining(Matrix& A, Matrix& LU, vector<vector<double>>& X, vector<double>& B, vector<long>& P){
 	vector<double> lhs(B.size()), r(B.size()), w(B.size());
 
 	cout<<"\n\nRefining "<< endl;
@@ -230,26 +230,54 @@ void lu_refining(Matrix A, Matrix LU, vector<vector<double>>& X, vector<double>&
 	}
 }
 
-void inverse_refining(Matrix A, Matrix LU, vector<vector<double>>& X, vector<double>& B, vector<long>& P){
-	vector<double> lhs(B.size()), r(B.size()), w(B.size());
+/**
+ * @brief Calculates residue in I
+ * @param A
+ * @param IA
+ * @param I no need for initialization
+ */
+void residue(Matrix& A, Matrix& IA, Matrix& I){
+	for(long icol=0; icol <= A.size-1; icol++){
+		// for each column of the inverse
+		for(long i=0; i <= IA.size-1; i++){
+			// for each line of A
+			if(i == icol){
+				I.at(i,icol) = 1; // init sum
+			} else {
+				I.at(i,icol) = 0; // init sum
+			}
+			for(long j=0; j <= IA.size-1; j++){
+				I.at(i,icol) += A.at(i,j)*IA.at(j,icol);
+			}
+		}
+	}
+}
 
+void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
+	vector<double> lhs(A.size), r(A.size), W(A.size);
+	Matrix IA2(A.size, 0), R(A.size, 0);
+	
+	inverse(IA, A, LU, P);
+	
 	cout<<"\n\nRefining "<< endl;
 	for(long i=0; i <= 3; i++) {
-    	lhs = lhs_value(A, X.at(i));
-    	// r: residue of X
-    	r = add_vec(B, lhs, -1);
-		cout<<"\n\n System Residue "<< i << endl;
-		printv(r);
+		for(long j=0; j<=A.size-1; j++){
+			residue(A, IA, R);
+			// R: residue of IA
+		}
+		cout<<"\n\n Inverse Matrix Residue "<< i << endl;
+		printm(R);
 
-    	// w: residues of each variable of X
-    	solve_lu(LU, w, r, P);
+    	// W: residues of each variable of X
+		//inverse(W, A, LU, P);
+    	//solve_lu(LU, W, R, P);
 
 		cout<<"\n Variables Residue "<< i << endl;
-		printv(w);
+		printv(W);
 
-		X.push_back(vector<double>(B.size()));
+		//X.push_back(vector<double>(B.size()));
     	// adjust X with found errors
-    	X.at(i+1) = add_vec(X.at(i), w);
+    	//X.at(i+1) = add_vec(X.at(i), W);
 	}
 }
 
@@ -298,9 +326,11 @@ int main(int argc, char **argv) {
 	cout<<"\nPivoting Permutaton is "<< endl;
 	printv(P);
 	
-    inverse(I, A, LU, P);
-    cout<<"\nInv matrix is "<< endl;
+	inverse(I, A, LU, P);
+	cout<<"\nInv matrix is "<< endl;
 	printm(I);
+
+	//inverse_refining(A, LU, IA, P);
 
 	// find first iteration of X
 //	solve_lu(LU, X.at(0), B, P);

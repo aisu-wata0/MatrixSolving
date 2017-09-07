@@ -11,6 +11,7 @@
     <VirtualDirectory Name="src">
       <File Name="main.cpp"/>
       <File Name="TestTimer.cpp"/>
+      <File Name="Matrix.h"/>
     </VirtualDirectory>
     <VirtualDirectory Name="Debug">
       <File Name="Debug/.d"/>

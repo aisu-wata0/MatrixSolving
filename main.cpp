@@ -51,55 +51,55 @@ public:
 	}
 };
 
-void subst(Matrix& coefs, vector<double>& var_x, vector<double>& indTerms, bool forward, vector<long>& perm) {
+void subst(Matrix& A, vector<double>& var_x, vector<double>& indTerms, bool forward, vector<long>& perm) {
 	double sum;
 	long i, j;
 	int step;
-	long size = coefs.size;
+	long size = A.size;
 
 	if (forward){
 		i = 1;
 		step = +1;
-		var_x.at(0) = indTerms.at(perm.at(0)) / coefs.at(0, 0);
+		var_x.at(0) = indTerms.at(perm.at(0)) / A.at(0, 0);
 	} else {
 		i = size-2;
 		step = -1;
-		var_x.at(size-1) = indTerms.at(perm.at(size-1)) / coefs.at(size-1, size-1);
+		var_x.at(size-1) = indTerms.at(perm.at(size-1)) / A.at(size-1, size-1);
 	}
 
 	for (; i >= 0 && i <= size-1 ; i += step) {
 		sum = indTerms.at(perm.at(i));
 		if(forward) {j = 0;} else {j = size-1;}
 		for (; j != i; j += step) {
-			sum -= var_x.at(j) * coefs.at(i, j);
+			sum -= var_x.at(j) * A.at(i, j);
 		}
-		var_x.at(i) = sum / coefs.at(i, i);
+		var_x.at(i) = sum / A.at(i, i);
 	}
 }
 /* */
-void subst(Matrix& coefs, vector<double>& var_x, vector<double>& indTerms, bool forward) {
+void subst(Matrix& A, vector<double>& var_x, vector<double>& indTerms, bool forward) {
 	double sum;
 	long i, j;
 	int step;
-	long size = coefs.size;
+	long size = A.size;
 
 	if (forward){
 		i = 1;
 		step = +1;
-		var_x.at(0) = indTerms.at(0) / coefs.at(0, 0);
+		var_x.at(0) = indTerms.at(0) / A.at(0, 0);
 	} else {
 		i = size-2;
 		step = -1;
-		var_x.at(size-1) = indTerms.at(size-1) / coefs.at(size-1, size-1);
+		var_x.at(size-1) = indTerms.at(size-1) / A.at(size-1, size-1);
 	}
 
 	for (; i >= 0 && i <= size-1 ; i += step) {
 		sum = indTerms.at(i);
 		if(forward) {j = 0;} else {j = size-1;}
 		for (; j != i; j += step) {
-			sum -= var_x.at(j) * coefs.at(i, j);
+			sum -= var_x.at(j) * A.at(i, j);
 		}
-		var_x.at(i) = sum / coefs.at(i, i);
+		var_x.at(i) = sum / A.at(i, i);
 	}
 }
 /**/
@@ -118,14 +118,14 @@ void printv(vector<T>& x){
 }
 
 /**/
-void GaussEl(Matrix& coefs, Matrix& L, Matrix& U, vector<long>& P) {
+void GaussEl(Matrix& A, Matrix& L, Matrix& U, vector<long>& P) {
 	TestTimer t("GaussEl");
-	long size = coefs.size;
+	long size = A.size;
 
 	for(long i = 0; i <= size-1; i++){
 		P.at(i) = i;
 		for(long j = 0; j <= size-1; j++){
-			U.at(i, j) = coefs.at(i,j);
+			U.at(i, j) = A.at(i,j);
 		}
 	}
 
@@ -156,6 +156,37 @@ void GaussEl(Matrix& coefs, Matrix& L, Matrix& U, vector<long>& P) {
 		}
 	}
 }
+
+void solve_lu(Matrix l, Matrix u, vector<double>& x, vector<double>& b, vector<long>& P){
+	vector<double> z(x.size());
+	//* find z; LZ=b *
+    subst(l, z, b, true, P);
+	//* find x; Ux=z *
+    subst(u, x, z, false);
+}
+
+void inverse(Matrix& I, Matrix A, Matrix L, Matrix U, vector<long>& P){  
+    int i, j, n;  
+    long size = L.size;
+    vector<double> x(size), b(size);
+    
+    //Creating identity matrix
+    for(i = 0; i < size; i++){  
+        for(j = 0; j < size; j++) I.at(i, j) = 0;  
+        I.at(i, i) = 1;  
+    }
+    
+    for(i = 0; i < size; i++){          //for each row
+        for(j = 0; j < size; j++){      //copying row elements
+            x.at(j) = A.at(j, i);      	//from the original matrix
+            b.at(j) = I.at(j, i);       //from identity
+        }
+        solve_lu(L, U, x, b, P);        //solve this row system
+        for(n = 0; n < size; n++) I.at(n, i) = x.at(n);        //Copying solution to inverse
+    }
+   
+}  
+   
 /* */
 void Cholesky(Matrix& a, Matrix& l, Matrix& u) {
 	long i, j, p, size = a.size;
@@ -305,43 +336,33 @@ int crout(Matrix& a, Matrix& l, Matrix& u) {
 	return 0;
 }
 
-void JacobiIt(Matrix& coefs, vector<double>& indTerms, vector<double>& x){
+void JacobiIt(Matrix& A, vector<double>& indTerms, vector<double>& x){
     int total;
     vector<double> new_x;
     // for each line
-    for(long i = 0; i <= coefs.size; ++i){
+    for(long i = 0; i <= A.size; ++i){
         total = 0;
         // substitute each x
         for(long j = 0; j <= x.size(); j++) {
             if(j != i){
-                total = total + coefs.at(i, j) * x.at(j);
+                total = total + A.at(i, j) * x.at(j);
             }
         }
-        new_x.at(i) = (indTerms.at(i) - total) / coefs.at(i, i);
+        new_x.at(i) = (indTerms.at(i) - total) / A.at(i, i);
     }
 }
 
-vector<double> found_values(Matrix coefs, vector<double> x){
+vector<double> found_values(Matrix A, vector<double> x){
     vector<double> values(x.size());
 
     for(long i=0; i <= x.size()-1; i++){
         values.at(i) = 0;
         for(long j=0; j <= x.size()-1; j++){
-            values.at(i) += coefs.at(i, j)*x.at(j);
+            values.at(i) += A.at(i, j)*x.at(j);
         }
     }
     return values;
 }
-
-void solve_lu(Matrix l, Matrix u, vector<double>& x, vector<double>& b, vector<long>& P){
-	vector<double> z(x.size());
-	//* find z; LZ=b *
-    subst(l, z, b, true, P);
-	//* find x; Ux=z *
-    subst(u, x, z, false);
-}
-
-
 
 template <class T>
 vector<T> add_vec(vector<T> a, vector<T> b, int sign = 1){
@@ -382,11 +403,11 @@ int main(int argc, char **argv) {
 	file.open("in.txt");
 
 	long size,i,j;
-
+    
 	cout<<"Enter the order of matrix ! ";
 	file>> size;
 
-	Matrix coef(size, 0), l(size, 0), u(size, 0);
+	Matrix coef(size, 0), l(size, 0), u(size, 0), I(size, 0);
 	vector<double> b(size), z(size);
 	vector<long> P(size);
 	vector<vector<double>> x;
@@ -405,12 +426,14 @@ int main(int argc, char **argv) {
 	//crout(coef, l, u);
 	//Cholesky(coef, l, u);
 	GaussEl(coef, l, u, P);
-
+    inverse(I, coef, l, u, P);
 	//* Displaying LU matrix *
 	cout<<"\n\nL matrix is "<< endl;
 	printm(l);
 	cout<<"\nU matrix is "<< endl;
 	printm(u);
+    cout<<"\nInv matrix is "<< endl;
+	printm(I);
 	cout<<"\nPivoting Permutaton is "<< endl;
 	printv(P);
 

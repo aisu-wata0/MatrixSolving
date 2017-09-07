@@ -8,6 +8,12 @@
 
 using namespace std;
 
+#define EPSILON 1e-7
+
+bool close_zero(double x){
+	return fabs(x) < EPSILON;
+}
+
 class Matrix
 {
 public:
@@ -23,18 +29,23 @@ public:
 	double& at(long i, long j) {
 		return matrix.at(i*size + j);
 	}
-
-	void swap_rows(long row0, long row1){
+	
+	void swap_rows_from(long row0, long row1, long start){
 		if(row0 == row1)
 			return;
-		for(long j = 0; j <= size-1; j++){
+		for(long j = start; j <= size-1; j++){
+			// for each collumn
 			swap(this->at(row0, j), this->at(row1, j));
 		}
 	}
-
+	
+	void swap_rows(long row0, long row1){
+		swap_rows_from(row0, row1, 0);
+	}
+	
 	void print(){
-		for (long i = 0; i < size; i++) {
-			for (long j = 0; j < size; j++) {
+		for(long i = 0; i < size; i++){
+			for(long j = 0; j < size; j++){
 				cout << this->at(i, j) <<'\t';
 			}
 			cout << endl;
@@ -51,7 +62,7 @@ public:
 	}
 };
 
-void subst(Matrix& coefs, vector<double>& var_x, vector<double>& indTerms, bool forward, vector<long>& perm) {
+void subst(Matrix& coefs, vector<double>& var_x, vector<double>& indTerms, bool forward, vector<long>& P) {
 	double sum;
 	long i, j;
 	int step;
@@ -60,23 +71,35 @@ void subst(Matrix& coefs, vector<double>& var_x, vector<double>& indTerms, bool 
 	if (forward){
 		i = 1;
 		step = +1;
-		var_x.at(0) = indTerms.at(perm.at(0)) / coefs.at(0, 0);
+		var_x.at(0) = indTerms.at(P.at(0)) / coefs.at(0, 0);
 	} else {
 		i = size-2;
 		step = -1;
-		var_x.at(size-1) = indTerms.at(perm.at(size-1)) / coefs.at(size-1, size-1);
+		var_x.at(size-1) = indTerms.at(P.at(size-1)) / coefs.at(size-1, size-1);
+	}
+	
+	for(k = 0; k <= size-1; k++){
+		if()
+		swap(indTerms.at(), indTerms.at());
 	}
 
-	for (; i >= 0 && i <= size-1 ; i += step) {
-		sum = indTerms.at(perm.at(i));
+	for(; i >= 0 && i <= size-1 ; i += step){
+		sum = indTerms.at(P.at(i));
 		if(forward) {j = 0;} else {j = size-1;}
-		for (; j != i; j += step) {
+		for(; j != i; j += step){
 			sum -= var_x.at(j) * coefs.at(i, j);
 		}
 		var_x.at(i) = sum / coefs.at(i, i);
 	}
 }
-/* */
+
+/**
+ * @brief Subtitution method for linear sistems, forward or backward
+ * @param A Coeficient Matrix
+ * @param x Variables to be found
+ * @param B Independant terms
+ * @param forward true is forward subst, false is backward.
+ */
 void subst(Matrix& coefs, vector<double>& var_x, vector<double>& indTerms, bool forward) {
 	double sum;
 	long i, j;
@@ -102,7 +125,7 @@ void subst(Matrix& coefs, vector<double>& var_x, vector<double>& indTerms, bool 
 		var_x.at(i) = sum / coefs.at(i, i);
 	}
 }
-/**/
+
 void printm(Matrix& matrix){
 	for(long i = 0; i <= matrix.size-1; i++){
 		for(long j = 0; j <= matrix.size-1; j++)
@@ -117,192 +140,55 @@ void printv(vector<T>& x){
 		cout << vx <<'\t';
 }
 
-/**/
-void GaussEl(Matrix& coefs, Matrix& L, Matrix& U, vector<long>& P) {
+/**
+ * @brief For the matrix A finds its LU decomposition without overwriting.
+ * Has partial pivoting, stores final indexes in P
+ * @param A Matrix to be decomposed
+ * @param LU Decomposition, lower triangle of this matrix will store L without the 1 diagonal, upper triangle stores U
+ * @param P Permutation vector resulting of the pivoting
+ */
+void GaussEl(Matrix& coefs, Matrix& LU, vector<long>& P) {
 	TestTimer t("GaussEl");
 	long size = coefs.size;
 
+	// initializing permutation vector
 	for(long i = 0; i <= size-1; i++){
 		P.at(i) = i;
-		for(long j = 0; j <= size-1; j++){
-			U.at(i, j) = coefs.at(i,j);
-		}
 	}
 
-	for(long j = 0; j <= size-1; j++){
+	for(long p = 0; p <= size-1; p++){
 		// for each pivot
 		/* partial pivoting */
-		long maxRow = j;
-		for(long p = j+1; p <= size-1; p++){
-			if(abs(U.at(p,j)) > abs(U.at(maxRow,j))) maxRow = p;
+		long maxRow = p;
+		for(long i = p+1; i <= size-1; i++){
+			// for each value below the p pivot
+			if(abs(LU.at(i,p)) > abs(LU.at(maxRow,p))) maxRow = i;
+		} // finds max value
+		// pivots rows of U
+		LU.swap_rows_from(p, maxRow, p);
+		swap(P.at(p), P.at(maxRow));
+		
+		// LU.at(p,p) = 1; // change subst method
+		close_zero(LU.at(p,p))
+		if(close_zero(LU.at(p,p))){
+			cout<<"Found a pivot == 0, system is not solvable with partial pivoting"<< endl;
+			exit(1);
 		}
-		U.swap_rows(j, maxRow);
-		swap(P.at(j), P.at(maxRow));
-		/**/
-		L.at(j,j) = 1;
-		for (long i = j+1; i <= size-1; i++) {
+		for (long i = p+1; i <= size-1; i++) {
 			// for each line below pivot
-			if (U.at(i, j) != 0){ // TODO: comparison with 0
-				// find pivot multiplier
-				L.at(i, j) = U.at(i, j)/U.at(j, j);
-				// subtract pivot from current line
-				for (long k = 0; k <= size-1; k++) {
-					U.at(i, k) -= U.at(j, k) * L.at(i, j);
-				}
-			} else {
-				cout<<"Found a pivot == 0, system is not solvable with partial pivoting"<< endl;
-				L.at(i,j) = 0;
-			}
-		}
-	}
-}
-/* */
-void Cholesky(Matrix& a, Matrix& l, Matrix& u) {
-	long i, j, p, size = a.size;
-	double sum, sum2;
-	/**/
-	for(i=0; i <= size-1; i++){
-		sum = 0;
-		for(j=0; j <= i-1; j++){
-			sum2 = 0;
-			for(p = 0; p <= j-1; p++)
-				sum2 += l.at(i,p) * l.at(j,p);
-			l.at(i,j) = (a.at(i,j) - sum2) / l.at(j,j);
-			u.at(j,i) = l.at(i,j);
-
-			sum += l.at(i,j)*l.at(i,j);
-		}
-		l.at(i,i) = sqrt(a.at(i,i) - sum);
-		u.at(i,i) = l.at(i,i);
-	}
-	/**/
-}
-
-////////////////////////////////////////////////////////////////////////////////
-//  int Crout_LU_Decomposition(double *A, int n)                              //
-//                                                                            //
-//  Description:                                                              //
-//     This routine uses Crout's method to decompose the n x n matrix A       //
-//     into a lower triangular matrix L and a unit upper triangular matrix U  //
-//     such that A = LU.                                                      //
-//     The matrices L and U replace the matrix A so that the original matrix  //
-//     A is destroyed.                                                        //
-//     Note!  In Crout's method the diagonal elements of U are 1 and are      //
-//            not stored.                                                     //
-//     Note!  The determinant of A is the product of the diagonal elements    //
-//            of L.  (det A = det L * det U = det L).                         //
-//     This routine is suitable for those classes of matrices which when      //
-//     performing Gaussian elimination do not need to undergo partial         //
-//     pivoting, e.g. positive definite symmetric matrices, diagonally        //
-//     dominant band matrices, etc.                                           //
-//     For the more general case in which partial pivoting is needed use      //
-//                    Crout_LU_Decomposition_with_Pivoting.                   //
-//     The LU decomposition is convenient when one needs to solve the linear  //
-//     equation Ax = B for the vector x while the matrix A is fixed and the   //
-//     vector B is varied.  The routine for solving the linear system Ax = B  //
-//     after performing the LU decomposition for A is Crout_LU_Solve          //
-//     (see below).                                                           //
-//                                                                            //
-//     The Crout method is given by evaluating, in order, the following       //
-//     pair of expressions for k = 0, ... , n - 1:                            //
-//       L[i][k] = (A[i][k] - (L[i][0]*U[0][k] + . + L[i][k-1]*U[k-1][k]))    //
-//                                 for i = k, ... , n-1,                      //
-//       U[k][j] = A[k][j] - (L[k][0]*U[0][j] + ... + L[k][k-1]*U[k-1][j])    //
-//                                                                  / L[k][k] //
-//                                      for j = k+1, ... , n-1.               //
-//       The matrix U forms the upper triangular matrix, and the matrix L     //
-/* */
-int crout(Matrix& a, Matrix& l, Matrix& u) {
-	long k, i, j, p, size = a.size;
-	double sum;
-
-	/**
-	for(k = 0; k <= size-1; k++){
-		u.at(k,k) = 1;
-		for(i = k; i <= size-1; i++){
-			sum = 0;
-			for(p = 0; p <= k-1; p++){
-				sum += l.at(i,p)*u.at(p,k);
-			}
-			l.at(i,k) = a.at(i,k)-sum;
-		}
-
-		for(j = k+1; j <= size-1 ;j++){
-			sum = 0;
-			for(p = 0; p <= k-1; p++){
-				sum += l.at(k,p)*u.at(p,j);
-			}
-			u.at(k,j) = (a.at(k,j)-sum)/l.at(k,k);
-		}
-	}
-	/**
-	for(k=0; k <= size-1; k++){
-		for(i=0; i <= size-1; i++){
-			if(i<=k){
-				u.at(i,k)=a.at(i,k);
-				for(p=0; p<i-1; p++)
-				  u.at(i,k)-=l.at(i,p)*u.at(p,k);
-				if(i==k)
-				  l.at(i,k)=1;
-				else
-				  l.at(i,k)=0;
-			}else{
-				l.at(i,k)=a.at(i,k);
-				for(p=0; p<=k-1; p++)
-				  l.at(i,k)-=l.at(i,p)*u.at(p,k);
-				l.at(i,k)/=u.at(k,k);
-				u.at(i,k)=0;
-			}
-		}
-	}
-	/*For each row and column, k = 0, ..., n-1,
-	find the lower triangular matrix elements for column k
-	and if the matrix is non-singular (nonzero diagonal element).
-	find the upper triangular matrix elements for row k. */
-	/**
-	int row;
-	double *p_k, *p_row, *p_col, *A = &a.matrix[0];
-	long n = a.size;
-	
-	for (k = 0, p_k = A; k < n; p_k += n, k++) {
-		for (i = k, p_row = p_k; i < n; p_row += n, i++) {
-			for (p = 0, p_col = A; p < k; p_col += n, p++)
-				*(p_row + k) -= *(p_row + p) * *(p_col + k);
-		}  
-		if ( *(p_k + k) == 0.0 ) return -1;
-		for (j = k+1; j < n; j++) {
-			for (p = 0, p_col = A; p < k; p_col += n,  p++)
-				*(p_k + j) -= *(p_k + p) * *(p_col + j);
-			*(p_k + j) /= *(p_k + k);
-		}
-	}
-	/* *
-	for (k = 0; k <= size-1; k++){
-		for (i = 0; i <= size-1; i++){
-			if (i < k){
-				l.at(i,k) = 0;
-			}else{
-				l.at(i,k) = a.at(i,k);
-				for (p = 0; p < k; p++){
-					l.at(i,k) = l.at(i,k) - l.at(i,p) * u.at(p,k);
+			if (!close_zero(LU.at(i,p))){
+				// only subtract pivot line if coeficient is not null
+				// find pivot multiplier, store in L
+				LU.at(i, p) = LU.at(i, p)/LU.at(p, p);
+				// subtract pivot from current line (in U)
+				for (long k = p+1; k <= size-1; k++) {
+					// for each collumn stating from pivot's
+					LU.at(i, k) -= LU.at(p, k) * LU.at(i, p);
+					// mulitply pivot line value to multiplier
 				}
 			}
 		}
-		for (i = 0; i <= size-1; i++){
-			if (i < k){
-				u.at(k,i) = 0;
-			}else if (i == k){
-				u.at(k,i) = 1;
-			}else{
-				u.at(k,i) = a.at(k,i) / l.at(k,k);
-				for (p = 0; p < k; p++){
-					u.at(k,i) = u.at(k,i) - ((l.at(k,p) * u.at(p,i)) / l.at(k,k));
-				}
-			}
-	  }
 	}
-	/**/
-	return 0;
 }
 
 void JacobiIt(Matrix& coefs, vector<double>& indTerms, vector<double>& x){
@@ -335,13 +221,11 @@ vector<double> found_values(Matrix coefs, vector<double> x){
 
 void solve_lu(Matrix l, Matrix u, vector<double>& x, vector<double>& b, vector<long>& P){
 	vector<double> z(x.size());
-	//* find z; LZ=b *
+	// find z; LZ=b
     subst(l, z, b, true, P);
-	//* find x; Ux=z *
+	// find x; Ux=z
     subst(u, x, z, false);
 }
-
-
 
 template <class T>
 vector<T> add_vec(vector<T> a, vector<T> b, int sign = 1){
@@ -377,7 +261,19 @@ void lu_refining(Matrix coef, Matrix l, Matrix u, vector<vector<double>>& x, vec
 	}
 }
 
+union my_double {
+	double f;
+	long long exp : 11;
+	long long mant : 53;
+} my_double_t; 
+
 int main(int argc, char **argv) {
+	my_double g; // TODO
+	g.f = 1.0;
+	g.mant = g.mant + 1;
+	cout<<"\nX =  "<<g.f - 1.0<<"  ";
+	
+	
 	fstream file;
 	file.open("in.txt");
 
@@ -386,7 +282,7 @@ int main(int argc, char **argv) {
 	cout<<"Enter the order of matrix ! ";
 	file>> size;
 
-	Matrix coef(size, 0), l(size, 0), u(size, 0);
+	Matrix coef(size), lu(size);
 	vector<double> b(size), z(size);
 	vector<long> P(size);
 	vector<vector<double>> x;
@@ -397,6 +293,7 @@ int main(int argc, char **argv) {
 		cout<<"\nRow "<<i<<"  ";
 		for(j=0; j<=size-1; j++)
 			file>> coef.at(i,j);
+			lu.at(i,j) = coef.at(i,j);
 	}
 	cout<<"Enter elements of b matrix"<<endl;
 	for(i=0; i<=size-1; i++)
@@ -404,7 +301,7 @@ int main(int argc, char **argv) {
 
 	//crout(coef, l, u);
 	//Cholesky(coef, l, u);
-	GaussEl(coef, l, u, P);
+	GaussEl(coef, lu, P);
 
 	//* Displaying LU matrix *
 	cout<<"\n\nL matrix is "<< endl;

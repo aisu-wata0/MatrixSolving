@@ -10,26 +10,25 @@
 using namespace std;
 
 /**
- * @brief For the matrix A finds its LU decomposition without overwriting.
+ * @brief For the matrix LU finds its LU decomposition overwriting it
  * Has partial pivoting, stores final indexes in P
- * @param A Matrix to be decomposed
- * @param LU Decomposition, lower triangle of this matrix will store L without the 1 diagonal, upper triangle stores U
+ * @param LU Matrix to be decomposed
+ * Output: lower triangle of this matrix will store L 1 diagonal implicit, upper triangle stores U
  * @param P Permutation vector resulting of the pivoting
  */
-void GaussEl(Matrix& A, Matrix& LU, vector<long>& P) {
+void GaussEl(Matrix& LU, vector<long>& P) {
 	//TestTimer t("GaussEl");
-	long size = A.size;
 
 	// initializing permutation vector
-	for(long i = 0; i <= size-1; i++){
+	for(long i = 0; i <= LU.size-1; i++){
 		P.at(i) = i;
 	}
 
-	for(long p = 0; p <= size-1; p++){
+	for(long p = 0; p <= LU.size-1; p++){
 		// for each pivot
 		/* partial pivoting */
 		long maxRow = p;
-		for(long i = p+1; i <= size-1; i++){
+		for(long i = p+1; i <= LU.size-1; i++){
 			// for each value below the p pivot
 			if(abs(LU.at(i,p)) > abs(LU.at(maxRow,p))) maxRow = i;
 		} // finds max value
@@ -43,14 +42,14 @@ void GaussEl(Matrix& A, Matrix& LU, vector<long>& P) {
 			cout<<"Found a pivot == 0, system is not solvable with partial pivoting"<< endl;
 			exit(1);
 		}
-		for (long i = p+1; i <= size-1; i++) {
+		for (long i = p+1; i <= LU.size-1; i++) {
 			// for each line below pivot
 			if (!close_zero(LU.at(i,p))){
 				// only subtract pivot line if coeficient is not null
 				// find pivot multiplier, store in L
 				LU.at(i, p) = LU.at(i, p)/LU.at(p, p);
 				// subtract pivot from current line (in U)
-				for (long k = p+1; k <= size-1; k++) {
+				for (long k = p+1; k <= LU.size-1; k++) {
 					// for each collumn stating from pivot's
 					LU.at(i, k) -= LU.at(p, k) * LU.at(i, p);
 					// mulitply pivot line value to multiplier
@@ -174,9 +173,7 @@ void inverse(Matrix& I, Matrix& A, Matrix& LU, vector<long>& P){
 			B.at(j) = I.at(j, i);		// from identity
 		}
 		solve_lu(LU, X, B, P);		// solve this row system
-    	lhs = lhs_value(A, X);
-		cout<<"\nLHS"<< endl;
-		printv(lhs);
+		
 		for(n = 0; n < size; n++)
 			I.at(n, i) = X.at(n);
 		// Copying solution to inverse
@@ -233,6 +230,29 @@ void lu_refining(Matrix A, Matrix LU, vector<vector<double>>& X, vector<double>&
 	}
 }
 
+void inverse_refining(Matrix A, Matrix LU, vector<vector<double>>& X, vector<double>& B, vector<long>& P){
+	vector<double> lhs(B.size()), r(B.size()), w(B.size());
+
+	cout<<"\n\nRefining "<< endl;
+	for(long i=0; i <= 3; i++) {
+    	lhs = lhs_value(A, X.at(i));
+    	// r: residue of X
+    	r = add_vec(B, lhs, -1);
+		cout<<"\n\n System Residue "<< i << endl;
+		printv(r);
+
+    	// w: residues of each variable of X
+    	solve_lu(LU, w, r, P);
+
+		cout<<"\n Variables Residue "<< i << endl;
+		printv(w);
+
+		X.push_back(vector<double>(B.size()));
+    	// adjust X with found errors
+    	X.at(i+1) = add_vec(X.at(i), w);
+	}
+}
+
 union my_double {
 	double f;
 	long long exp : 11;
@@ -250,7 +270,7 @@ int main(int argc, char **argv) {
 	long size,i,j;
 	file.open("in.txt");
     
-	cout<<"Enter the order of matrix ! ";
+	cout<<"Enter the order of matrix = ";
 	file>> size;
 
 	Matrix A(size, 0), LU(size, 0), I(size, 0);
@@ -271,7 +291,7 @@ int main(int argc, char **argv) {
 //	for(i=0; i<=size-1; i++)
 //		file>> B.at(i);
 
-	GaussEl(A, LU, P);
+	GaussEl(LU, P);
 
 	cout<<"\n\nLU matrix is "<< endl;
 	printm(LU);

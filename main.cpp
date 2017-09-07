@@ -281,17 +281,6 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
 	}
 }
 
-union my_double {
-	double f;
-	long long exp : 11;
-	long long mant : 53;
-} my_double_t; 
-
-
-//	my_double g; // TODO
-//	g.f = 1.0;
-//	g.mant = g.mant + 1;
-//	cout<<"\nX =  "<<g.f - 1.0<<"  ";
 
 int main(int argc, char **argv) {
 	fstream file;

@@ -35,7 +35,7 @@ void GaussEl(Matrix& LU, vector<long>& P) {
 		// pivots rows of U
 		LU.swap_rows_from(p, maxRow, p);
 		swap(P.at(p), P.at(maxRow));
-		
+
 		// LU.at(p,p) = 1; // change subst method
 		close_zero(LU.at(p,p));
 		if(close_zero(LU.at(p,p))){
@@ -211,13 +211,13 @@ void solve_lu(Matrix LU, vector<double>& X, vector<double>& B, vector<long>& P){
 	vector<double> Z(X.size());
 	// find Z; LZ=B
 	subst_P(LU, Z, B, true, P, true);
-	
+
 	// find X; Ux=Z
 	subst(LU, X, Z, false);
 }
 
 void identity(Matrix& I){
-	for(long i = 0; i < I.size; i++){  
+	for(long i = 0; i < I.size; i++){
 		for(long j = 0; j < I.size; j++){
 			I.at(i, j) = 0;
 		}
@@ -226,7 +226,7 @@ void identity(Matrix& I){
 }
 
 void inverse(Matrix& LU, Matrix& IA, Matrix& I, vector<long>& P){
-	int j;  
+	int j;
 	long size = LU.size;
 	vector<double> X(size), B(size), lhs(size);
 
@@ -314,7 +314,7 @@ double residue(Matrix& A, Matrix& IA, Matrix& I){
 			if(i == icol){
 				I.at(i,icol) = 1;
 			} else {
-				I.at(i,icol) = 0; 
+				I.at(i,icol) = 0;
 			}
 			// multiply A line to the current inverse col
 			for(long j=0; j <= IA.size-1; j++){
@@ -340,23 +340,23 @@ double residue(Matrix& A, Matrix& IA, Matrix& I){
 void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
 	long i=0;
 	Matrix W(A.size, 0), R(A.size, 0), I(A.size, 0);
-	
+
 	identity(I);
 	// TODO: inverse_id(LU, IA, P); that doesn't need Identity matrix in the memory
 	inverse(LU, IA, I, P);
 	printf("# iter %d:\n", i);
 	printm(IA);
-	
+
 	while(residue(A, IA, R) > EPSILON){
 		i += 1;
 		// R: residue of IA
-		
+
 		inverse(LU, W, R, P);
 		// W: residues of each variable of IA
-		
+
 		// adjust IA with found errors
 		IA.add(W);
-		
+
 		printf("# iter %d:\n", i);
 		printm(IA);
 	}
@@ -367,7 +367,7 @@ int main(int argc, char **argv) {
 	fstream file;
 	long size,i,j;
 	file.open("in.txt");
-    
+
 	cout<<"Enter the order of matrix = ";
 	file>> size;
 
@@ -390,16 +390,16 @@ int main(int argc, char **argv) {
 //		file>> B.at(i);
 
 	GaussEl(LU, P);
-	
+
 	printf("#\n");
-	
+
 	inverse_refining(A, LU, IA, P);
-	
+
 	printf("# Tempo LU: %.17g\n, 0.0", 0.0); // TODO
 	printf("# Tempo iter: %.17g\n", 0.0);
 	printf("# Tempo residuo: %.17g\n#\n", 0.0);
 	printm(IA);
-	
+
 //	find first iteration of X
 //	solve_lu(LU, X.at(0), B, P);
 //

@@ -59,18 +59,6 @@ void GaussEl(Matrix& LU, vector<long>& P) {
 	}
 }
 
-vector<double> lhs_value(Matrix A, vector<double> X){
-    vector<double> lhs(X.size());
-
-    for(long i=0; i <= X.size()-1; i++){
-        lhs.at(i) = 0;
-        for(long j=0; j <= X.size()-1; j++){
-            lhs.at(i) += A.at(i, j)*X.at(j);
-        }
-    }
-    return lhs;
-}
-
 void subst_P(Matrix& L, vector<double>& X, Matrix& I, bool forward, vector<long>& P, bool unit_diagonal, long col){
 	double sum;
 	long i, j;
@@ -275,6 +263,18 @@ vector<T> add_vec(vector<T> a, vector<T> b, int sign = 1){
     return x;
 }
 
+vector<double> lhs_value(Matrix A, vector<double> X){
+    vector<double> lhs(X.size());
+
+    for(long i=0; i <= X.size()-1; i++){
+        lhs.at(i) = 0;
+        for(long j=0; j <= X.size()-1; j++){
+            lhs.at(i) += A.at(i, j)*X.at(j);
+        }
+    }
+    return lhs;
+}
+
 void lu_refining(Matrix& A, Matrix& LU, vector<vector<double>>& X, vector<double>& B, vector<long>& P){
 	vector<double> lhs(B.size()), r(B.size()), w(B.size());
 
@@ -299,21 +299,23 @@ void lu_refining(Matrix& A, Matrix& LU, vector<vector<double>>& X, vector<double
 }
 
 /**
- * @brief Calculates residue in I
- * @param A
- * @param IA
- * @param I no need for initialization
+ * @brief Calculates residue into I, A*IA supposed to be Identity
+ * @param A original matrix
+ * @param IA solution to A*IA = I
+ * @param I return value, no init needed
  */
 void residue(Matrix& A, Matrix& IA, Matrix& I){
 	for(long icol=0; icol <= A.size-1; icol++){
 		// for each column of the inverse
 		for(long i=0; i <= IA.size-1; i++){
 			// for each line of A
+			// init sum
 			if(i == icol){
-				I.at(i,icol) = 1; // init sum
+				I.at(i,icol) = 1;
 			} else {
-				I.at(i,icol) = 0; // init sum
+				I.at(i,icol) = 0; 
 			}
+			// multiply A line to the current inverse col
 			for(long j=0; j <= IA.size-1; j++){
 				I.at(i,icol) -= A.at(i,j)*IA.at(j,icol);
 				if(close_zero(I.at(i,icol))){
@@ -324,6 +326,12 @@ void residue(Matrix& A, Matrix& IA, Matrix& I){
 	}
 }
 
+/**
+ * @brief Calculates inverse of A into IA
+ * @param LU decomposition of A
+ * @param IA return value, no init needed
+ * @param P LU pivot permutation
+ */
 void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
 	Matrix W(A.size, 0), R(A.size, 0), I(A.size, 0);
 	
@@ -351,8 +359,6 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
 
 		// adjust IA with found errors
 		IA.add(W);
-		cout<<"\n IA "<< i << endl;
-		printm(IA);
 	}
 }
 
@@ -391,6 +397,7 @@ int main(int argc, char **argv) {
 	printv(P);
 	
 	inverse_refining(A, LU, IA, P);
+	
 	cout<<"\nInv matrix is "<< endl;
 	printm(IA);
 	

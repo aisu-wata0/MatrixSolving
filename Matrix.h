@@ -8,7 +8,7 @@
 
 namespace std {
 
-#define EPSILON 1e-7
+#define EPSILON 1e-16
 #define E_FACTOR 16
 
 union Double {
@@ -46,16 +46,21 @@ class Matrix
 {
 public:
 	long size;
+	int type;
 	vector<double> matrix;
 
-	Matrix(long size, int type) : size(size){
-		if (type == 0){
+	Matrix(long size, int type) : size(size), type(type){
+		if(type == 0 || type == 1){
 			matrix.resize(size*size);
 		}
 	}
 
 	double& at(long i, long j) {
-		return matrix.at(i*size + j);
+		if(type == 0){
+			matrix.at(i*size + j);
+		} else { // TODO speed, use o IA, R, I
+			matrix.at(j*size + i);
+		}
 	}
 	
 	void swap_rows_from(long row0, long row1, long start){
@@ -99,10 +104,11 @@ public:
 };
 
 void printm(Matrix& matrix){
+	printf("%d\n", matrix.size);
 	for(long i = 0; i <= matrix.size-1; i++){
 		for(long j = 0; j <= matrix.size-1; j++)
-			cout<< matrix.at(i,j) <<'\t';
-		cout<< '\n';
+			printf("%.17g\t", matrix.at(i,j));
+		cout<< endl;
 	}
 }
 

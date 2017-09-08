@@ -71,6 +71,41 @@ vector<double> lhs_value(Matrix A, vector<double> X){
     return lhs;
 }
 
+void subst_P(Matrix& L, vector<double>& X, Matrix& I, bool forward, vector<long>& P, bool unit_diagonal, long col){
+	double sum;
+	long i, j;
+	int step;
+	long size = L.size;
+
+	if (forward){
+		i = 1;
+		step = +1;
+		X.at(0) = I.at(P.at(0),col);
+		if(!unit_diagonal){
+			X.at(i) /= L.at(0, 0);
+		}
+	} else {
+		i = size-2;
+		step = -1;
+		X.at(size-1) = I.at(P.at(size-1),col);
+		if(!unit_diagonal){
+			X.at(i) /= L.at(size-1, size-1);
+		}
+	}
+
+	for (; i >= 0 && i <= size-1 ; i += step) {
+		sum = I.at(i, col);
+		if(forward) {j = 0;} else {j = size-1;}
+		for (; j != i; j += step) {
+			sum -= X.at(j) * L.at(i, j);
+		}
+		X.at(i) = sum;
+		if(!unit_diagonal){
+			X.at(i) /= L.at(i, i);
+		}
+	}
+}
+
 /**
  * @brief Subtitution method for linear sistems, forward or backward, uses P from pivoting on the LU decomposition
  * @param A Coeficient Matrix
@@ -96,7 +131,10 @@ void subst_P(Matrix& A, vector<double>& X, vector<double>& B, bool forward, vect
 	} else {
 		i = size-2;
 		step = -1;
-		X.at(size-1) = B.at(P.at(size-1)) / A.at(size-1, size-1);
+		X.at(size-1) = B.at(P.at(size-1));
+		if(!unit_diagonal){
+			X.at(i) /= A.at(size-1, size-1);
+		}
 	}
 
 	for(; i >= 0 && i <= size-1 ; i += step){
@@ -110,6 +148,32 @@ void subst_P(Matrix& A, vector<double>& X, vector<double>& B, bool forward, vect
 		if(!unit_diagonal){
 			X.at(i) /= A.at(i, i);
 		}
+	}
+}
+
+void subst(Matrix& A, Matrix& X, vector<double>& B, bool forward, long col) {
+	double sum;
+	long i, j;
+	int step;
+	long size = A.size;
+
+	if (forward){
+		i = 1;
+		step = +1;
+		X.at(0,col) = B.at(0) / A.at(0, 0);
+	} else {
+		i = size-2;
+		step = -1;
+		X.at(size-1,col) = B.at(size-1) / A.at(size-1, size-1);
+	}
+
+	for (; i >= 0 && i <= size-1 ; i += step) {
+		sum = B.at(i);
+		if(forward) {j = 0;} else {j = size-1;}
+		for (; j != i; j += step) {
+			sum -= X.at(j,col) * A.at(i, j);
+		}
+		X.at(i,col) = sum / A.at(i, i);
 	}
 }
 
@@ -146,37 +210,41 @@ void subst(Matrix& A, vector<double>& X, vector<double>& B, bool forward) {
 	}
 }
 
+void solve_lu(Matrix LU, Matrix& X, Matrix& B, vector<long>& P, long col){
+	vector<double> Z(LU.size);
+	// find Z; LZ=B
+	subst_P(LU, Z, B, true, P, true, col);
+
+	// find X; Ux=Z
+	subst(LU, X, Z, false, col);
+}
+
 void solve_lu(Matrix LU, vector<double>& X, vector<double>& B, vector<long>& P){
 	vector<double> Z(X.size());
 	// find Z; LZ=B
-    subst_P(LU, Z, B, true, P, true);
-	cout<<"\nZ"<< endl;
-	printv(Z);
+	subst_P(LU, Z, B, true, P, true);
+	
 	// find X; Ux=Z
-    subst(LU, X, Z, false);
+	subst(LU, X, Z, false);
 }
 
-void inverse(Matrix& I, Matrix& A, Matrix& LU, vector<long>& P){  
-	int i, j, n;  
+void identity(Matrix& I){
+	for(long i = 0; i < I.size; i++){  
+		for(long j = 0; j < I.size; j++){
+			I.at(i, j) = 0;
+		}
+		I.at(i, i) = 1;
+	}
+}
+
+void inverse(Matrix& LU, Matrix& IA, Matrix& I, vector<long>& P){
+	int j;  
 	long size = LU.size;
 	vector<double> X(size), B(size), lhs(size);
 
-	// Creating identity matrix
-	for(i = 0; i < size; i++){  
-		for(j = 0; j < size; j++) I.at(i, j) = 0;  
-		I.at(i, i) = 1;  
-	}
-
-	for(i = 0; i < size; i++){			// for each row
-		for(j = 0; j < size; j++){		// copying row elements
-			X.at(j) = A.at(j, i);		// from the original matrix
-			B.at(j) = I.at(j, i);		// from identity
-		}
-		solve_lu(LU, X, B, P);		// solve this row system
-		
-		for(n = 0; n < size; n++)
-			I.at(n, i) = X.at(n);
-		// Copying solution to inverse
+	for(j = 0; j < size; j++){
+		// for each IA col solve SL to find the IA col values
+		solve_lu(LU, IA, I, P, j);
 	}
 }
 
@@ -247,17 +315,24 @@ void residue(Matrix& A, Matrix& IA, Matrix& I){
 				I.at(i,icol) = 0; // init sum
 			}
 			for(long j=0; j <= IA.size-1; j++){
-				I.at(i,icol) += A.at(i,j)*IA.at(j,icol);
+				I.at(i,icol) -= A.at(i,j)*IA.at(j,icol);
+				if(close_zero(I.at(i,icol))){
+					I.at(i,icol) = 0.0;
+				}
 			}
 		}
 	}
 }
 
 void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
-	vector<double> lhs(A.size), r(A.size), W(A.size);
-	Matrix IA2(A.size, 0), R(A.size, 0);
+	Matrix W(A.size, 0), R(A.size, 0), I(A.size, 0);
 	
-	inverse(IA, A, LU, P);
+	identity(I);
+	// TODO: inverse_id(LU, IA, P); that doesn't need Identity matrix in the memory
+	inverse(LU, IA, I, P);
+	
+	cout<<"\nInv matrix is "<< endl;
+	printm(IA);
 	
 	cout<<"\n\nRefining "<< endl;
 	for(long i=0; i <= 3; i++) {
@@ -268,16 +343,16 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
 		cout<<"\n\n Inverse Matrix Residue "<< i << endl;
 		printm(R);
 
-    	// W: residues of each variable of X
-		//inverse(W, A, LU, P);
-    	//solve_lu(LU, W, R, P);
+		inverse(LU, W, R, P);
+		// W: residues of each variable of IA
 
 		cout<<"\n Variables Residue "<< i << endl;
-		printv(W);
+		printm(W);
 
-		//X.push_back(vector<double>(B.size()));
-    	// adjust X with found errors
-    	//X.at(i+1) = add_vec(X.at(i), W);
+		// adjust IA with found errors
+		IA.add(W);
+		cout<<"\n IA "<< i << endl;
+		printm(IA);
 	}
 }
 
@@ -290,7 +365,7 @@ int main(int argc, char **argv) {
 	cout<<"Enter the order of matrix = ";
 	file>> size;
 
-	Matrix A(size, 0), LU(size, 0), I(size, 0);
+	Matrix A(size, 0), LU(size, 0), IA(size, 0);
 	vector<double> B(size), z(size);
 	vector<long> P(size);
 	vector<vector<double>> X;
@@ -315,12 +390,10 @@ int main(int argc, char **argv) {
 	cout<<"\nPivoting Permutaton is "<< endl;
 	printv(P);
 	
-	inverse(I, A, LU, P);
+	inverse_refining(A, LU, IA, P);
 	cout<<"\nInv matrix is "<< endl;
-	printm(I);
-
-	//inverse_refining(A, LU, IA, P);
-
+	printm(IA);
+	
 	// find first iteration of X
 //	solve_lu(LU, X.at(0), B, P);
 //

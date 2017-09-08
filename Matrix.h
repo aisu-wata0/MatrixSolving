@@ -18,7 +18,7 @@ union Double {
 }; 
 
 bool close_zero(double x){
-	return fabs(x) < EPSILON;
+	return fabs(x) <= EPSILON;
 }
 
 double inc(double x, int i){
@@ -69,6 +69,14 @@ public:
 	
 	void swap_rows(long row0, long row1){
 		swap_rows_from(row0, row1, 0);
+	}
+	
+	void add(Matrix& b){
+		for(long i=0; i <= size-1; i++){
+			for(long j=0; j <= size-1; j++){
+				this->at(i,j) += b.at(i,j);
+			}
+		}
 	}
 	
 	void print(){

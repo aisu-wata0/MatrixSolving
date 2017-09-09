@@ -8,7 +8,7 @@
 
 namespace std {
 
-#define EPSILON 1e-16
+#define EPSILON 1e-20 // TODO: adjust value
 #define E_FACTOR 16
 
 union Double {

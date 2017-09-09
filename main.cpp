@@ -54,6 +54,9 @@ void GaussEl(Matrix& LU, vector<long>& P) {
 					LU.at(i, k) -= LU.at(p, k) * LU.at(i, p);
 					// mulitply pivot line value to multiplier
 				}
+			} else {
+				// pivot not subtracted from line
+				LU.at(i, p) = 0.0;
 			}
 		}
 	}
@@ -303,6 +306,7 @@ void lu_refining(Matrix& A, Matrix& LU, vector<vector<double>>& X, vector<double
  * @param A original matrix
  * @param IA solution to A*IA = I
  * @param I return value, no init needed
+ * @return Max residue value found in abs()
  */
 double residue(Matrix& A, Matrix& IA, Matrix& I){
 	double err_max = 0.0;
@@ -319,12 +323,9 @@ double residue(Matrix& A, Matrix& IA, Matrix& I){
 			// multiply A line to the current inverse col
 			for(long j=0; j <= IA.size-1; j++){
 				I.at(i,icol) -= A.at(i,j)*IA.at(j,icol);
-				if(close_zero(I.at(i,icol))){
-					I.at(i,icol) = 0.0;
-				}
 			}
-			if (I.at(i,icol) > err_max){
-				err_max = I.at(i,icol);
+			if(fabs(I.at(i,icol)) > err_max) {
+				err_max = fabs(I.at(i,icol));
 			}
 		}
 	}
@@ -339,6 +340,7 @@ double residue(Matrix& A, Matrix& IA, Matrix& I){
  */
 void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
 	long i=0;
+	double c_residue, l_residue;
 	Matrix W(A.size, 0), R(A.size, 0), I(A.size, 0);
 
 	identity(I);
@@ -346,19 +348,25 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
 	inverse(LU, IA, I, P);
 	printf("# iter %d:\n", i);
 	printm(IA);
-
-	while(residue(A, IA, R) > EPSILON){
+	
+	c_residue = residue(A, IA, R);
+	l_residue = 1.0; // enter condition at least once
+	while((l_residue - c_residue > EPSILON) && (l_residue > c_residue)){
+		// calculate how much the residue diminished
+		// TODO: choose method to stop
+		//(c_residue > EPSILON) && (l_residue - c_residue > EPSILON) && (l_residue > c_residue)
 		i += 1;
 		// R: residue of IA
 
 		inverse(LU, W, R, P);
 		// W: residues of each variable of IA
-
 		// adjust IA with found errors
 		IA.add(W);
 
 		printf("# iter %d:\n", i);
 		printm(IA);
+		l_residue = c_residue;
+		c_residue = residue(A, IA, R);
 	}
 }
 

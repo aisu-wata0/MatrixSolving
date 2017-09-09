@@ -3,6 +3,8 @@
 #include <vector>
 #include <cmath>
 #include <ctgmath>
+#include <stdlib.h>
+
 
 #include "TestTimer.cpp"
 #include "Matrix.h"
@@ -17,7 +19,7 @@ using namespace std;
  * @param P Permutation vector resulting of the pivoting
  */
 void GaussEl(Matrix& LU, vector<long>& P) {
-	TestTimer t("GaussEl");
+	//TestTimer t("GaussEl");
 
 	// initializing permutation vector
 	for(long i = 0; i <= LU.size-1; i++){
@@ -35,11 +37,11 @@ void GaussEl(Matrix& LU, vector<long>& P) {
 		// pivots rows of U
 		LU.swap_rows_from(p, maxRow, p);
 		swap(P.at(p), P.at(maxRow));
-
+		
 		// LU.at(p,p) = 1; // change subst method
 		close_zero(LU.at(p,p));
 		if(close_zero(LU.at(p,p))){
-			fprintf(stderr, "Found a pivot == 0, system is not solvable with partial pivoting");
+			cout<<"Found a pivot == 0, system is not solvable with partial pivoting"<< endl;
 			exit(1);
 		}
 		for (long i = p+1; i <= LU.size-1; i++) {
@@ -54,9 +56,6 @@ void GaussEl(Matrix& LU, vector<long>& P) {
 					LU.at(i, k) -= LU.at(p, k) * LU.at(i, p);
 					// mulitply pivot line value to multiplier
 				}
-			} else {
-				// pivot not subtracted from line
-				LU.at(i, p) = 0.0;
 			}
 		}
 	}
@@ -201,6 +200,19 @@ void subst(Matrix& A, vector<double>& X, vector<double>& B, bool forward) {
 	}
 }
 
+void generateSquareRandomMatrix(unsigned int n, ofstream& out){
+    Matrix M(n, 0);
+    int i, j;
+    double invRandMax = 1.0/(double)RAND_MAX;
+
+    for(i = 0; i < n; i++){
+        for(j = 0; j < n; j++){
+            out << (double)rand() * invRandMax <<"\t";
+        }
+        out<<"\n";
+    }
+}
+
 void solve_lu(Matrix LU, Matrix& X, Matrix& B, vector<long>& P, long col){
 	vector<double> Z(LU.size);
 	// find Z; LZ=B
@@ -214,13 +226,13 @@ void solve_lu(Matrix LU, vector<double>& X, vector<double>& B, vector<long>& P){
 	vector<double> Z(X.size());
 	// find Z; LZ=B
 	subst_P(LU, Z, B, true, P, true);
-
+	
 	// find X; Ux=Z
 	subst(LU, X, Z, false);
 }
 
 void identity(Matrix& I){
-	for(long i = 0; i < I.size; i++){
+	for(long i = 0; i < I.size; i++){  
 		for(long j = 0; j < I.size; j++){
 			I.at(i, j) = 0;
 		}
@@ -229,7 +241,7 @@ void identity(Matrix& I){
 }
 
 void inverse(Matrix& LU, Matrix& IA, Matrix& I, vector<long>& P){
-	int j;
+	int j;  
 	long size = LU.size;
 	vector<double> X(size), B(size), lhs(size);
 
@@ -306,10 +318,8 @@ void lu_refining(Matrix& A, Matrix& LU, vector<vector<double>>& X, vector<double
  * @param A original matrix
  * @param IA solution to A*IA = I
  * @param I return value, no init needed
- * @return Max residue value found in abs()
  */
-double residue(Matrix& A, Matrix& IA, Matrix& I){
-	double err_max = 0.0;
+void residue(Matrix& A, Matrix& IA, Matrix& I){
 	for(long icol=0; icol <= A.size-1; icol++){
 		// for each column of the inverse
 		for(long i=0; i <= IA.size-1; i++){
@@ -318,18 +328,17 @@ double residue(Matrix& A, Matrix& IA, Matrix& I){
 			if(i == icol){
 				I.at(i,icol) = 1;
 			} else {
-				I.at(i,icol) = 0;
+				I.at(i,icol) = 0; 
 			}
 			// multiply A line to the current inverse col
 			for(long j=0; j <= IA.size-1; j++){
 				I.at(i,icol) -= A.at(i,j)*IA.at(j,icol);
-			}
-			if(fabs(I.at(i,icol)) > err_max) {
-				err_max = fabs(I.at(i,icol));
+				if(close_zero(I.at(i,icol))){
+					I.at(i,icol) = 0.0;
+				}
 			}
 		}
 	}
-	return err_max;
 }
 
 /**
@@ -339,43 +348,43 @@ double residue(Matrix& A, Matrix& IA, Matrix& I){
  * @param P LU pivot permutation
  */
 void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
-	long i=0;
-	double c_residue, l_residue;
 	Matrix W(A.size, 0), R(A.size, 0), I(A.size, 0);
-
+	
 	identity(I);
 	// TODO: inverse_id(LU, IA, P); that doesn't need Identity matrix in the memory
 	inverse(LU, IA, I, P);
-	printf("# iter %d:\n", i);
+	
+	cout<<"\nInv matrix is "<< endl;
 	printm(IA);
 	
-	c_residue = residue(A, IA, R);
-	l_residue = 1.0; // enter condition at least once
-	while((l_residue - c_residue > EPSILON) && (l_residue > c_residue)){
-		// calculate how much the residue diminished
-		// TODO: choose method to stop
-		//(c_residue > EPSILON) && (l_residue - c_residue > EPSILON) && (l_residue > c_residue)
-		i += 1;
-		// R: residue of IA
+	cout<<"\n\nRefining "<< endl;
+	for(long i=0; i <= 3; i++) {
+		for(long j=0; j<=A.size-1; j++){
+			residue(A, IA, R);
+			// R: residue of IA
+		}
+		cout<<"\n\n Inverse Matrix Residue "<< i << endl;
+		printm(R);
 
 		inverse(LU, W, R, P);
 		// W: residues of each variable of IA
+
+		cout<<"\n Variables Residue "<< i << endl;
+		printm(W);
+
 		// adjust IA with found errors
 		IA.add(W);
-
-		printf("# iter %d:\n", i);
-		printm(IA);
-		l_residue = c_residue;
-		c_residue = residue(A, IA, R);
 	}
 }
 
 
 int main(int argc, char **argv) {
 	fstream file;
+	ofstream out;
 	long size,i,j;
 	file.open("in.txt");
-
+	out.open("out.txt");
+    	srand(20172);
 	cout<<"Enter the order of matrix = ";
 	file>> size;
 
@@ -399,16 +408,18 @@ int main(int argc, char **argv) {
 
 	GaussEl(LU, P);
 
-	printf("#\n");
-
+	cout<<"\n\nLU matrix is "<< endl;
+	printm(LU);
+	cout<<"\nPivoting Permutaton is "<< endl;
+	printv(P);
+	
 	inverse_refining(A, LU, IA, P);
-
-	printf("# Tempo LU: %.17g\n, 0.0", 0.0); // TODO
-	printf("# Tempo iter: %.17g\n", 0.0);
-	printf("# Tempo residuo: %.17g\n#\n", 0.0);
+	
+	cout<<"\nInv matrix is "<< endl;
 	printm(IA);
-
-//	find first iteration of X
+	
+	generateSquareRandomMatrix(16384/2, out);
+	// find first iteration of X
 //	solve_lu(LU, X.at(0), B, P);
 //
 //	lu_refining(A, LU, X, B, P);
@@ -416,6 +427,6 @@ int main(int argc, char **argv) {
 //	cout<<"\nSet of solution is"<<endl;
 //	printv(X.at(X.size()-1));
 //	cout << endl;
-
+	out.close();
 	return 0;
 }

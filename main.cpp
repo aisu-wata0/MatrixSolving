@@ -376,7 +376,7 @@ int main(int argc, char **argv) {
 	long size,i,j;
 	file.open("in.txt");
 
-	cout<<"Enter the order of matrix = ";
+//	read matrix size
 	file>> size;
 
 	Matrix A(size, 0), LU(size, 0), IA(size, 0);
@@ -385,15 +385,14 @@ int main(int argc, char **argv) {
 	vector<vector<double>> X;
 	X.push_back(vector<double>(size));
 
-	cout<<"Enter all coefficients of matrix : ";
+//	read matrix coef
 	for(i=0; i<=size-1; i++){
-		cout<<"\nRow "<<i<<"  ";
 		for(j=0; j<=size-1; j++){
 			file>> A.at(i,j);
 			LU.at(i,j) = A.at(i,j);
 		}
 	}
-//	cout<<"Enter elements of B matrix"<<endl;
+//	read B values
 //	for(i=0; i<=size-1; i++)
 //		file>> B.at(i);
 

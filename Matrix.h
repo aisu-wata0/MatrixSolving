@@ -10,6 +10,7 @@ namespace std {
 
 #define EPSILON 1e-20 // TODO: adjust value
 #define E_FACTOR 16
+#define IODIR "../IO/"
 
 union Double {
 	double f;
@@ -57,9 +58,9 @@ public:
 
 	double& at(long i, long j) {
 		if(type == 0){
-			matrix.at(i*size + j);
+			return matrix.at(i*size + j);
 		} else { // TODO speed, use o IA, R, I
-			matrix.at(j*size + i);
+			return matrix.at(j*size + i);
 		}
 	}
 	
@@ -102,6 +103,20 @@ public:
 		}
 	}
 };
+
+void generateSquareRandomMatrix(unsigned int n, ofstream& out){
+	Matrix M(n, 0);
+	int i, j;
+	double invRandMax = 1.0/(double)RAND_MAX;
+	
+	out << n <<"\n";
+	for(i = 0; i < n; i++){
+		for(j = 0; j < n; j++){
+			out << (double)rand() * invRandMax <<"\t";
+		}
+		out<<"\n";
+	}
+}
 
 void printm(Matrix& matrix){
 	printf("%d\n", matrix.size);

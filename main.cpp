@@ -370,11 +370,11 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
 	}
 }
 
-
 int main(int argc, char **argv) {
-	fstream file;
 	long size,i,j;
-	file.open("in.txt");
+	
+	fstream file;
+	file.open(IODIR "in.txt");
 
 //	read matrix size
 	file>> size;
@@ -392,29 +392,40 @@ int main(int argc, char **argv) {
 			LU.at(i,j) = A.at(i,j);
 		}
 	}
-//	read B values
-//	for(i=0; i<=size-1; i++)
-//		file>> B.at(i);
-
+	/**
+	read B values
+	for(i=0; i<=size-1; i++)
+		file>> B.at(i);
+	/**/
+	
 	GaussEl(LU, P);
 
 	printf("#\n");
 
 	inverse_refining(A, LU, IA, P);
 
-	printf("# Tempo LU: %.17g\n, 0.0", 0.0); // TODO
+	printf("# Tempo LU: %.17g\n", 0.0); // TODO
 	printf("# Tempo iter: %.17g\n", 0.0);
 	printf("# Tempo residuo: %.17g\n#\n", 0.0);
 	printm(IA);
+	/**
+	find first iteration of X
+	solve_lu(LU, X.at(0), B, P);
 
-//	find first iteration of X
-//	solve_lu(LU, X.at(0), B, P);
-//
-//	lu_refining(A, LU, X, B, P);
-//
-//	cout<<"\nSet of solution is"<<endl;
-//	printv(X.at(X.size()-1));
-//	cout << endl;
+	lu_refining(A, LU, X, B, P);
 
+	cout<<"\nSet of solution is"<<endl;
+	printv(X.at(X.size()-1));
+	cout << endl;
+	/**/
+
+	/**
+	ofstream out;
+	int n = 16384/8;
+	
+	out.open(IODIR "out.txt");
+	srand(20172);
+	generateSquareRandomMatrix(n, out);
+	/**/
 	return 0;
 }

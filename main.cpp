@@ -341,7 +341,9 @@ double residue(Matrix& A, Matrix& IA, Matrix& I){
 void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
 	long i=0;
 	double c_residue, l_residue;
-	Matrix W(A.size, 0), R(A.size, 0), I(A.size, 0);
+//	Matrix W(A.size, 0), R(A.size, 0), I(A.size, 0);
+	// Optm: iterating line by line
+	Matrix W(A.size, 1), R(A.size, 1), I(A.size, 1);
 
 	identity(I);
 	// TODO: inverse_id(LU, IA, P); that doesn't need Identity matrix in the memory

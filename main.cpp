@@ -42,7 +42,8 @@ void GaussEl(Matrix& LU, vector<long>& P) {
 			fprintf(stderr, "Found a pivot == 0, system is not solvable with partial pivoting");
 			exit(1);
 		}
-		for (long i = p+1; i <= LU.size-1; i++) {
+        //for (long i = p+1; i <= LU.size-1; i++) {      //going from below pivot to end
+		for (long i = LU.size-1; i >= p+1; i--) {      //going from end to pivot
 			// for each line below pivot
 			if (!close_zero(LU.at(i,p))){
 				// only subtract pivot line if coeficient is not null
@@ -50,7 +51,7 @@ void GaussEl(Matrix& LU, vector<long>& P) {
 				LU.at(i, p) = LU.at(i, p)/LU.at(p, p);
 				// subtract pivot from current line (in U)
 				for (long k = p+1; k <= LU.size-1; k++) {
-					// for each collumn stating from pivot's
+					// for each collumn starting from pivot's
 					LU.at(i, k) -= LU.at(p, k) * LU.at(i, p);
 					// mulitply pivot line value to multiplier
 				}

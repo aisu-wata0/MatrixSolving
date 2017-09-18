@@ -42,8 +42,8 @@ void GaussEl(Matrix& LU, vector<long>& P) {
 			fprintf(stderr, "Found a pivot == 0, system is not solvable with partial pivoting");
 			exit(1);
 		}
-        //for (long i = p+1; i <= LU.size-1; i++) {      //going from below pivot to end
-		for (long i = LU.size-1; i >= p+1; i--) {      //going from end to pivot
+		//for (long i = p+1; i <= LU.size-1; i++) {	//going from below pivot to end
+		for (long i = LU.size-1; i >= p+1; i--) {	//going from end to pivot
 			// for each line below pivot
 			if (!close_zero(LU.at(i,p))){
 				// only subtract pivot line if coeficient is not null
@@ -241,42 +241,42 @@ void inverse(Matrix& LU, Matrix& IA, Matrix& I, vector<long>& P){
 }
 
 void JacobiIt(Matrix& A, vector<double>& indTerms, vector<double>& X){
-    int total;
-    vector<double> new_x;
-    // for each line
-    for(long i = 0; i <= A.size; ++i){
-        total = 0;
-        // substitute each X
-        for(long j = 0; j <= X.size(); j++) {
-            if(j != i){
-                total = total + A.at(i, j) * X.at(j);
-            }
-        }
-        new_x.at(i) = (indTerms.at(i) - total) / A.at(i, i);
-    }
+	int total;
+	vector<double> new_x;
+	// for each line
+	for(long i = 0; i <= A.size; ++i){
+		total = 0;
+		// substitute each X
+		for(long j = 0; j <= X.size(); j++) {
+			if(j != i){
+				total = total + A.at(i, j) * X.at(j);
+			}
+		}
+		new_x.at(i) = (indTerms.at(i) - total) / A.at(i, i);
+	}
 }
 
 template <class T>
 vector<T> add_vec(vector<T> a, vector<T> b, int sign = 1){
-    vector<T> x(a.size());
+	vector<T> x(a.size());
 
-    for(long i=0; i <= x.size()-1; i++){
-        x.at(i) = a.at(i) + sign*b.at(i);
-    }
+	for(long i=0; i <= x.size()-1; i++){
+		x.at(i) = a.at(i) + sign*b.at(i);
+	}
 
-    return x;
+	return x;
 }
 
 vector<double> lhs_value(Matrix A, vector<double> X){
-    vector<double> lhs(X.size());
+	vector<double> lhs(X.size());
 
-    for(long i=0; i <= X.size()-1; i++){
-        lhs.at(i) = 0;
-        for(long j=0; j <= X.size()-1; j++){
-            lhs.at(i) += A.at(i, j)*X.at(j);
-        }
-    }
-    return lhs;
+	for(long i=0; i <= X.size()-1; i++){
+		lhs.at(i) = 0;
+		for(long j=0; j <= X.size()-1; j++){
+			lhs.at(i) += A.at(i, j)*X.at(j);
+		}
+	}
+	return lhs;
 }
 
 void lu_refining(Matrix& A, Matrix& LU, vector<vector<double>>& X, vector<double>& B, vector<long>& P){
@@ -284,21 +284,21 @@ void lu_refining(Matrix& A, Matrix& LU, vector<vector<double>>& X, vector<double
 
 	cout<<"\n\nRefining "<< endl;
 	for(long i=0; i <= 3; i++) {
-    	lhs = lhs_value(A, X.at(i));
-    	// r: residue of X
-    	r = add_vec(B, lhs, -1);
+		lhs = lhs_value(A, X.at(i));
+		// r: residue of X
+		r = add_vec(B, lhs, -1);
 		cout<<"\n\n System Residue "<< i << endl;
 		printv(r);
 
-    	// w: residues of each variable of X
-    	solve_lu(LU, w, r, P);
+		// w: residues of each variable of X
+		solve_lu(LU, w, r, P);
 
 		cout<<"\n Variables Residue "<< i << endl;
 		printv(w);
 
 		X.push_back(vector<double>(B.size()));
-    	// adjust X with found errors
-    	X.at(i+1) = add_vec(X.at(i), w);
+		// adjust X with found errors
+		X.at(i+1) = add_vec(X.at(i), w);
 	}
 }
 
@@ -351,7 +351,7 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
 	inverse(LU, IA, I, P);
 	printf("# iter %d:\n", i);
 	printm(IA);
-	
+
 	c_residue = residue(A, IA, R);
 	l_residue = 1.0; // enter condition at least once
 	while((l_residue - c_residue > EPSILON) && (l_residue > c_residue)){
@@ -375,7 +375,7 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
 
 int main(int argc, char **argv) {
 	long size,i,j;
-	
+
 	fstream file;
 	file.open(IODIR "in.txt");
 
@@ -400,7 +400,7 @@ int main(int argc, char **argv) {
 	for(i=0; i<=size-1; i++)
 		file>> B.at(i);
 	/**/
-	
+
 	GaussEl(LU, P);
 
 	printf("#\n");
@@ -425,7 +425,7 @@ int main(int argc, char **argv) {
 	/**
 	ofstream out;
 	int n = 16384/8;
-	
+
 	out.open(IODIR "out.txt");
 	srand(20172);
 	generateSquareRandomMatrix(n, out);

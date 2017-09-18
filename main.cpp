@@ -4,10 +4,14 @@
 #include <cmath>
 #include <ctgmath>
 
-#include "TestTimer.cpp"
+#include "Timer.cpp"
 #include "Matrix.h"
 
 using namespace std;
+
+Timer timer;
+double total_time_iter = 0.0;
+double total_time_residue = 0.0;
 
 /**
  * @brief For the matrix LU finds its LU decomposition overwriting it
@@ -17,8 +21,6 @@ using namespace std;
  * @param P Permutation vector resulting of the pivoting
  */
 void GaussEl(Matrix& LU, vector<long>& P) {
-	TestTimer t("GaussEl");
-
 	// initializing permutation vector
 	for(long i = 0; i <= LU.size-1; i++){
 		P.at(i) = i;
@@ -260,7 +262,7 @@ template <class T>
 vector<T> add_vec(vector<T> a, vector<T> b, int sign = 1){
 	vector<T> x(a.size());
 
-	for(long i=0; i <= x.size()-1; i++){
+	for(long i=0; i <= ((long)x.size() - 1); i++){
 		x.at(i) = a.at(i) + sign*b.at(i);
 	}
 
@@ -360,21 +362,26 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
 		//(c_residue > EPSILON) && (l_residue - c_residue > EPSILON) && (l_residue > c_residue)
 		i += 1;
 		// R: residue of IA
-
+		
+		timer.start();
 		inverse(LU, W, R, P);
 		// W: residues of each variable of IA
 		// adjust IA with found errors
 		IA.add(W);
+		total_time_iter += timer.elapsed();
 
 		printf("# iter %d:\n", i);
 		printm(IA);
 		l_residue = c_residue;
+		
+		timer.start();
 		c_residue = residue(A, IA, R);
+		total_time_residue += timer.elapsed();
 	}
 }
 
 int main(int argc, char **argv) {
-	long size,i,j;
+	long size,i,j,k;
 
 	fstream file;
 	file.open(IODIR "in.txt");
@@ -382,7 +389,10 @@ int main(int argc, char **argv) {
 //	read matrix size
 	file>> size;
 
-	Matrix A(size, 0), LU(size, 0), IA(size, 0);
+	Matrix A(size, BY_COL), LU(size, BY_COL);
+	// Matrix IA(size, BY_COL);
+	// Optm: iterating line by line
+	Matrix IA(size, BY_LINE);
 	vector<double> B(size), z(size);
 	vector<long> P(size);
 	vector<vector<double>> X;
@@ -400,16 +410,19 @@ int main(int argc, char **argv) {
 	for(i=0; i<=size-1; i++)
 		file>> B.at(i);
 	/**/
-
+	timer.start();
+	double lu_time = 0.0;
+	
 	GaussEl(LU, P);
+	lu_time = timer.elapsed();
 
 	printf("#\n");
 
 	inverse_refining(A, LU, IA, P);
 
-	printf("# Tempo LU: %.17g\n", 0.0); // TODO
-	printf("# Tempo iter: %.17g\n", 0.0);
-	printf("# Tempo residuo: %.17g\n#\n", 0.0);
+	printf("# Tempo LU: %.17g\n", lu_time); // TODO
+	printf("# Tempo iter: %.17g\n", total_time_iter/(double)k);
+	printf("# Tempo residuo: %.17g\n#\n", total_time_residue/(double)k);
 	printm(IA);
 	/**
 	find first iteration of X

@@ -48,19 +48,19 @@ class Matrix
 public:
 	long size;
 	int type;
-	vector<double> matrix;
+	double* matrix;
 
 	Matrix(long size, int type) : size(size), type(type){
 		if(type == 0 || type == 1){
-			matrix.resize(size*size);
+			matrix = (double*)malloc(sizeof(double)*size*size);
 		}
 	}
 
 	double& at(long i, long j) {
 		if(type == 0){
-			return matrix.at(i*size + j);
+			return matrix[i*size + j];
 		} else { // TODO speed, use o IA, R, I
-			return matrix.at(j*size + i);
+			return matrix[j*size + i];
 		}
 	}
 	

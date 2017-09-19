@@ -1,5 +1,6 @@
 #ifndef MATRIX_H
 #define MATRIX_H
+
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -40,6 +41,8 @@ bool near(double a, double b){
 	return (min_a <= b && max_a >= b);
 }
 
+enum Matrix_type { BY_COL, BY_LINE };
+
 /**
  * @brief Stores values from specified type of matrix, can be acessed using conventional indexing .at(i,j)
  */
@@ -47,17 +50,15 @@ class Matrix
 {
 public:
 	long size;
-	int type;
+	Matrix_type type;
 	double* matrix;
 
-	Matrix(long size, int type) : size(size), type(type){
-		if(type == 0 || type == 1){
-			matrix = (double*)malloc(sizeof(double)*size*size);
-		}
+	Matrix(long size, Matrix_type type) : size(size), type(type){
+		matrix = (double*)malloc(sizeof(double)*size*size);
 	}
 
 	double& at(long i, long j) {
-		if(type == 0){
+		if(type == BY_COL){
 			return matrix[i*size + j];
 		} else { // TODO speed, use o IA, R, I
 			return matrix[j*size + i];
@@ -105,7 +106,6 @@ public:
 };
 
 void generateSquareRandomMatrix(unsigned int n, ofstream& out){
-	Matrix M(n, 0);
 	int i, j;
 	double invRandMax = 1.0/(double)RAND_MAX;
 	

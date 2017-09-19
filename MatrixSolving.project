@@ -11,7 +11,7 @@
     <VirtualDirectory Name="src">
       <File Name="main.cpp"/>
       <File Name="Matrix.h"/>
-      <File Name="Timer.cpp"/>
+      <File Name="Timer.h"/>
     </VirtualDirectory>
     <VirtualDirectory Name="Debug">
       <File Name="Debug/.d"/>

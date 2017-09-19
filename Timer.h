@@ -1,10 +1,10 @@
-#include <iostream>
-#include <time.h>
+#ifndef TIMER_H
+#define TIMER_H
 
-namespace std{
+#include <sys/time.h>
 
-double timeNow(void){
-	struct timeval time;
+double gettime(void){
+	timeval time;
 	gettimeofday(&time, NULL);
 	return ((double)(time.tv_sec*1000.0 + time.tv_usec/1000.0));
 }
@@ -16,12 +16,12 @@ private:
 	
 public:
 	void start(){
-		start_timer = timeNow();
+		start_timer = gettime();
 	}
 	
 	double elapsed(){
-		return total = timeNow() - start;
+		return gettime() - start_timer;
 	}
 };
 
-} // namespace std
+#endif // TIMER_H

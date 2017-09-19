@@ -4,7 +4,7 @@
 #include <cmath>
 #include <ctgmath>
 
-#include "Timer.cpp"
+#include "Timer.h"
 #include "Matrix.h"
 
 using namespace std;
@@ -346,7 +346,7 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
 	double c_residue, l_residue;
 //	Matrix W(A.size, 0), R(A.size, 0), I(A.size, 0);
 	// Optm: iterating line by line
-	Matrix W(A.size, 1), R(A.size, 1), I(A.size, 1);
+	Matrix W(A.size, BY_LINE), R(A.size, BY_LINE), I(A.size, BY_LINE);
 
 	identity(I);
 	// TODO: inverse_id(LU, IA, P); that doesn't need Identity matrix in the memory
@@ -367,7 +367,7 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
 		inverse(LU, W, R, P);
 		// W: residues of each variable of IA
 		// adjust IA with found errors
-		IA.add(W);
+		IA.add(W);	//TODO: Optm: add at the same time its calculating W
 		total_time_iter += timer.elapsed();
 
 		printf("# iter %d:\n", i);

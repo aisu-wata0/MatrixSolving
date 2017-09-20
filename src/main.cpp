@@ -38,8 +38,7 @@ void GaussEl(Matrix& LU, vector<long>& P) {
 		LU.swap_rows_from(p, maxRow, p);
 		swap(P.at(p), P.at(maxRow));
 
-		// LU.at(p,p) = 1; // change subst method
-		close_zero(LU.at(p,p));
+		// LU.at(p,p) = 1; implicit
 		if(close_zero(LU.at(p,p))){
 			fprintf(stderr, "Found a pivot == 0, system is not solvable with partial pivoting");
 			exit(1);
@@ -222,15 +221,6 @@ void solve_lu(Matrix LU, vector<double>& X, vector<double>& B, vector<long>& P){
 	subst(LU, X, Z, false);
 }
 
-void identity(Matrix& I){
-	for(long i = 0; i < I.size; i++){
-		for(long j = 0; j < I.size; j++){
-			I.at(i, j) = 0;
-		}
-		I.at(i, i) = 1;
-	}
-}
-
 void inverse(Matrix& LU, Matrix& IA, Matrix& I, vector<long>& P){
 	int j;
 	long size = LU.size;
@@ -313,6 +303,7 @@ void lu_refining(Matrix& A, Matrix& LU, vector<vector<double>>& X, vector<double
  */
 double residue(Matrix& A, Matrix& IA, Matrix& I){
 	double norm = 0.0;
+	
 	for(long icol=0; icol <= A.size-1; icol++){
 		// for each column of the inverse
 		for(long i=0; i <= IA.size-1; i++){
@@ -337,7 +328,7 @@ double residue(Matrix& A, Matrix& IA, Matrix& I){
  * @param P LU pivot permutation
  */
 void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
-	long i=0;
+	long i=0, k = 1024;
 	double c_residue, l_residue;
 //	Matrix W(A.size, 0), R(A.size, 0), I(A.size, 0);
 	// Optm: iterating line by line
@@ -346,12 +337,11 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
 	identity(I);
 	// TODO: inverse_id(LU, IA, P); that doesn't need Identity matrix in the memory
 	inverse(LU, IA, I, P);
-	cout<<"# iter "<< i <<":\n";
-	printm(IA);
-
 	c_residue = residue(A, IA, R);
-	l_residue = 1.0; // enter condition at least once
-	while((abs(l_residue - c_residue)/c_residue > EPSILON) && (l_residue > c_residue)){
+	l_residue = c_residue*2; // enter condition at least once
+	cout<<"# iter "<< i <<": "<< c_residue <<"\n";
+	while(i < k){
+		// (abs(l_residue - c_residue)/c_residue > EPSILON) && (l_residue > c_residue)
 		// relative approximate error
 		i += 1;
 		// R: residue of IA
@@ -363,18 +353,19 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
 		IA.add(W);	//TODO: Optm: add at the same time its calculating W
 		total_time_iter += timer.elapsed();
 
-		cout<<"# iter "<< i <<":\n";
-		printm(IA);
 		l_residue = c_residue;
 		
 		timer.start();
 		c_residue = residue(A, IA, R);
 		total_time_residue += timer.elapsed();
+		cout<<"# iter "<< i <<": "<< c_residue <<"\n";
 	}
 }
 
 int main(int argc, char **argv) {
 	long size,i,j,k;
+	
+	cout.precision(17);
 
 	fstream file;
 	file.open(IODIR "in.txt");

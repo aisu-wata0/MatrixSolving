@@ -312,27 +312,22 @@ void lu_refining(Matrix& A, Matrix& LU, vector<vector<double>>& X, vector<double
  * @return Max residue value found in abs()
  */
 double residue(Matrix& A, Matrix& IA, Matrix& I){
-	double err_max = 0.0;
+	double norm = 0.0;
 	for(long icol=0; icol <= A.size-1; icol++){
 		// for each column of the inverse
 		for(long i=0; i <= IA.size-1; i++){
 			// for each line of A
-			// init sum
-			if(i == icol){
-				I.at(i,icol) = 1;
-			} else {
-				I.at(i,icol) = 0;
-			}
+			I.at(i,icol) = 0;
 			// multiply A line to the current inverse col
 			for(long j=0; j <= IA.size-1; j++){
 				I.at(i,icol) -= A.at(i,j)*IA.at(j,icol);
 			}
-			if(fabs(I.at(i,icol)) > err_max) {
-				err_max = fabs(I.at(i,icol));
-			}
+			if(i == icol)
+				I.at(i,icol) += 1;
+			norm += I.at(i,icol)*I.at(i,icol);
 		}
 	}
-	return err_max;
+	return sqrt(norm);
 }
 
 /**
@@ -356,10 +351,8 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
 
 	c_residue = residue(A, IA, R);
 	l_residue = 1.0; // enter condition at least once
-	while((l_residue - c_residue > EPSILON) && (l_residue > c_residue)){
-		// calculate how much the residue diminished
-		// TODO: choose method to stop
-		//(c_residue > EPSILON) && (l_residue - c_residue > EPSILON) && (l_residue > c_residue)
+	while((abs(l_residue - c_residue)/c_residue > EPSILON) && (l_residue > c_residue)){
+		// relative approximate error
 		i += 1;
 		// R: residue of IA
 		

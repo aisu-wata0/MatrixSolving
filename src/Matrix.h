@@ -78,10 +78,10 @@ public:
 		swap_rows_from(row0, row1, 0);
 	}
 	
-	void add(Matrix& b){
+	void add(Matrix& b, double sign = 1){
 		for(long i=0; i <= size-1; i++){
 			for(long j=0; j <= size-1; j++){
-				this->at(i,j) += b.at(i,j);
+				this->at(i,j) += sign*b.at(i,j);
 			}
 		}
 	}
@@ -104,6 +104,15 @@ public:
 		}
 	}
 };
+
+void identity(Matrix& I){
+	for(long i = 0; i < I.size; i++){
+		for(long j = 0; j < I.size; j++){
+			I.at(i, j) = 0;
+		}
+		I.at(i, i) = 1;
+	}
+}
 
 void generateSquareRandomMatrix(long n, ofstream& out){
 	long i, j;

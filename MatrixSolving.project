@@ -98,8 +98,18 @@
     </Configuration>
   </Settings>
   <VirtualDirectory Name="src">
-    <File Name="src/main.cpp"/>
     <File Name="src/Matrix.h"/>
     <File Name="src/Timer.h"/>
+    <File Name="src/main.cpp"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="MatrixSolving">
+    <File Name="Makefile"/>
+    <File Name="LICENSE"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="Debug">
+    <File Name="Debug/MatrixSolving"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="Release">
+    <File Name="Release/MatrixSolving"/>
   </VirtualDirectory>
 </CodeLite_Project>

@@ -13,12 +13,15 @@ SRCS := $(addprefix $(SRCDIR)/, $(SRCNAMES))
 LIBS =
 
 # warnings and flags
-WARN = -Wall -Wextra -Werror
+WARN = -Wall
 WNO = -Wno-comment  -Wno-sign-compare
 FLAGS = -O3 $(WARN) $(WNO)
 
 # Executable filename
 bin = invmat
+
+#compiler
+compiler = g++ -std=c++11
 
 all: obj_dir list_srcnames $(bin)
 
@@ -46,19 +49,19 @@ list_srcnames:
 $(bin): $(OBJECTS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C++ Linker'
-	g++ -std=c++11 -o "$(bin)" $(OBJECTS) $(LIBS)
+	$(compiler) -o "$(bin)" $(OBJECTS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo
 
-$(BUILDDIR)/%.o: $(SRCDIR)/%.cpp $(SRCDIR)/%.h
+$(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking: GCC C++ Compiler'
-	g++ -std=c++11 $(FLAGS) $(LIBS) -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
+	$(compiler) $(FLAGS) $(LIBS) -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo
 
 clean:
-	rm -rf  ./$(BUILDDIR)/*.o  ./$(BUILDDIR)/*.d
+	rm -rf  ./$(BUILDDIR)/*.o  ./$(BUILDDIR)/*.d $(bin)
 
 cleanAll: clean
 	rm -rf  $(bin)

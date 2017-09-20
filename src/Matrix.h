@@ -105,8 +105,8 @@ public:
 	}
 };
 
-void generateSquareRandomMatrix(unsigned int n, ofstream& out){
-	int i, j;
+void generateSquareRandomMatrix(long n, ofstream& out){
+	long i, j;
 	double invRandMax = 1.0/(double)RAND_MAX;
 	
 	out << n <<"\n";
@@ -119,7 +119,7 @@ void generateSquareRandomMatrix(unsigned int n, ofstream& out){
 }
 
 void printm(Matrix& matrix){
-	printf("%d\n", matrix.size);
+	printf("%li\n", matrix.size);
 	for(long i = 0; i <= matrix.size-1; i++){
 		for(long j = 0; j <= matrix.size-1; j++)
 			printf("%.17g\t", matrix.at(i,j));

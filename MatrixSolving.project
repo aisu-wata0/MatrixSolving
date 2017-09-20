@@ -7,7 +7,7 @@
   </Plugins>
   <Description/>
   <Dependencies/>
-  <VirtualDirectory Name="TriangularMatrix">
+  <VirtualDirectory Name="MatrixSolving">
     <VirtualDirectory Name="src">
       <File Name="main.cpp"/>
       <File Name="Matrix.h"/>

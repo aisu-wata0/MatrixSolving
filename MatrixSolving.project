@@ -7,19 +7,9 @@
   </Plugins>
   <Description/>
   <Dependencies/>
-  <VirtualDirectory Name="MatrixSolving">
-    <VirtualDirectory Name="src">
-      <File Name="main.cpp"/>
-      <File Name="Matrix.h"/>
-      <File Name="Timer.h"/>
-    </VirtualDirectory>
-    <VirtualDirectory Name="Debug">
-      <File Name="Debug/.d"/>
-    </VirtualDirectory>
-  </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>
-      <Compiler Options="-std=c++11 -Wno-comment" C_Options="-Wno-comment" Assembler="">
+      <Compiler Options="-std=c++11 -Wno-comment  -Wno-sign-compare" C_Options="-Wno-comment -Wno-sign-compare" Assembler="">
         <IncludePath Value="."/>
       </Compiler>
       <Linker Options="">
@@ -107,4 +97,9 @@
       </Completion>
     </Configuration>
   </Settings>
+  <VirtualDirectory Name="src">
+    <File Name="src/main.cpp"/>
+    <File Name="src/Matrix.h"/>
+    <File Name="src/Timer.h"/>
+  </VirtualDirectory>
 </CodeLite_Project>

@@ -346,7 +346,7 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
 	identity(I);
 	// TODO: inverse_id(LU, IA, P); that doesn't need Identity matrix in the memory
 	inverse(LU, IA, I, P);
-	printf("# iter %d:\n", i);
+	cout<<"# iter "<< i <<":\n";
 	printm(IA);
 
 	c_residue = residue(A, IA, R);
@@ -363,7 +363,7 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
 		IA.add(W);	//TODO: Optm: add at the same time its calculating W
 		total_time_iter += timer.elapsed();
 
-		printf("# iter %d:\n", i);
+		cout<<"# iter "<< i <<":\n";
 		printm(IA);
 		l_residue = c_residue;
 		

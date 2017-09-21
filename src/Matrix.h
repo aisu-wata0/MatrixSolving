@@ -127,7 +127,20 @@ void generateSquareRandomMatrix(long n){
 	}
 }
 
+
+void randomMatrix(Matrix& M, Matrix& LU){
+	long i, j;
+	double invRandMax = 1.0/(double)RAND_MAX;
+	
+	for(i = 0; i < M.size; i++){
+		for(j = 0; j < M.size; j++){
+			M.at(i,j) = (double)rand() * invRandMax;
+			LU.at(i,j) = M.at(i,j);
+		}
+	}
+}
 void printm(Matrix& matrix){
+	cout<<  matrix.size <<"\n";
 	cout<<  matrix.size <<"\n";
 	for(long i = 0; i <= matrix.size-1; i++){
 		for(long j = 0; j <= matrix.size-1; j++)

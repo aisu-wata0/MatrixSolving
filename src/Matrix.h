@@ -51,26 +51,16 @@ class Matrix
 public:
 	long size;
 	Matrix_type type;
-	double* matrix;
+	vector<double> matrix;
 
-	Matrix(long size, Matrix_type type) : size(size), type(type){
-		matrix = (double*)malloc(sizeof(double)*size*size);
+	Matrix(long size, Matrix_type type) : size(size), type(type), matrix(size*size){
 	}
 
 	double& at(long i, long j) {
 		if(type == BY_COL){
-			return matrix[i*size + j];
-		} else { // TODO speed, use o IA, R, I
-			return matrix[j*size + i];
-		}
-	}
-	
-	void swap_rows_from(long row0, long row1, long start){
-		if(row0 == row1)
-			return;
-		for(long j = start; j <= size-1; j++){
-			// for each collumn
-			swap(this->at(row0, j), this->at(row1, j));
+			return matrix.at(i*size + j);
+		} else {
+			return matrix.at(j*size + i);
 		}
 	}
 	

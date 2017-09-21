@@ -36,7 +36,7 @@ void GaussEl(Matrix& LU, vector<long>& P) {
 			if(abs(LU.at(i,p)) > abs(LU.at(maxRow,p))) maxRow = i;
 		} // finds max value
 		// pivots rows of U
-		LU.swap_rows_from(p, maxRow, p);
+		LU.swap_rows(maxRow, p);
 		swap(P.at(p), P.at(maxRow));
 
 		// LU.at(p,p) = 1; implicit
@@ -332,15 +332,15 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long k
 	long i=0;
 	long digits = k > 0 ? (long) log10((double) k) + 1 : 1;
 	double c_residue, l_residue;
-//	Matrix W(A.size, 0), R(A.size, 0), I(A.size, 0);
+//	Matrix W(A.size, BY_COL), R(A.size, BY_COL), I(A.size, BY_COL);
 	// Optm: iterating line by line
 	Matrix W(A.size, BY_LINE), R(A.size, BY_LINE), I(A.size, BY_LINE);
 
 	identity(I);
+	
 	// TODO: inverse_id(LU, IA, P); that doesn't need Identity matrix in the memory
 	inverse(LU, IA, I, P);
 	c_residue = residue(A, IA, R, P);
-	l_residue = c_residue*2; // enter condition at least once
 	cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";
 	while(i < k){
 		// (abs(l_residue - c_residue)/c_residue > EPSILON) && (l_residue > c_residue)
@@ -362,7 +362,6 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long k
 		total_time_residue += timer.elapsed();
 		cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";
 	}
-	printm(R); // DEBUG
 }
 
 int main(int argc, char **argv) {
@@ -384,7 +383,7 @@ int main(int argc, char **argv) {
 	cin>> size;
 	
 	Matrix A(size, BY_COL), LU(size, BY_COL);
-	// Matrix IA(size, BY_COL);
+//	Matrix IA(size, BY_COL);
 	// Optm: iterating line by line
 	Matrix IA(size, BY_LINE);
 	vector<double> B(size), z(size);

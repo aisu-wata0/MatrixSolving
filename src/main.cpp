@@ -341,7 +341,6 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long k
 	inverse(LU, IA, I, P);
 	c_residue = residue(A, IA, R, P);
 	l_residue = c_residue*2; // enter condition at least once
-	printm(R);
 	cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";
 	while(i < k){
 		// (abs(l_residue - c_residue)/c_residue > EPSILON) && (l_residue > c_residue)
@@ -363,6 +362,7 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long k
 		total_time_residue += timer.elapsed();
 		cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";
 	}
+	printm(R); // DEBUG
 }
 
 int main(int argc, char **argv) {
@@ -370,7 +370,7 @@ int main(int argc, char **argv) {
 	cout << scientific;
 	srand(20172);
 
-	long size, k = 0;
+	long size, k = 32;
 	
 	// if(has_in_file_argument)
 		ifstream in_f(IODIR "in.txt");

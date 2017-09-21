@@ -64,6 +64,15 @@ public:
 		}
 	}
 	
+	void swap_rows_from(long row0, long row1, long start){
+		if(row0 == row1)
+			return;
+		for(long j = start; j <= size-1; j++){
+			// for each collumn
+			swap(this->at(row0, j), this->at(row1, j));
+		}
+	}
+	
 	void swap_rows(long row0, long row1){
 		swap_rows_from(row0, row1, 0);
 	}

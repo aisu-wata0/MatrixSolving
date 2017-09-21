@@ -114,16 +114,16 @@ void identity(Matrix& I){
 	}
 }
 
-void generateSquareRandomMatrix(long n, ofstream& out){
+void generateSquareRandomMatrix(long n){
 	long i, j;
 	double invRandMax = 1.0/(double)RAND_MAX;
 	
-	out << n <<"\n";
+	cout<< n <<"\n";
 	for(i = 0; i < n; i++){
 		for(j = 0; j < n; j++){
-			out << (double)rand() * invRandMax <<"\t";
+			cout<< (double)rand() * invRandMax <<"\t";
 		}
-		out<<"\n";
+		cout<<"\n";
 	}
 }
 

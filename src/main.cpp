@@ -431,12 +431,16 @@ int main(int argc, char **argv) {
 	/**/
 
 	/**
-	ofstream out;
-	out.precision(17);
-	for(int n = 2; n <= 1024; n <<= 1){
-		out.open(IODIR + to_string(n) + ".txt");
-		generateSquareRandomMatrix(n, out);
-		out.close();
+	ofstream o_f;
+	cout.precision(17);
+	cout << scientific;
+	for(int n = 2; n <= 2048; n <<= 1){
+		o_f.open(IODIR + to_string(n) + ".txt");
+		cout.rdbuf(o_f.rdbuf()); //redirect
+		
+		generateSquareRandomMatrix(n);
+		
+		o_f.close();
 	}
 	/**/
 	

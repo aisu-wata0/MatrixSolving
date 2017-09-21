@@ -88,7 +88,7 @@ void subst_P(Matrix& L, vector<double>& X, Matrix& I, bool forward, vector<long>
 	}
 
 	for (; i >= 0 && i <= size-1 ; i += step) {
-		sum = I.at(i, col);
+		sum = I.at(P.at(i), col);
 		if(forward) {j = 0;} else {j = size-1;}
 		for (; j != i; j += step) {
 			sum -= X.at(j) * L.at(i, j);
@@ -301,7 +301,7 @@ void lu_refining(Matrix& A, Matrix& LU, vector<double>& X, vector<double>& B, ve
  * @param I return value, no init needed
  * @return Max residue value found in abs()
  */
-double residue(Matrix& A, Matrix& IA, Matrix& I){
+double residue(Matrix& A, Matrix& IA, Matrix& I, vector<long> P){
 	double norm = 0.0;
 	
 	for(long icol=0; icol <= A.size-1; icol++){
@@ -313,8 +313,9 @@ double residue(Matrix& A, Matrix& IA, Matrix& I){
 			for(long j=0; j <= IA.size-1; j++){
 				I.at(i,icol) -= A.at(i,j)*IA.at(j,icol);
 			}
-			if(i == icol)
+			if(i == icol){
 				I.at(i,icol) += 1;
+			}
 			norm += I.at(i,icol)*I.at(i,icol);
 		}
 	}
@@ -338,9 +339,9 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long k
 	identity(I);
 	// TODO: inverse_id(LU, IA, P); that doesn't need Identity matrix in the memory
 	inverse(LU, IA, I, P);
-	c_residue = residue(A, IA, R);
+	c_residue = residue(A, IA, R, P);
 	l_residue = c_residue*2; // enter condition at least once
-	
+	printm(R);
 	cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";
 	while(i < k){
 		// (abs(l_residue - c_residue)/c_residue > EPSILON) && (l_residue > c_residue)
@@ -358,7 +359,7 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long k
 		l_residue = c_residue;
 		
 		timer.start();
-		c_residue = residue(A, IA, R);
+		c_residue = residue(A, IA, R, P);
 		total_time_residue += timer.elapsed();
 		cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";
 	}
@@ -369,7 +370,7 @@ int main(int argc, char **argv) {
 	cout << scientific;
 	srand(20172);
 
-	long size, k = 64;
+	long size, k = 0;
 	
 	// if(has_in_file_argument)
 		ifstream in_f(IODIR "in.txt");
@@ -381,7 +382,7 @@ int main(int argc, char **argv) {
 
 //	read matrix size
 	cin>> size;
-
+	
 	Matrix A(size, BY_COL), LU(size, BY_COL);
 	// Matrix IA(size, BY_COL);
 	// Optm: iterating line by line
@@ -417,7 +418,6 @@ int main(int argc, char **argv) {
 	cout<<"# Tempo LU: "<< lu_time <<"\n"; // TODO
 	cout<<"# Tempo iter: "<< total_time_iter/(double)k <<"\n";
 	cout<<"# Tempo residuo: "<< total_time_residue/(double)k <<"\n#\n";
-	cout << scientific;
 	printm(IA);
 	/**
 	find first iteration of X

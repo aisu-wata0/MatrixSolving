@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <iomanip>
 #include <vector>
 #include <cmath>
 #include <ctgmath>
@@ -271,12 +272,12 @@ vector<double> lhs_value(Matrix A, vector<double> X){
 	return lhs;
 }
 
-void lu_refining(Matrix& A, Matrix& LU, vector<vector<double>>& X, vector<double>& B, vector<long>& P){
+void lu_refining(Matrix& A, Matrix& LU, vector<double>& X, vector<double>& B, vector<long>& P){
 	vector<double> lhs(B.size()), r(B.size()), w(B.size());
 
 	cout<<"\n\nRefining "<< endl;
 	for(long i=0; i <= 3; i++) {
-		lhs = lhs_value(A, X.at(i));
+		lhs = lhs_value(A, X);
 		// r: residue of X
 		r = add_vec(B, lhs, -1);
 		cout<<"\n\n System Residue "<< i << endl;
@@ -287,10 +288,9 @@ void lu_refining(Matrix& A, Matrix& LU, vector<vector<double>>& X, vector<double
 
 		cout<<"\n Variables Residue "<< i << endl;
 		printv(w);
-
-		X.push_back(vector<double>(B.size()));
+		
 		// adjust X with found errors
-		X.at(i+1) = add_vec(X.at(i), w);
+		X = add_vec(X, w);
 	}
 }
 
@@ -327,8 +327,9 @@ double residue(Matrix& A, Matrix& IA, Matrix& I){
  * @param IA return value, no init needed
  * @param P LU pivot permutation
  */
-void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
-	long i=0, k = 1024;
+void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long k){
+	long i=0;
+	long digits = k > 0 ? (long) log10((double) k) + 1 : 1;
 	double c_residue, l_residue;
 //	Matrix W(A.size, 0), R(A.size, 0), I(A.size, 0);
 	// Optm: iterating line by line
@@ -339,7 +340,8 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
 	inverse(LU, IA, I, P);
 	c_residue = residue(A, IA, R);
 	l_residue = c_residue*2; // enter condition at least once
-	cout<<"# iter "<< i <<": "<< c_residue <<"\n";
+	
+	cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";
 	while(i < k){
 		// (abs(l_residue - c_residue)/c_residue > EPSILON) && (l_residue > c_residue)
 		// relative approximate error
@@ -358,20 +360,27 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P){
 		timer.start();
 		c_residue = residue(A, IA, R);
 		total_time_residue += timer.elapsed();
-		cout<<"# iter "<< i <<": "<< c_residue <<"\n";
+		cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";
 	}
 }
 
 int main(int argc, char **argv) {
-	long size,i,j,k;
-	
 	cout.precision(17);
+	cout << scientific;
+	srand(20172);
 
-	fstream file;
-	file.open(IODIR "in.txt");
+	long size, k = 64;
+	
+	// if(has_in_file_argument)
+		ifstream in_f(IODIR "in.txt");
+		cin.rdbuf(in_f.rdbuf()); //redirect
+
+	// if(has_out_file_argument)
+		ofstream o_f(IODIR "out.txt");
+		cout.rdbuf(o_f.rdbuf()); //redirect
 
 //	read matrix size
-	file>> size;
+	cin>> size;
 
 	Matrix A(size, BY_COL), LU(size, BY_COL);
 	// Matrix IA(size, BY_COL);
@@ -379,20 +388,20 @@ int main(int argc, char **argv) {
 	Matrix IA(size, BY_LINE);
 	vector<double> B(size), z(size);
 	vector<long> P(size);
-	vector<vector<double>> X;
-	X.push_back(vector<double>(size));
-
+	vector<double> X;
+	
 //	read matrix coef
-	for(i=0; i<=size-1; i++){
-		for(j=0; j<=size-1; j++){
-			file>> A.at(i,j);
+	/**/
+	for(long i=0; i<=size-1; i++){
+		for(long j=0; j<=size-1; j++){
+			cin>> A.at(i,j);
 			LU.at(i,j) = A.at(i,j);
 		}
 	}
 	/**
 	read B values
 	for(i=0; i<=size-1; i++)
-		file>> B.at(i);
+		cin>> B.at(i);
 	/**/
 	timer.start();
 	double lu_time = 0.0;
@@ -400,32 +409,36 @@ int main(int argc, char **argv) {
 	GaussEl(LU, P);
 	lu_time = timer.elapsed();
 
-	printf("#\n");
+	cout<<"#\n";
+	inverse_refining(A, LU, IA, P, k);
 
-	inverse_refining(A, LU, IA, P);
-
-	printf("# Tempo LU: %.17g\n", lu_time); // TODO
-	printf("# Tempo iter: %.17g\n", total_time_iter/(double)k);
-	printf("# Tempo residuo: %.17g\n#\n", total_time_residue/(double)k);
+	
+	cout<< defaultfloat;
+	cout<<"# Tempo LU: "<< lu_time <<"\n"; // TODO
+	cout<<"# Tempo iter: "<< total_time_iter/(double)k <<"\n";
+	cout<<"# Tempo residuo: "<< total_time_residue/(double)k <<"\n#\n";
+	cout << scientific;
 	printm(IA);
 	/**
 	find first iteration of X
-	solve_lu(LU, X.at(0), B, P);
+	solve_lu(LU, X, B, P);
 
 	lu_refining(A, LU, X, B, P);
 
 	cout<<"\nSet of solution is"<<endl;
-	printv(X.at(X.size()-1));
+	printv(X);
 	cout << endl;
 	/**/
 
 	/**
 	ofstream out;
-	int n = 16384/8;
-
-	out.open(IODIR "out.txt");
-	srand(20172);
-	generateSquareRandomMatrix(n, out);
+	out.precision(17);
+	for(int n = 2; n <= 1024; n <<= 1){
+		out.open(IODIR + to_string(n) + ".txt");
+		generateSquareRandomMatrix(n, out);
+		out.close();
+	}
 	/**/
+	
 	return 0;
 }

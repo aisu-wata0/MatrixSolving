@@ -1,3 +1,5 @@
+
+
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -8,6 +10,19 @@
 #include "Timer.h"
 #include "Matrix.h"
 #include <unistd.h>
+
+/**
+@mainpage
+
+Usage: %s [-e inputFile] [-o outputFile] [-r randSize] -i Iterations
+
+@authors Bruno Freitas Serbena
+@authors Luiz Gustavo Jhon Rodrigues
+*/
+/**
+@file main.cpp
+*/
+
 using namespace std;
 
 Timer timer;
@@ -15,11 +30,10 @@ double total_time_iter = 0.0;
 double total_time_residue = 0.0;
 
 /**
- * @brief For the matrix LU finds its LU decomposition overwriting it
- * Has partial pivoting, stores final indexes in P
- * @param LU Matrix to be decomposed
- * Output: lower triangle of this matrix will store L 1 diagonal implicit, upper triangle stores U
- * @param P Permutation vector resulting of the pivoting
+ @brief For the matrix LU finds its LU decomposition overwriting it
+ Has partial pivoting, stores final indexes in P
+ @param LU Matrix to be decomposed Output: lower triangle of this matrix will store L 1 diagonal implicit, upper triangle stores U
+ @param P Permutation vector resulting of the pivoting
  */
 void GaussEl(Matrix& LU, vector<long>& P) {
 	// initializing permutation vector
@@ -64,7 +78,16 @@ void GaussEl(Matrix& LU, vector<long>& P) {
 		}
 	}
 }
-
+/**
+ * @brief Subtitution method for linear sistems, forward or backward, uses P from pivoting on the LU decomposition
+ * @param L Coeficient Matrix
+ * @param X Variables to be found
+ * @param I Independant terms
+ * @param forward true is forward subst, false is backward.
+ * @param P from LU Decomposition
+ * @param unit_diagonal true if diagonal is equal to 1
+ * @param col Column of the matrix I to be used as B
+ */
 void subst_P(Matrix& L, vector<double>& X, Matrix& I, bool forward, vector<long>& P, bool unit_diagonal, long col){
 	double sum;
 	long i, j;
@@ -144,7 +167,14 @@ void subst_P(Matrix& A, vector<double>& X, vector<double>& B, bool forward, vect
 		}
 	}
 }
-
+/**
+ * @brief Subtitution method for linear sistems, forward or backward
+ * @param A Coeficient Matrix
+ * @param X Variables to be found
+ * @param B Independant terms
+ * @param forward true is forward subst, false is backward.
+ * @param col Column of the matrix to be used as B
+ */
 void subst(Matrix& A, Matrix& X, vector<double>& B, bool forward, long col) {
 	double sum;
 	long i, j;
@@ -204,6 +234,15 @@ void subst(Matrix& A, vector<double>& X, vector<double>& B, bool forward) {
 	}
 }
 
+/**
+ * @brief Solves LU system using subst functions.
+ * @param LU Matrix to find solution
+ * @param X Variables to be found
+ * Output: Value of found variables is stored in X
+ * @param B Independent terms
+ * @param P Permutation vector resulting of the pivoting
+ * @param col Column of the matrix to be used as B
+ */
 void solve_lu(Matrix LU, Matrix& X, Matrix& B, vector<long>& P, long col){
 	vector<double> Z(LU.size);
 	// find Z; LZ=B
@@ -213,6 +252,14 @@ void solve_lu(Matrix LU, Matrix& X, Matrix& B, vector<long>& P, long col){
 	subst(LU, X, Z, false, col);
 }
 
+/**
+ * @brief Solves LU system using subst functions.
+ * @param LU Matrix to find solution
+ * @param X Variables to be found
+ * Output: Value of found variables is stored in X
+ * @param B Independent terms
+ * @param P Permutation vector resulting of the pivoting
+ */
 void solve_lu(Matrix LU, vector<double>& X, vector<double>& B, vector<long>& P){
 	vector<double> Z(X.size());
 	// find Z; LZ=B
@@ -222,6 +269,14 @@ void solve_lu(Matrix LU, vector<double>& X, vector<double>& B, vector<long>& P){
 	subst(LU, X, Z, false);
 }
 
+/**
+ * @brief Finds inverse matrix.
+ * @param LU Matrix to find inverse
+ * @param IA Inverse matrix to be found
+ * Output: Inverse matrix is stored in IA
+ * @param I Identity matrix
+ * @param P Permutation vector resulting of the pivoting
+ */
 void inverse(Matrix& LU, Matrix& IA, Matrix& I, vector<long>& P){
 	int j;
 	long size = LU.size;
@@ -233,22 +288,10 @@ void inverse(Matrix& LU, Matrix& IA, Matrix& I, vector<long>& P){
 	}
 }
 
-void JacobiIt(Matrix& A, vector<double>& indTerms, vector<double>& X){
-	int total;
-	vector<double> new_x;
-	// for each line
-	for(long i = 0; i <= A.size; ++i){
-		total = 0;
-		// substitute each X
-		for(long j = 0; j <= X.size(); j++) {
-			if(j != i){
-				total = total + A.at(i, j) * X.at(j);
-			}
-		}
-		new_x.at(i) = (indTerms.at(i) - total) / A.at(i, i);
-	}
-}
-
+/**
+ * @brief Adds two vectors, returns result
+ * @param sign optional: = -1 if you want a-b
+ */
 template <class T>
 vector<T> add_vec(vector<T> a, vector<T> b, int sign = 1){
 	vector<T> x(a.size());
@@ -260,6 +303,12 @@ vector<T> add_vec(vector<T> a, vector<T> b, int sign = 1){
 	return x;
 }
 
+/**
+ * @brief Calculates left hand side
+ * @param A coeficient matrix
+ * @param X variable values
+ * @return left hand side
+ */
 vector<double> lhs_value(Matrix A, vector<double> X){
 	vector<double> lhs(X.size());
 
@@ -272,11 +321,20 @@ vector<double> lhs_value(Matrix A, vector<double> X){
 	return lhs;
 }
 
-void lu_refining(Matrix& A, Matrix& LU, vector<double>& X, vector<double>& B, vector<long>& P){
+/**
+ * @brief Refines  
+ * @param A original coef matrix
+ * @param LU decomposition of A
+ * @param X return value, no init needed
+ * @param B independent terms
+ * @param P LU pivot permutation
+ * @param iter_n number of iterations
+ */
+void lu_refining(Matrix& A, Matrix& LU, vector<double>& X, vector<double>& B, vector<long>& P, long iter_n){
 	vector<double> lhs(B.size()), r(B.size()), w(B.size());
 
 	cout<<"\n\nRefining "<< endl;
-	for(long i=0; i <= 3; i++) {
+	for(long i=0; i < iter_n; i++) {
 		lhs = lhs_value(A, X);
 		// r: residue of X
 		r = add_vec(B, lhs, -1);
@@ -298,7 +356,7 @@ void lu_refining(Matrix& A, Matrix& LU, vector<double>& X, vector<double>& B, ve
  * @brief Calculates residue into I, A*IA supposed to be Identity
  * @param A original matrix
  * @param IA solution to A*IA = I
- * @param I return value, no init needed
+ * @param I Output value, no init needed
  * @return Max residue value found in abs()
  */
 double residue(Matrix& A, Matrix& IA, Matrix& I, vector<long> P){
@@ -340,7 +398,7 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long i
 
 	identity(I);
 	
-	// TODO: inverse_id(LU, IA, P); that doesn't need Identity matrix in the memory
+	// TOptm: inverse_id(LU, IA, P); that doesn't need Identity matrix in the memory
 	inverse(LU, IA, I, P);
 	c_residue = residue(A, IA, R, P);
 	cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";
@@ -354,7 +412,7 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long i
 		inverse(LU, W, R, P);
 		// W: residues of each variable of IA
 		// adjust IA with found errors
-		IA.add(W);	//TODO: Optm: add at the same time its calculating W
+		IA.add(W);	//TOptm: add at the same time its calculating W
 		total_time_iter += timer.elapsed();
 
 		l_residue = c_residue;
@@ -366,23 +424,34 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long i
 	}
 }
 
+/**
+ * @brief Read matrix coef from cin, 2 copies
+ */
+void readMatrix(Matrix& A, Matrix& LU){
+	for(long i=0; i<=A.size-1; i++){
+		for(long j=0; j<=A.size-1; j++){
+			cin>> A.at(i,j);
+			LU.at(i,j) = A.at(i,j);
+		}
+	}
+}
+
 int main(int argc, char **argv) {
 	cout.precision(17);
 	cout << scientific;
 	srand(20172);
 
-	long size = 0, iter_n = 2;
+	long size = 0, iter_n = -1;
 	
 /*<<<<<<<*
 
 	#define IODIR "../IO/"
-	// if(has_in_file_argument)
-		ifstream in_f(IODIR "in.txt");
-		cin.rdbuf(in_f.rdbuf()); //redirect
-
-	// if(has_out_file_argument)
-		ofstream o_f(IODIR "out.txt");
-		cout.rdbuf(o_f.rdbuf()); //redirect	
+	
+	ifstream in_f(IODIR "in.txt");
+	cin.rdbuf(in_f.rdbuf()); //redirect
+	
+	ofstream o_f(IODIR "out.txt");
+	cout.rdbuf(o_f.rdbuf()); //redirect	
 
 /*=====*/
 
@@ -404,12 +473,12 @@ int main(int argc, char **argv) {
 				o_f.open(outputFile);
 				cout.rdbuf(o_f.rdbuf()); //redirect
 				break;
-			case 'r':
+			case 'r':	//Generate random matrix
 				size = stol(optarg);
 				break;
 			case 'i':
 				iter_n = stol(optarg);
-				break; // TODO: should break here?
+				break;
 			case ':':
 			// missing option argument
 				fprintf(stderr, "%s: option '-%c' requires an argument\n", argv[0], optopt);
@@ -422,30 +491,34 @@ int main(int argc, char **argv) {
 
 /*>>>>>>>*/
 
-	// read matrix sizes
-	cin>> size;
+	if(iter_n == -1){
+		fprintf(stderr, "Usage: %s [-e inputFile] [-o outputFile] [-r randSize] -i Iterations\n", argv[0]);
+		fprintf(stderr, "-i Iterations is not optional\n");
+		exit(EXIT_FAILURE);
+	}
+
+	if(size == 0)
+		cin>> size;
 	
 	Matrix A(size, BY_COL), LU(size, BY_COL);
+	
+	if(size == 0){
+		readMatrix(A, LU);
+	} else {
+		randomMatrix(A, LU);
+	}
+	
 //	Matrix IA(size, BY_COL);
 	// Optm: iterating line by line
 	Matrix IA(size, BY_LINE);
 	vector<double> B(size), z(size);
 	vector<long> P(size);
-	vector<double> X;
 	
-//	read matrix coef
-	/**/
-	for(long i=0; i<=size-1; i++){
-		for(long j=0; j<=size-1; j++){
-			cin>> A.at(i,j);
-			LU.at(i,j) = A.at(i,j);
-		}
-	}
 	/**
 	read B values
 	for(i=0; i<=size-1; i++)
 		cin>> B.at(i);
-	/**/
+	*/
 	timer.start();
 	double lu_time = 0.0;
 	
@@ -457,11 +530,14 @@ int main(int argc, char **argv) {
 
 	
 	cout<< defaultfloat;
-	cout<<"# Tempo LU: "<< lu_time <<"\n"; // TODO
+	cout<<"# Tempo LU: "<< lu_time <<"\n";
 	cout<<"# Tempo iter: "<< total_time_iter/(double)iter_n <<"\n";
 	cout<<"# Tempo residuo: "<< total_time_residue/(double)iter_n <<"\n#\n";
 	printm(IA);
-	/**
+	
+	/** Solve SL	
+	vector<double> X(size);
+	
 	find first iteration of X
 	solve_lu(LU, X, B, P);
 
@@ -470,7 +546,7 @@ int main(int argc, char **argv) {
 	cout<<"\nSet of solution is"<<endl;
 	printv(X);
 	cout << endl;
-	/**/
+	*/
 
 	/**
 	ofstream o_f;
@@ -484,7 +560,7 @@ int main(int argc, char **argv) {
 		
 		o_f.close();
 	}
-	/**/
+	*/
 	
 	return 0;
 }

@@ -6,7 +6,7 @@
 double gettime(void){
 	timeval time;
 	gettimeofday(&time, NULL);
-	return ((double)(time.tv_sec*1000.0 + time.tv_usec/1000.0));
+	return ((double)(time.tv_sec + time.tv_usec/1000000.0));
 }
 
 class Timer

@@ -7,7 +7,7 @@
 
 #include "Timer.h"
 #include "Matrix.h"
-
+#include <unistd.h>
 using namespace std;
 
 Timer timer;
@@ -42,7 +42,7 @@ void GaussEl(Matrix& LU, vector<long>& P) {
 		// LU.at(p,p) = 1; implicit
 		if(close_zero(LU.at(p,p))){
 			fprintf(stderr, "Found a pivot == 0, system is not solvable with partial pivoting");
-			exit(1);
+			exit(EXIT_FAILURE);
 		}
 		//for (long i = p+1; i <= LU.size-1; i++) {	//going from below pivot to end
 		for (long i = LU.size-1; i >= p+1; i--) {	//going from end to pivot
@@ -327,10 +327,12 @@ double residue(Matrix& A, Matrix& IA, Matrix& I, vector<long> P){
  * @param LU decomposition of A
  * @param IA return value, no init needed
  * @param P LU pivot permutation
+ * @param k number of iterations
  */
-void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long k){
+void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long iter_n){
 	long i=0;
-	long digits = k > 0 ? (long) log10((double) k) + 1 : 1;
+	// number of digits of iter_n
+	long digits = iter_n > 0 ? (long) log10((double) iter_n) + 1 : 1;
 	double c_residue, l_residue;
 //	Matrix W(A.size, BY_COL), R(A.size, BY_COL), I(A.size, BY_COL);
 	// Optm: iterating line by line
@@ -342,7 +344,7 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long k
 	inverse(LU, IA, I, P);
 	c_residue = residue(A, IA, R, P);
 	cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";
-	while(i < k){
+	while(i < iter_n){
 		// (abs(l_residue - c_residue)/c_residue > EPSILON) && (l_residue > c_residue)
 		// relative approximate error
 		i += 1;
@@ -369,17 +371,58 @@ int main(int argc, char **argv) {
 	cout << scientific;
 	srand(20172);
 
-	long size, k = 32;
+	long size = 0, iter_n = 2;
 	
+/*<<<<<<<*
+
+	#define IODIR "../IO/"
 	// if(has_in_file_argument)
 		ifstream in_f(IODIR "in.txt");
 		cin.rdbuf(in_f.rdbuf()); //redirect
 
 	// if(has_out_file_argument)
 		ofstream o_f(IODIR "out.txt");
-		cout.rdbuf(o_f.rdbuf()); //redirect
+		cout.rdbuf(o_f.rdbuf()); //redirect	
 
-//	read matrix size
+/*=====*/
+
+	int c;
+	char* inputFile = NULL;
+	char* outputFile = NULL;
+	ifstream in_f;
+	ofstream o_f;
+	
+	while (( c = getopt(argc, argv, "e:o:r:i:")) != -1){
+		switch (c){
+			case 'e':
+				inputFile = optarg;
+				in_f.open(inputFile);
+				cin.rdbuf(in_f.rdbuf()); //redirect
+				break;
+			case 'o':
+				outputFile = optarg;
+				o_f.open(outputFile);
+				cout.rdbuf(o_f.rdbuf()); //redirect
+				break;
+			case 'r':
+				size = stol(optarg);
+				break;
+			case 'i':
+				iter_n = stol(optarg);
+				break; // TODO: should break here?
+			case ':':
+			// missing option argument
+				fprintf(stderr, "%s: option '-%c' requires an argument\n", argv[0], optopt);
+				break;
+			default:
+				fprintf(stderr, "Usage: %s [-e inputFile] [-o outputFile] [-r randSize] -i Iterations\n", argv[0]);
+				exit(EXIT_FAILURE);
+		}
+	}
+
+/*>>>>>>>*/
+
+	// read matrix sizes
 	cin>> size;
 	
 	Matrix A(size, BY_COL), LU(size, BY_COL);
@@ -410,13 +453,13 @@ int main(int argc, char **argv) {
 	lu_time = timer.elapsed();
 
 	cout<<"#\n";
-	inverse_refining(A, LU, IA, P, k);
+	inverse_refining(A, LU, IA, P, iter_n);
 
 	
 	cout<< defaultfloat;
 	cout<<"# Tempo LU: "<< lu_time <<"\n"; // TODO
-	cout<<"# Tempo iter: "<< total_time_iter/(double)k <<"\n";
-	cout<<"# Tempo residuo: "<< total_time_residue/(double)k <<"\n#\n";
+	cout<<"# Tempo iter: "<< total_time_iter/(double)iter_n <<"\n";
+	cout<<"# Tempo residuo: "<< total_time_residue/(double)iter_n <<"\n#\n";
 	printm(IA);
 	/**
 	find first iteration of X

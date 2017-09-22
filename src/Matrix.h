@@ -9,7 +9,7 @@
 
 namespace std {
 
-#define EPSILON 1e-15 // TODO: adjust value
+#define EPSILON 1e-15
 #define E_FACTOR 16
 
 union Double {
@@ -125,7 +125,6 @@ void generateSquareRandomMatrix(long n){
 	}
 }
 
-
 void randomMatrix(Matrix& M, Matrix& LU){
 	long i, j;
 	double invRandMax = 1.0/(double)RAND_MAX;
@@ -137,6 +136,7 @@ void randomMatrix(Matrix& M, Matrix& LU){
 		}
 	}
 }
+
 void printm(Matrix& matrix){
 	cout<<  matrix.size <<"\n";
 	cout<<  matrix.size <<"\n";

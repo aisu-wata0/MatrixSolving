@@ -9,7 +9,7 @@
 
 namespace std {
 
-#define EPSILON 1e-17 // TODO: adjust value
+#define EPSILON 1e-15 // TODO: adjust value
 #define E_FACTOR 16
 #define IODIR "../IO/"
 

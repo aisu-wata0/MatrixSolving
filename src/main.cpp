@@ -7,7 +7,7 @@
 
 #include "Timer.h"
 #include "Matrix.h"
-
+#include <unistd.h>
 using namespace std;
 
 Timer timer;
@@ -371,16 +371,39 @@ int main(int argc, char **argv) {
 
 	long size, k = 32;
 	
-	// if(has_in_file_argument)
-		ifstream in_f(IODIR "in.txt");
-		cin.rdbuf(in_f.rdbuf()); //redirect
-
-	// if(has_out_file_argument)
-		ofstream o_f(IODIR "out.txt");
-		cout.rdbuf(o_f.rdbuf()); //redirect
+    int c;
+	char* inputFile = NULL;
+	char* outputFile = NULL;
+	long iterations;
+	
+	while (( c = getopt(argc, argv, "e:o:r:i:")) != -1){
+		switch (c){
+			case 'e':
+        		inputFile = optarg;
+                ifstream in_f(IODIR inputFile);
+                cin.rdbuf(in_f.rdbuf());
+        		break;
+      		case 'o':
+        		outputFile = optarg;
+                ofstream o_f(IODIR "out.txt");
+                cout.rdbuf(o_f.rdbuf()); //redirect
+        		break;
+      		case 'r':
+        		size = stol(optarg);
+        		break;
+            case 'i':
+                iterations = stol(optarg);
+            case ':':
+            /* missing option argument */
+                fprintf(stderr, "%s: option '-%c' requires an argument\n", argv[0], optopt);
+                break;
+        	default:
+                fprintf(stderr, "Usage: %s [-e inputFile] [-o outputFile] [-r randSize] -i Iterations\n", argv[0]);
+                exit(EXIT_FAILURE);
+            }
+	}
 
 //	read matrix size
-	cin>> size;
 	
 	Matrix A(size, BY_COL), LU(size, BY_COL);
 //	Matrix IA(size, BY_COL);

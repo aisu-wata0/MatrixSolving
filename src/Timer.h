@@ -3,10 +3,13 @@
 
 #include <sys/time.h>
 
-double gettime(void){
-	timeval time;
-	gettimeofday(&time, NULL);
-	return ((double)(time.tv_sec + time.tv_usec/1000000.0));
+/**
+ * @return returns current clock time in seconds 
+ */
+double timestamp(void){
+	struct timeval tp;
+	gettimeofday(&tp, NULL);
+	return ((double)(tp.tv_sec + tp.tv_usec/1000000.0));
 }
 
 /**
@@ -23,13 +26,13 @@ public:
 	 * @brief Starts timer
 	 */
 	void start(){
-		start_timer = gettime();
+		start_timer = timestamp();
 	}
 	/**
 	 * @return time elapsed since last start
 	 */
 	double elapsed(){
-		return gettime() - start_timer;
+		return timestamp() - start_timer;
 	}
 };
 

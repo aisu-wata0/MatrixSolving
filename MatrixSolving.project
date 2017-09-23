@@ -105,5 +105,6 @@
   <VirtualDirectory Name="MatrixSolving">
     <File Name="Makefile"/>
     <File Name="LICENSE"/>
+    <File Name="doxyconfig"/>
   </VirtualDirectory>
 </CodeLite_Project>

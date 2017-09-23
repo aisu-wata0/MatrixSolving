@@ -106,10 +106,4 @@
     <File Name="Makefile"/>
     <File Name="LICENSE"/>
   </VirtualDirectory>
-  <VirtualDirectory Name="Debug">
-    <File Name="Debug/MatrixSolving"/>
-  </VirtualDirectory>
-  <VirtualDirectory Name="Release">
-    <File Name="Release/MatrixSolving"/>
-  </VirtualDirectory>
 </CodeLite_Project>

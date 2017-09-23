@@ -14,6 +14,7 @@
 /**
 @mainpage
 
+Inverts input matrix using LU decomposition by Gauss Elimination and refining
 Usage: %s [-e inputFile] [-o outputFile] [-r randSize] -i Iterations
 
 @authors Bruno Freitas Serbena
@@ -239,7 +240,7 @@ void subst(Matrix& A, vector<double>& X, vector<double>& B, bool forward) {
  * @param LU Matrix to find solution
  * @param X Variables to be found
  * Output: Value of found variables is stored in X
- * @param B Independent terms
+ * @param B Independent term matrix
  * @param P Permutation vector resulting of the pivoting
  * @param col Column of the matrix to be used as B
  */
@@ -270,7 +271,8 @@ void solve_lu(Matrix LU, vector<double>& X, vector<double>& B, vector<long>& P){
 }
 
 /**
- * @brief Finds inverse matrix.
+ * @brief Finds inverse matrix,
+ * also solves linear sistems A*IA = I where each of I's columns are different Bs
  * @param LU Matrix to find inverse
  * @param IA Inverse matrix to be found
  * Output: Inverse matrix is stored in IA
@@ -287,10 +289,12 @@ void inverse(Matrix& LU, Matrix& IA, Matrix& I, vector<long>& P){
 		solve_lu(LU, IA, I, P, j);
 	}
 }
-
 /**
  * @brief Adds two vectors, returns result
- * @param sign optional: = -1 if you want a-b
+ * @param a
+ * @param b
+ * @param sign
+ * @return sign optional: = -1 if you want a-b
  */
 template <class T>
 vector<T> add_vec(vector<T> a, vector<T> b, int sign = 1){
@@ -322,7 +326,7 @@ vector<double> lhs_value(Matrix A, vector<double> X){
 }
 
 /**
- * @brief Refines  
+ * @brief Refines a linear sistem
  * @param A original coef matrix
  * @param LU decomposition of A
  * @param X return value, no init needed
@@ -353,14 +357,15 @@ void lu_refining(Matrix& A, Matrix& LU, vector<double>& X, vector<double>& B, ve
 }
 
 /**
- * @brief Calculates residue into I, A*IA supposed to be Identity
- * @param A original matrix
+ * @brief  Calculates residue into I, A*IA shuold be close to Identity
+ * @param A original coef matrix
  * @param IA solution to A*IA = I
- * @param I Output value, no init needed
- * @return Max residue value found in abs()
+ * @param I Output residue, no init needed
+ * @param P Permutation from partial pivoting
+ * @return Norm of the residue
  */
 double residue(Matrix& A, Matrix& IA, Matrix& I, vector<long> P){
-	double norm = 0.0;
+	double err_norm = 0.0;
 	
 	for(long icol=0; icol <= A.size-1; icol++){
 		// for each column of the inverse
@@ -374,18 +379,20 @@ double residue(Matrix& A, Matrix& IA, Matrix& I, vector<long> P){
 			if(i == icol){
 				I.at(i,icol) += 1;
 			}
-			norm += I.at(i,icol)*I.at(i,icol);
+			
+			err_norm += I.at(i,icol)*I.at(i,icol);
 		}
 	}
-	return sqrt(norm);
+	return sqrt(err_norm);
 }
 
 /**
  * @brief Calculates inverse of A into IA
+ * @param A
  * @param LU decomposition of A
  * @param IA return value, no init needed
  * @param P LU pivot permutation
- * @param k number of iterations
+ * @param iter_n
  */
 void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long iter_n){
 	long i=0;
@@ -425,7 +432,10 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long i
 }
 
 /**
- * @brief Read matrix coef from cin, 2 copies
+ * @brief Assigns the same matrix from cin to M and LU,
+ * they need to be the same size and have been initialized with some size
+ * @param A
+ * @param LU
  */
 void readMatrix(Matrix& A, Matrix& LU){
 	for(long i=0; i<=A.size-1; i++){
@@ -443,18 +453,6 @@ int main(int argc, char **argv) {
 
 	long size = 0, iter_n = -1;
 	
-/*<<<<<<<*
-
-	#define IODIR "../IO/"
-	
-	ifstream in_f(IODIR "in.txt");
-	cin.rdbuf(in_f.rdbuf()); //redirect
-	
-	ofstream o_f(IODIR "out.txt");
-	cout.rdbuf(o_f.rdbuf()); //redirect	
-
-/*=====*/
-
 	int c;
 	char* inputFile = NULL;
 	char* outputFile = NULL;
@@ -490,8 +488,6 @@ int main(int argc, char **argv) {
 		}
 	}
 
-/*>>>>>>>*/
-
 	if(iter_n == -1){
 		fprintf(stderr, "Usage: %s [-e inputFile] [-o outputFile] [-r randSize] -i Iterations\n", argv[0]);
 		fprintf(stderr, "-i Iterations is not optional\n");
@@ -516,7 +512,7 @@ int main(int argc, char **argv) {
 	vector<double> B(size), z(size);
 	vector<long> P(size);
 	
-	/**
+	/** Solve SL
 	read B values
 	for(i=0; i<=size-1; i++)
 		cin>> B.at(i);
@@ -537,7 +533,7 @@ int main(int argc, char **argv) {
 	cout<<"# Tempo residuo: "<< total_time_residue/(double)iter_n <<"\n#\n";
 	printm(IA);
 	
-	/** Solve SL	
+	/** Solve SL
 	vector<double> X(size);
 	
 	find first iteration of X

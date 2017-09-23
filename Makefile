@@ -23,6 +23,9 @@ bin = invmat
 #compiler
 compiler = g++ -std=c++11
 
+doc:
+	doxygen doxyconfig
+
 all: obj_dir list_srcnames $(bin)
 
 set_debug:

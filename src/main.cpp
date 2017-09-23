@@ -460,6 +460,7 @@ int main(int argc, char **argv) {
 	char* outputFile = NULL;
 	ifstream in_f;
 	ofstream o_f;
+	streambuf* coutbuf = cout.rdbuf(); //save old buf; 
 	
 	while (( c = getopt(argc, argv, "e:o:r:i:")) != -1){
 		switch (c){
@@ -504,6 +505,7 @@ int main(int argc, char **argv) {
 	
 	if(size == 0){
 		readMatrix(A, LU);
+		in_f.close();
 	} else {
 		randomMatrix(A, LU);
 	}
@@ -550,6 +552,8 @@ int main(int argc, char **argv) {
 
 	/**
 	ofstream o_f;
+	streambuf* coutbuf = cout.rdbuf(); //save old buf; 
+
 	cout.precision(17);
 	cout << scientific;
 	for(int n = 2; n <= 2048; n <<= 1){
@@ -561,6 +565,8 @@ int main(int argc, char **argv) {
 		o_f.close();
 	}
 	*/
-	
+	in_f.close();
+	cout.rdbuf(coutbuf); //redirect
+	o_f.close();
 	return 0;
 }

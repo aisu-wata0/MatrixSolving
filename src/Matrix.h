@@ -139,7 +139,6 @@ void randomMatrix(Matrix& M, Matrix& LU){
 
 void printm(Matrix& matrix){
 	cout<<  matrix.size <<"\n";
-	cout<<  matrix.size <<"\n";
 	for(long i = 0; i <= matrix.size-1; i++){
 		for(long j = 0; j <= matrix.size-1; j++)
 			cout<< matrix.at(i,j) <<"\t";

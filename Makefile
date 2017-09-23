@@ -23,10 +23,10 @@ bin = invmat
 #compiler
 compiler = g++ -std=c++11
 
+all: obj_dir list_srcnames $(bin)
+
 doc:
 	doxygen doxyconfig
-
-all: obj_dir list_srcnames $(bin)
 
 set_debug:
 	$(eval FLAGS = -O0 -g $(WARN))

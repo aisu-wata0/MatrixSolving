@@ -15,8 +15,7 @@
 namespace std {
 
 /**
- * @brief Stores values from specified type of matrix, can be acessed using conventional indexing .at(i,j)
- * Optimization: The next in memory value can be decided on the constructor
+ * @brief Stores values of matrix in a vector, Row Major Order
  */
 class Matrix
 {
@@ -26,8 +25,6 @@ public:
 
 	/**
 	 * @param size of matrix, total number of lines
-	 * @param type optional: if the next in memory value is on the following column or line
-	 * default: column
 	 */
 	Matrix(long size) : size(size), matrix(size*size){
 	}
@@ -40,10 +37,13 @@ public:
 	 * @param j
 	 * @return element of position i,j
 	 */
-	virtual double& at(long i, long j) {
+	double& at(long i, long j) {
 		return matrix.at(i*size + j);
 	}
 
+	/**
+	 * @brief swaps rows starting from col 'start'
+	 */
 	void swap_rows_from(long row0, long row1, long start){
 		if(row0 == row1)
 			return;
@@ -61,6 +61,7 @@ public:
 		 size = new_size;
 		 matrix.resize(size*size);
 	}
+	
 	/**
 	 * @brief Increments b into the matrix
 	 * @param b
@@ -74,6 +75,9 @@ public:
 		}
 	}
 
+	/**
+	 * @brief copy matrix M to yourself
+	 */
 	void set(Matrix& M){
 		for(long i=0; i <= size-1; i++){
 			for(long j=0; j <= size-1; j++){
@@ -108,10 +112,19 @@ public:
 	}
 };
 
+/**
+ * @brief Stores values of matrix in a vector, Column Major Order
+ */
 class MatrixColMajor : public Matrix
 {
+public:
 	using Matrix::Matrix;
 	
+	/**
+	 * @param i
+	 * @param j
+	 * @return element of position i,j
+	 */
 	double& at(long i, long j) {
 		return matrix.at(j*size + i);
 	}
@@ -121,29 +134,12 @@ class MatrixColMajor : public Matrix
  * @brief sets I to identity
  * @param I
  */
-void identity(Matrix& I){
+void identity(MatrixColMajor& I){
 	for(long i = 0; i < I.size; i++){
 		for(long j = 0; j < I.size; j++){
 			I.at(i, j) = 0;
 		}
 		I.at(i, i) = 1;
-	}
-}
-
-/**
- * @brief prints random matrix
- * @param n size
- */
-void generateSquareRandomMatrix(long n){
-	long i, j;
-	double invRandMax = 1.0/(double)RAND_MAX;
-
-	cout<< n <<"\n";
-	for(i = 0; i < n; i++){
-		for(j = 0; j < n; j++){
-			cout<< (double)rand() * invRandMax <<"\t";
-		}
-		cout<<"\n";
 	}
 }
 

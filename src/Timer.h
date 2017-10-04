@@ -1,5 +1,8 @@
 #ifndef TIMER_H
 #define TIMER_H
+/**
+@file Timer.h
+*/
 
 #include <sys/time.h>
 

@@ -39,4 +39,4 @@ public:
 	}
 };
 
-#endif // TIMER_H
+#endif

@@ -41,6 +41,7 @@ void GaussEl(Matrix A, Matrix& LU, vector<long>& P) {
 		P.at(i) = i;
 	}
 	// copy A to LU
+	LU.resize(A.size);
 	LU.set(A);
 
 	for(long p = 0; p <= LU.size-1; p++){
@@ -351,7 +352,7 @@ void lu_refining(Matrix& A, Matrix& LU, vector<double>& X, vector<double>& B, ve
 
 		cout<<"\n Variables Residue "<< i << endl;
 		printv(w);
-		
+
 		// adjust X with found errors
 		X = add_vec(X, w);
 	}
@@ -366,7 +367,7 @@ void lu_refining(Matrix& A, Matrix& LU, vector<double>& X, vector<double>& B, ve
  */
 double residue(Matrix& A, Matrix& IA, Matrix& I){
 	double err_norm = 0.0;
-	
+
 	for(long icol=0; icol <= A.size-1; icol++){
 		// for each column of the inverse
 		for(long i=0; i <= IA.size-1; i++){
@@ -379,7 +380,7 @@ double residue(Matrix& A, Matrix& IA, Matrix& I){
 			if(i == icol){
 				I.at(i,icol) += 1;
 			}
-			
+
 			err_norm += I.at(i,icol)*I.at(i,icol);
 		}
 	}
@@ -405,7 +406,7 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long i
 	Matrix W(A.size, BY_LINE), R(A.size, BY_LINE), I(A.size, BY_LINE);
 
 	identity(I);
-	
+
 	// TOptm: inverse_id(LU, IA, P); that doesn't need Identity matrix in the memory
 	inverse(LU, IA, I, P);
 	c_residue = residue(A, IA, R);
@@ -415,7 +416,7 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long i
 		// relative approximate error
 		i += 1;
 		// R: residue of IA
-		
+
 		timer.start();
 		inverse(LU, W, R, P);
 		// W: residues of each variable of IA
@@ -424,7 +425,7 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long i
 		total_time_iter += timer.elapsed();
 
 		//l_residue = c_residue;
-		
+
 		timer.start();
 		c_residue = residue(A, IA, R);
 		total_time_residue += timer.elapsed();
@@ -450,14 +451,14 @@ int main(int argc, char **argv) {
 	srand(20172);
 
 	long size = 0, iter_n = -1;
-	
+
 	int c;
 	char* inputFile = NULL;
 	char* outputFile = NULL;
 	ifstream in_f;
 	ofstream o_f;
-	streambuf* coutbuf = cout.rdbuf(); //save old buf; 
-	
+	streambuf* coutbuf = cout.rdbuf(); //save old buf;
+
 	while (( c = getopt(argc, argv, "e:o:r:i:")) != -1){
 		switch (c){
 			case 'e':
@@ -492,47 +493,47 @@ int main(int argc, char **argv) {
 		exit(EXIT_FAILURE);
 	}
 
-	if(size == 0)
-		cin>> size;
-	
 	Matrix A(size, BY_COL), LU(size, BY_COL);
-	
+
 	if(size == 0){
+		cin>> size;
+		A.resize(size);
 		readMatrix(A);
 		in_f.close();
 	} else {
+		A.resize(size);
 		randomMatrix(A);
 	}
-	
+
 //	Matrix IA(size, BY_COL);
 	// Optm: iterating line by line
 	Matrix IA(size, BY_LINE);
 	vector<double> B(size), z(size);
 	vector<long> P(size);
-	
+
 	/** Solve SL
 	read B values
 	for(i=0; i<=size-1; i++)
 		cin>> B.at(i);
 	*/
 	timer.start();
-	
+
 	GaussEl(A, LU, P);
 	lu_time = timer.elapsed();
 
 	cout<<"#\n";
 	inverse_refining(A, LU, IA, P, iter_n);
 
-	
+
 	cout<< defaultfloat;
 	cout<<"# Tempo LU: "<< lu_time <<"\n";
 	cout<<"# Tempo iter: "<< total_time_iter/(double)iter_n <<"\n";
 	cout<<"# Tempo residuo: "<< total_time_residue/(double)iter_n <<"\n#\n";
 	printm(IA);
-	
+
 	/** Solve SL
 	vector<double> X(size);
-	
+
 	find first iteration of X
 	solve_lu(LU, X, B, P);
 
@@ -545,16 +546,16 @@ int main(int argc, char **argv) {
 
 	/**
 	ofstream o_f;
-	streambuf* coutbuf = cout.rdbuf(); //save old buf; 
+	streambuf* coutbuf = cout.rdbuf(); //save old buf;
 
 	cout.precision(17);
 	cout << scientific;
 	for(int n = 2; n <= 2048; n <<= 1){
 		o_f.open(IODIR + to_string(n) + ".txt");
 		cout.rdbuf(o_f.rdbuf()); //redirect
-		
+
 		generateSquareRandomMatrix(n);
-		
+
 		o_f.close();
 	}
 	*/

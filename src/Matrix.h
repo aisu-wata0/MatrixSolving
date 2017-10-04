@@ -35,6 +35,9 @@ public:
 	Matrix(long size, Matrix_type type = BY_COL) : size(size), type(type), matrix(size*size){
 	}
 
+	Matrix(Matrix_type type = BY_COL) : type(type){
+	}
+
 	/**
 	 * @param i
 	 * @param j
@@ -47,7 +50,7 @@ public:
 			return matrix.at(j*size + i);
 		}
 	}
-	
+
 	void swap_rows_from(long row0, long row1, long start){
 		if(row0 == row1)
 			return;
@@ -56,11 +59,15 @@ public:
 			swap(this->at(row0, j), this->at(row1, j));
 		}
 	}
-	
+
 	void swap_rows(long row0, long row1){
 		swap_rows_from(row0, row1, 0);
 	}
-	
+
+	void resize (long new_size){
+		 size = new_size;
+		 matrix.resize(size*size);
+	}
 	/**
 	 * @brief Increments b into the matrix
 	 * @param b
@@ -73,7 +80,7 @@ public:
 			}
 		}
 	}
-	
+
 	void set(Matrix& M){
 		for(long i=0; i <= size-1; i++){
 			for(long j=0; j <= size-1; j++){
@@ -81,7 +88,7 @@ public:
 			}
 		}
 	}
-	
+
 	/**
 	 * @brief prints matrix coeficients
 	 */
@@ -128,7 +135,7 @@ void identity(Matrix& I){
 void generateSquareRandomMatrix(long n){
 	long i, j;
 	double invRandMax = 1.0/(double)RAND_MAX;
-	
+
 	cout<< n <<"\n";
 	for(i = 0; i < n; i++){
 		for(j = 0; j < n; j++){
@@ -145,7 +152,7 @@ void generateSquareRandomMatrix(long n){
 void randomMatrix(Matrix& M){
 	long i, j;
 	double invRandMax = 1.0/(double)RAND_MAX;
-	
+
 	for(i = 0; i < M.size; i++){
 		for(j = 0; j < M.size; j++){
 			M.at(i,j) = (double)rand() * invRandMax;
@@ -178,4 +185,4 @@ void printv(vector<T>& x){
 
 }
 
-#endif // MATRIX_H
+#endif

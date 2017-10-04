@@ -27,6 +27,7 @@ using namespace std;
 Timer timer;
 double total_time_iter = 0.0;
 double total_time_residue = 0.0;
+double lu_time = 0.0;
 
 /**
  @brief For the matrix LU finds its LU decomposition overwriting it
@@ -34,11 +35,13 @@ double total_time_residue = 0.0;
  @param LU Matrix to be decomposed Output: lower triangle of this matrix will store L 1 diagonal implicit, upper triangle stores U
  @param P Permutation vector resulting of the pivoting
  */
-void GaussEl(Matrix& LU, vector<long>& P) {
+void GaussEl(Matrix A, Matrix& LU, vector<long>& P) {
 	// initializing permutation vector
 	for(long i = 0; i <= LU.size-1; i++){
 		P.at(i) = i;
 	}
+	// copy A to LU
+	LU.set(A);
 
 	for(long p = 0; p <= LU.size-1; p++){
 		// for each pivot
@@ -395,7 +398,8 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long i
 	long i=0;
 	// number of digits of iter_n
 	long digits = iter_n > 0 ? (long) log10((double) iter_n) + 1 : 1;
-	double c_residue, l_residue;
+	double c_residue;
+	//double l_residue;
 //	Matrix W(A.size, BY_COL), R(A.size, BY_COL), I(A.size, BY_COL);
 	// Optm: iterating line by line
 	Matrix W(A.size, BY_LINE), R(A.size, BY_LINE), I(A.size, BY_LINE);
@@ -419,7 +423,7 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long i
 		IA.add(W);	//TOptm: add at the same time its calculating W
 		total_time_iter += timer.elapsed();
 
-		l_residue = c_residue;
+		//l_residue = c_residue;
 		
 		timer.start();
 		c_residue = residue(A, IA, R);
@@ -429,16 +433,13 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long i
 }
 
 /**
- * @brief Assigns the same matrix from cin to M and LU,
- * they need to be the same size and have been initialized with some size
- * @param A
- * @param LU
+ * @brief Assigns matrix from cin to M
+ * @param A needs to have been allocated
  */
-void readMatrix(Matrix& A, Matrix& LU){
+void readMatrix(Matrix& A){
 	for(long i=0; i<=A.size-1; i++){
 		for(long j=0; j<=A.size-1; j++){
 			cin>> A.at(i,j);
-			LU.at(i,j) = A.at(i,j);
 		}
 	}
 }
@@ -497,10 +498,10 @@ int main(int argc, char **argv) {
 	Matrix A(size, BY_COL), LU(size, BY_COL);
 	
 	if(size == 0){
-		readMatrix(A, LU);
+		readMatrix(A);
 		in_f.close();
 	} else {
-		randomMatrix(A, LU);
+		randomMatrix(A);
 	}
 	
 //	Matrix IA(size, BY_COL);
@@ -515,9 +516,8 @@ int main(int argc, char **argv) {
 		cin>> B.at(i);
 	*/
 	timer.start();
-	double lu_time = 0.0;
 	
-	GaussEl(LU, P);
+	GaussEl(A, LU, P);
 	lu_time = timer.elapsed();
 
 	cout<<"#\n";

@@ -74,6 +74,14 @@ public:
 		}
 	}
 	
+	void set(Matrix& M){
+		for(long i=0; i <= size-1; i++){
+			for(long j=0; j <= size-1; j++){
+				this->at(i,j) = M.at(i,j);
+			}
+		}
+	}
+	
 	/**
 	 * @brief prints matrix coeficients
 	 */
@@ -131,19 +139,16 @@ void generateSquareRandomMatrix(long n){
 }
 
 /**
- * @brief Assigns the same random matrix to M and LU,
- * they need to be the same size and have been initialized with some size
- * @param M
- * @param LU
+ * @brief Assigns random matrix to M
+ * @param M needs to have been allocated
  */
-void randomMatrix(Matrix& M, Matrix& LU){
+void randomMatrix(Matrix& M){
 	long i, j;
 	double invRandMax = 1.0/(double)RAND_MAX;
 	
 	for(i = 0; i < M.size; i++){
 		for(j = 0; j < M.size; j++){
 			M.at(i,j) = (double)rand() * invRandMax;
-			LU.at(i,j) = M.at(i,j);
 		}
 	}
 }

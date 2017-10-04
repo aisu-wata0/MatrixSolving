@@ -91,7 +91,7 @@ void GaussEl(Matrix A, Matrix& LU, vector<long>& P) {
  * @param unit_diagonal true if diagonal is equal to 1
  * @param col Column of the matrix I to be used as B
  */
-void subst_P(Matrix& L, vector<double>& X, Matrix& I, bool forward, vector<long>& P, bool unit_diagonal, long col){
+void subst_P(Matrix& L, vector<double>& X, MatrixColMajor& I, bool forward, vector<long>& P, bool unit_diagonal, long col){
 	double sum;
 	long i, j;
 	int step;
@@ -127,50 +127,6 @@ void subst_P(Matrix& L, vector<double>& X, Matrix& I, bool forward, vector<long>
 }
 
 /**
- * @brief Subtitution method for linear sistems, forward or backward, uses P from pivoting on the LU decomposition
- * @param A Coeficient Matrix
- * @param X Variables to be found
- * @param B Independant terms
- * @param forward true is forward subst, false is backward.
- * @param P from LU Decomposition
- * @param unit_diagonal true if diagonal is equal to 1
- */
-void subst_P(Matrix& A, vector<double>& X, vector<double>& B, bool forward, vector<long>& P, bool unit_diagonal) {
-	double sum;
-	long i, j;
-	int step;
-	long size = A.size;
-
-	if (forward){
-		i = 1;
-		step = +1;
-		X.at(0) = B.at(P.at(0));
-		if(!unit_diagonal){
-			X.at(i) /= A.at(0, 0);
-		}
-	} else {
-		i = size-2;
-		step = -1;
-		X.at(size-1) = B.at(P.at(size-1));
-		if(!unit_diagonal){
-			X.at(i) /= A.at(size-1, size-1);
-		}
-	}
-
-	for(; i >= 0 && i <= size-1 ; i += step){
-		sum = B.at(P.at(i));
-		if(forward) {j = 0;} else {j = size-1;}
-		for(; j != i; j += step){
-			// from the start to diagonal, subst values and sub them from the sum
-			sum -= X.at(j) * A.at(i, j);
-		}
-		X.at(i) = sum;
-		if(!unit_diagonal){
-			X.at(i) /= A.at(i, i);
-		}
-	}
-}
-/**
  * @brief Subtitution method for linear sistems, forward or backward
  * @param A Coeficient Matrix
  * @param X Variables to be found
@@ -178,7 +134,7 @@ void subst_P(Matrix& A, vector<double>& X, vector<double>& B, bool forward, vect
  * @param forward true is forward subst, false is backward.
  * @param col Column of the matrix to be used as B
  */
-void subst(Matrix& A, Matrix& X, vector<double>& B, bool forward, long col) {
+void subst(Matrix& A, MatrixColMajor& X, vector<double>& B, bool forward, long col) {
 	double sum;
 	long i, j;
 	int step;
@@ -205,39 +161,6 @@ void subst(Matrix& A, Matrix& X, vector<double>& B, bool forward, long col) {
 }
 
 /**
- * @brief Subtitution method for linear sistems, forward or backward
- * @param A Coeficient Matrix
- * @param X Variables to be found
- * @param B Independant terms
- * @param forward true is forward subst, false is backward.
- */
-void subst(Matrix& A, vector<double>& X, vector<double>& B, bool forward) {
-	double sum;
-	long i, j;
-	int step;
-	long size = A.size;
-
-	if (forward){
-		i = 1;
-		step = +1;
-		X.at(0) = B.at(0) / A.at(0, 0);
-	} else {
-		i = size-2;
-		step = -1;
-		X.at(size-1) = B.at(size-1) / A.at(size-1, size-1);
-	}
-
-	for (; i >= 0 && i <= size-1 ; i += step) {
-		sum = B.at(i);
-		if(forward) {j = 0;} else {j = size-1;}
-		for (; j != i; j += step) {
-			sum -= X.at(j) * A.at(i, j);
-		}
-		X.at(i) = sum / A.at(i, i);
-	}
-}
-
-/**
  * @brief Solves LU system using subst functions.
  * @param LU Matrix to find solution
  * @param X Variables to be found
@@ -246,30 +169,13 @@ void subst(Matrix& A, vector<double>& X, vector<double>& B, bool forward) {
  * @param P Permutation vector resulting of the pivoting
  * @param col Column of the matrix to be used as B
  */
-void solve_lu(Matrix LU, Matrix& X, Matrix& B, vector<long>& P, long col){
+void solve_lu(Matrix LU, MatrixColMajor& X, MatrixColMajor& B, vector<long>& P, long col){
 	vector<double> Z(LU.size);
 	// find Z; LZ=B
 	subst_P(LU, Z, B, true, P, true, col);
 
 	// find X; Ux=Z
 	subst(LU, X, Z, false, col);
-}
-
-/**
- * @brief Solves LU system using subst functions.
- * @param LU Matrix to find solution
- * @param X Variables to be found
- * Output: Value of found variables is stored in X
- * @param B Independent terms
- * @param P Permutation vector resulting of the pivoting
- */
-void solve_lu(Matrix LU, vector<double>& X, vector<double>& B, vector<long>& P){
-	vector<double> Z(X.size());
-	// find Z; LZ=B
-	subst_P(LU, Z, B, true, P, true);
-
-	// find X; Ux=Z
-	subst(LU, X, Z, false);
 }
 
 /**
@@ -281,7 +187,7 @@ void solve_lu(Matrix LU, vector<double>& X, vector<double>& B, vector<long>& P){
  * @param I Identity matrix
  * @param P Permutation vector resulting of the pivoting
  */
-void inverse(Matrix& LU, Matrix& IA, Matrix& I, vector<long>& P){
+void inverse(Matrix& LU, MatrixColMajor& IA, MatrixColMajor& I, vector<long>& P){
 	int j;
 	long size = LU.size;
 	vector<double> X(size), B(size), lhs(size);
@@ -328,44 +234,13 @@ vector<double> lhs_value(Matrix A, vector<double> X){
 }
 
 /**
- * @brief Refines a linear sistem
- * @param A original coef matrix
- * @param LU decomposition of A
- * @param X return value, no init needed
- * @param B independent terms
- * @param P LU pivot permutation
- * @param iter_n number of iterations
- */
-void lu_refining(Matrix& A, Matrix& LU, vector<double>& X, vector<double>& B, vector<long>& P, long iter_n){
-	vector<double> lhs(B.size()), r(B.size()), w(B.size());
-
-	cout<<"\n\nRefining "<< endl;
-	for(long i=0; i < iter_n; i++) {
-		lhs = lhs_value(A, X);
-		// r: residue of X
-		r = add_vec(B, lhs, -1);
-		cout<<"\n\n System Residue "<< i << endl;
-		printv(r);
-
-		// w: residues of each variable of X
-		solve_lu(LU, w, r, P);
-
-		cout<<"\n Variables Residue "<< i << endl;
-		printv(w);
-
-		// adjust X with found errors
-		X = add_vec(X, w);
-	}
-}
-
-/**
  * @brief  Calculates residue into I, A*IA shuold be close to Identity
  * @param A original coef matrix
  * @param IA solution to A*IA = I
  * @param I Output residue, no init needed
  * @return Norm of the residue
  */
-double residue(Matrix& A, Matrix& IA, Matrix& I){
+double residue(Matrix& A, MatrixColMajor& IA, MatrixColMajor& I){
 	double err_norm = 0.0;
 
 	for(long icol=0; icol <= A.size-1; icol++){
@@ -395,15 +270,15 @@ double residue(Matrix& A, Matrix& IA, Matrix& I){
  * @param P LU pivot permutation
  * @param iter_n
  */
-void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long iter_n){
+void inverse_refining(Matrix& A, Matrix& LU, MatrixColMajor& IA, vector<long>& P, long iter_n){
 	long i=0;
 	// number of digits of iter_n
 	long digits = iter_n > 0 ? (long) log10((double) iter_n) + 1 : 1;
 	double c_residue;
 	//double l_residue;
-//	Matrix W(A.size, BY_COL), R(A.size, BY_COL), I(A.size, BY_COL);
+	
 	// Optm: iterating line by line
-	Matrix W(A.size, BY_LINE), R(A.size, BY_LINE), I(A.size, BY_LINE);
+	MatrixColMajor W(A.size), R(A.size), I(A.size);
 
 	identity(I);
 
@@ -493,7 +368,7 @@ int main(int argc, char **argv) {
 		exit(EXIT_FAILURE);
 	}
 
-	Matrix A(BY_COL), LU(BY_COL);
+	Matrix A, LU;
 
 	if(size == 0){
 		cin>> size;
@@ -505,9 +380,8 @@ int main(int argc, char **argv) {
 		randomMatrix(A);
 	}
 
-//	Matrix IA(size, BY_COL);
 	// Optm: iterating line by line
-	Matrix IA(size, BY_LINE);
+	MatrixColMajor IA(size);
 	vector<double> B(size), z(size);
 	vector<long> P(size);
 
@@ -530,35 +404,7 @@ int main(int argc, char **argv) {
 	cout<<"# Tempo iter: "<< total_time_iter/(double)iter_n <<"\n";
 	cout<<"# Tempo residuo: "<< total_time_residue/(double)iter_n <<"\n#\n";
 	printm(IA);
-
-	/** Solve SL
-	vector<double> X(size);
-
-	find first iteration of X
-	solve_lu(LU, X, B, P);
-
-	lu_refining(A, LU, X, B, P);
-
-	cout<<"\nSet of solution is"<<endl;
-	printv(X);
-	cout << endl;
-	*/
-
-	/**
-	ofstream o_f;
-	streambuf* coutbuf = cout.rdbuf(); //save old buf;
-
-	cout.precision(17);
-	cout << scientific;
-	for(int n = 2; n <= 2048; n <<= 1){
-		o_f.open(IODIR + to_string(n) + ".txt");
-		cout.rdbuf(o_f.rdbuf()); //redirect
-
-		generateSquareRandomMatrix(n);
-
-		o_f.close();
-	}
-	*/
+	
 	in_f.close();
 	cout.rdbuf(coutbuf); //redirect
 	o_f.close();

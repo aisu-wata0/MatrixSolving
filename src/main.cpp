@@ -1,16 +1,3 @@
-
-
-#include <iostream>
-#include <fstream>
-#include <iomanip>
-#include <vector>
-#include <cmath>
-#include <ctgmath>
-
-#include "Timer.h"
-#include "Matrix.h"
-#include <unistd.h>
-
 /**
 @mainpage
 
@@ -23,6 +10,17 @@ Usage: %s [-e inputFile] [-o outputFile] [-r randSize] -i Iterations
 /**
 @file main.cpp
 */
+
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include <vector>
+#include <cmath>
+#include <ctgmath>
+
+#include "Timer.h"
+#include "Matrix.h"
+#include <unistd.h>
 
 using namespace std;
 
@@ -361,10 +359,9 @@ void lu_refining(Matrix& A, Matrix& LU, vector<double>& X, vector<double>& B, ve
  * @param A original coef matrix
  * @param IA solution to A*IA = I
  * @param I Output residue, no init needed
- * @param P Permutation from partial pivoting
  * @return Norm of the residue
  */
-double residue(Matrix& A, Matrix& IA, Matrix& I, vector<long> P){
+double residue(Matrix& A, Matrix& IA, Matrix& I){
 	double err_norm = 0.0;
 	
 	for(long icol=0; icol <= A.size-1; icol++){
@@ -407,7 +404,7 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long i
 	
 	// TOptm: inverse_id(LU, IA, P); that doesn't need Identity matrix in the memory
 	inverse(LU, IA, I, P);
-	c_residue = residue(A, IA, R, P);
+	c_residue = residue(A, IA, R);
 	cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";
 	while(i < iter_n){
 		// (abs(l_residue - c_residue)/c_residue > EPSILON) && (l_residue > c_residue)
@@ -425,7 +422,7 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long i
 		l_residue = c_residue;
 		
 		timer.start();
-		c_residue = residue(A, IA, R, P);
+		c_residue = residue(A, IA, R);
 		total_time_residue += timer.elapsed();
 		cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";
 	}

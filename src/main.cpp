@@ -401,9 +401,9 @@ void inverse_refining(Matrix& A, Matrix& LU, Matrix& IA, vector<long>& P, long i
 	long digits = iter_n > 0 ? (long) log10((double) iter_n) + 1 : 1;
 	double c_residue;
 	//double l_residue;
-//	Matrix W(A.size, BY_COL), R(A.size, BY_COL), I(A.size, BY_COL);
+//	Matrix W(A.size), R(A.size), I(A.size);
 	// Optm: iterating line by line
-	Matrix W(A.size, BY_LINE), R(A.size, BY_LINE), I(A.size, BY_LINE);
+	MatrixColMajor W(A.size), R(A.size), I(A.size);
 
 	identity(I);
 
@@ -493,7 +493,7 @@ int main(int argc, char **argv) {
 		exit(EXIT_FAILURE);
 	}
 
-	Matrix A(size, BY_COL), LU(size, BY_COL);
+	Matrix A, LU;
 
 	if(size == 0){
 		cin>> size;
@@ -505,9 +505,9 @@ int main(int argc, char **argv) {
 		randomMatrix(A);
 	}
 
-//	Matrix IA(size, BY_COL);
+//	Matrix IA(size);
 	// Optm: iterating line by line
-	Matrix IA(size, BY_LINE);
+	MatrixColMajor IA(size);
 	vector<double> B(size), z(size);
 	vector<long> P(size);
 

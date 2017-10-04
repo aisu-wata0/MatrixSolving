@@ -14,8 +14,6 @@
 
 namespace std {
 
-enum Matrix_type { BY_COL, BY_LINE };
-
 /**
  * @brief Stores values from specified type of matrix, can be acessed using conventional indexing .at(i,j)
  * Optimization: The next in memory value can be decided on the constructor
@@ -24,7 +22,6 @@ class Matrix
 {
 public:
 	long size;
-	Matrix_type type;
 	vector<double> matrix;
 
 	/**
@@ -32,10 +29,10 @@ public:
 	 * @param type optional: if the next in memory value is on the following column or line
 	 * default: column
 	 */
-	Matrix(long size, Matrix_type type = BY_COL) : size(size), type(type), matrix(size*size){
+	Matrix(long size) : size(size), matrix(size*size){
 	}
 
-	Matrix(Matrix_type type = BY_COL) : type(type){
+	Matrix(){
 	}
 
 	/**
@@ -44,11 +41,7 @@ public:
 	 * @return element of position i,j
 	 */
 	double& at(long i, long j) {
-		if(type == BY_COL){
-			return matrix.at(i*size + j);
-		} else {
-			return matrix.at(j*size + i);
-		}
+		return matrix.at(i*size + j);
 	}
 
 	void swap_rows_from(long row0, long row1, long start){
@@ -64,7 +57,7 @@ public:
 		swap_rows_from(row0, row1, 0);
 	}
 
-	void resize (long new_size){
+	void resize(long new_size){
 		 size = new_size;
 		 matrix.resize(size*size);
 	}
@@ -112,6 +105,15 @@ public:
 			}
 			cout <<"=\t"<< B[i] << endl;
 		}
+	}
+};
+
+class MatrixColMajor : public Matrix
+{
+	using Matrix::Matrix;
+	
+	double& at(long i, long j) {
+		return matrix.at(j*size + i);
 	}
 };
 

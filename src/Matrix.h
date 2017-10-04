@@ -40,7 +40,7 @@ public:
 	 * @param j
 	 * @return element of position i,j
 	 */
-	double& at(long i, long j) {
+	virtual double& at(long i, long j) {
 		return matrix.at(i*size + j);
 	}
 

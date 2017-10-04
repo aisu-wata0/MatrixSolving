@@ -36,13 +36,13 @@ double lu_time = 0.0;
  @param P Permutation vector resulting of the pivoting
  */
 void GaussEl(Matrix A, Matrix& LU, vector<long>& P) {
+	// copy A to LU
+	LU.resize(A.size);
+	LU.set(A);
 	// initializing permutation vector
 	for(long i = 0; i <= LU.size-1; i++){
 		P.at(i) = i;
 	}
-	// copy A to LU
-	LU.resize(A.size);
-	LU.set(A);
 
 	for(long p = 0; p <= LU.size-1; p++){
 		// for each pivot

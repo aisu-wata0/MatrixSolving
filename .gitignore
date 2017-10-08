@@ -1,3 +1,11 @@
+
+Release/
+Debug/
+
+MatrixSolving
+MatrixSolving.mk
+MatrixSolving.txt
+
 # Prerequisites
 *.d
 

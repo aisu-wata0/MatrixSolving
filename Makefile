@@ -10,7 +10,8 @@ OBJECTS := $(addprefix $(BUILDDIR)/, $(SRCNAMES:%.cpp=%.o))
 SRCS := $(addprefix $(SRCDIR)/, $(SRCNAMES))
 
 # libs to include
-LIBS =
+LIBS = -llikwid -Lllikwid /usr/local/likwid/lib -I/usr/local/likwid/include
+LIBS = $LIBS $(shell find )
 
 # warnings and flags
 WARN = -Wall

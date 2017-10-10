@@ -3,16 +3,10 @@
 /**
 @file Matrix.h
 */
-
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <cmath>
-#include <ctgmath>
+namespace std {
 
 #include "Double.h"
 
-namespace std {
 
 /**
  * @brief Stores values of matrix in a vector, Row Major Order

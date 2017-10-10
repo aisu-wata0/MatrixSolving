@@ -17,10 +17,13 @@ Usage: %s [-e inputFile] [-o outputFile] [-r randSize] -i Iterations
 #include <vector>
 #include <cmath>
 #include <ctgmath>
+#include <likwid.h>
+#include <unistd.h>
 
 #include "Timer.h"
 #include "Matrix.h"
-#include <unistd.h>
+#include "GaussEl.h"
+#include "Subst.h"
 
 using namespace std;
 
@@ -28,138 +31,6 @@ Timer timer;
 double total_time_iter = 0.0;
 double total_time_residue = 0.0;
 double lu_time = 0.0;
-
-/**
- @brief For the matrix LU finds its LU decomposition overwriting it
- Has partial pivoting, stores final indexes in P
- @param LU Matrix to be decomposed Output: lower triangle of this matrix will store L 1 diagonal implicit, upper triangle stores U
- @param P Permutation vector resulting of the pivoting
- */
-void GaussEl(Matrix A, Matrix& LU, vector<long>& P) {
-	// copy A to LU
-	LU.resize(A.size);
-	LU.set(A);
-	// initializing permutation vector
-	for(long i = 0; i <= LU.size-1; i++){
-		P.at(i) = i;
-	}
-
-	for(long p = 0; p <= LU.size-1; p++){
-		// for each pivot
-		/* partial pivoting */
-		long maxRow = p;
-		for(long i = p+1; i <= LU.size-1; i++){
-			// for each value below the p pivot
-			if(abs(LU.at(i,p)) > abs(LU.at(maxRow,p))) maxRow = i;
-		} // finds max value
-		// pivots rows of U
-		LU.swap_rows(maxRow, p);
-		swap(P.at(p), P.at(maxRow));
-
-		// LU.at(p,p) = 1; implicit
-		if(close_zero(LU.at(p,p))){
-			fprintf(stderr, "Found a pivot == 0, system is not solvable with partial pivoting");
-			exit(EXIT_FAILURE);
-		}
-		//for (long i = p+1; i <= LU.size-1; i++) {	//going from below pivot to end
-		for (long i = LU.size-1; i >= p+1; i--) {	//going from end to pivot
-			// for each line below pivot
-			if (!close_zero(LU.at(i,p))){
-				// only subtract pivot line if coeficient is not null
-				// find pivot multiplier, store in L
-				LU.at(i, p) = LU.at(i, p)/LU.at(p, p);
-				// subtract pivot from current line (in U)
-				for (long k = p+1; k <= LU.size-1; k++) {
-					// for each collumn starting from pivot's
-					LU.at(i, k) -= LU.at(p, k) * LU.at(i, p);
-					// mulitply pivot line value to multiplier
-				}
-			} else {
-				// pivot not subtracted from line
-				LU.at(i, p) = 0.0;
-			}
-		}
-	}
-}
-/**
- * @brief Subtitution method for linear sistems, forward or backward, uses P from pivoting on the LU decomposition
- * @param L Coeficient Matrix
- * @param X Variables to be found
- * @param I Independant terms
- * @param forward true is forward subst, false is backward.
- * @param P from LU Decomposition
- * @param unit_diagonal true if diagonal is equal to 1
- * @param col Column of the matrix I to be used as B
- */
-void subst_P(Matrix& L, vector<double>& X, MatrixColMajor& I, bool forward, vector<long>& P, bool unit_diagonal, long col){
-	double sum;
-	long i, j;
-	int step;
-	long size = L.size;
-
-	if (forward){
-		i = 1;
-		step = +1;
-		X.at(0) = I.at(P.at(0),col);
-		if(!unit_diagonal){
-			X.at(i) /= L.at(0, 0);
-		}
-	} else {
-		i = size-2;
-		step = -1;
-		X.at(size-1) = I.at(P.at(size-1),col);
-		if(!unit_diagonal){
-			X.at(i) /= L.at(size-1, size-1);
-		}
-	}
-
-	for (; i >= 0 && i <= size-1 ; i += step) {
-		sum = I.at(P.at(i), col);
-		if(forward) {j = 0;} else {j = size-1;}
-		for (; j != i; j += step) {
-			sum -= X.at(j) * L.at(i, j);
-		}
-		X.at(i) = sum;
-		if(!unit_diagonal){
-			X.at(i) /= L.at(i, i);
-		}
-	}
-}
-
-/**
- * @brief Subtitution method for linear sistems, forward or backward
- * @param A Coeficient Matrix
- * @param X Variables to be found
- * @param B Independant terms
- * @param forward true is forward subst, false is backward.
- * @param col Column of the matrix to be used as B
- */
-void subst(Matrix& A, MatrixColMajor& X, vector<double>& B, bool forward, long col) {
-	double sum;
-	long i, j;
-	int step;
-	long size = A.size;
-
-	if (forward){
-		i = 1;
-		step = +1;
-		X.at(0,col) = B.at(0) / A.at(0, 0);
-	} else {
-		i = size-2;
-		step = -1;
-		X.at(size-1,col) = B.at(size-1) / A.at(size-1, size-1);
-	}
-
-	for (; i >= 0 && i <= size-1 ; i += step) {
-		sum = B.at(i);
-		if(forward) {j = 0;} else {j = size-1;}
-		for (; j != i; j += step) {
-			sum -= X.at(j,col) * A.at(i, j);
-		}
-		X.at(i,col) = sum / A.at(i, i);
-	}
-}
-
 /**
  * @brief Solves LU system using subst functions.
  * @param LU Matrix to find solution

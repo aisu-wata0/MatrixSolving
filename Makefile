@@ -9,9 +9,9 @@ HNAMES := $(shell find $(SOURCEDIR) -name '*.h' -type f -exec basename {} \;)
 OBJECTS := $(addprefix $(BUILDDIR)/, $(SRCNAMES:%.cpp=%.o))
 SRCS := $(addprefix $(SRCDIR)/, $(SRCNAMES))
 
-# libs to include
-LIBS = -llikwid -Lllikwid /usr/local/likwid/lib -I/usr/local/likwid/include
-LIBS = $LIBS $(shell find )
+LIKDIR1=/usr/local/likwid/
+LIKDIR2=/home/soft/likwid/
+LIBS =  -DLIKWID_PERFMON -I$(LIKDIR2)include -L$(LIKDIR2)lib -llikwid -lm
 
 # warnings and flags
 WARN = -Wall
@@ -24,7 +24,10 @@ bin = invmat
 #compiler
 compiler = g++ -std=c++11
 
-all: obj_dir list_srcnames $(bin)
+all: pre obj_dir list_srcnames $(bin)
+
+pre:
+
 
 doc:
 	doxygen doxyconfig
@@ -52,14 +55,14 @@ list_srcnames:
 # Tool invocations
 $(bin): $(OBJECTS)
 	@echo 'Building target: $@'
-	@echo 'Invoking: GCC C++ Linker'
+	@echo 'Invoking Linker'
 	$(compiler) -o "$(bin)" $(OBJECTS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
 	@echo 'Building file: $<'
-	@echo 'Invoking: GCC C++ Compiler'
+	@echo 'Invoking Compiler'
 	$(compiler) $(FLAGS) $(LIBS) -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo

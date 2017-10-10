@@ -12,6 +12,8 @@
     <File Name="src/Timer.h"/>
     <File Name="src/main.cpp"/>
     <File Name="src/Double.h"/>
+    <File Name="src/GaussEl.h"/>
+    <File Name="src/Subst.h"/>
   </VirtualDirectory>
   <VirtualDirectory Name="MatrixSolving">
     <File Name="Makefile"/>

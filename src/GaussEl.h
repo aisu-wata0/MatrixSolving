@@ -5,10 +5,8 @@
 */
 namespace std {
 
-#include "Timer.h"
+#include "Double.h"
 #include "Matrix.h"
-#include "GaussEl.h"
-
 
 /**
  @brief For the matrix LU finds its LU decomposition overwriting it

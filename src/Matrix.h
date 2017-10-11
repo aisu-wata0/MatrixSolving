@@ -5,9 +5,6 @@
 */
 namespace std {
 
-#include "Double.h"
-
-
 /**
  * @brief Stores values of matrix in a vector, Row Major Order
  */
@@ -16,7 +13,6 @@ class Matrix
 public:
 	long size;
 	vector<double> matrix;
-
 	/**
 	 * @param size of matrix, total number of lines
 	 */
@@ -25,7 +21,6 @@ public:
 
 	Matrix(){
 	}
-
 	/**
 	 * @param i
 	 * @param j
@@ -34,7 +29,6 @@ public:
 	double& at(long i, long j) {
 		return matrix.at(i*size + j);
 	}
-
 	/**
 	 * @brief swaps rows starting from col 'start'
 	 */
@@ -55,7 +49,6 @@ public:
 		 size = new_size;
 		 matrix.resize(size*size);
 	}
-	
 	/**
 	 * @brief Increments b into the matrix
 	 * @param b
@@ -68,7 +61,6 @@ public:
 			}
 		}
 	}
-
 	/**
 	 * @brief copy matrix M to yourself
 	 */
@@ -79,7 +71,6 @@ public:
 			}
 		}
 	}
-
 	/**
 	 * @brief prints matrix coeficients
 	 */
@@ -91,7 +82,6 @@ public:
 			cout << endl;
 		}
 	}
-
 	/**
 	 * @brief prints matrix coeficients together with B
 	 * @param B
@@ -136,7 +126,6 @@ void identity(MatrixColMajor& I){
 		I.at(i, i) = 1;
 	}
 }
-
 /**
  * @brief Assigns random matrix to M
  * @param M needs to have been allocated
@@ -151,7 +140,6 @@ void randomMatrix(Matrix& M){
 		}
 	}
 }
-
 /**
  * @brief prints matrix
  * @param matrix
@@ -164,7 +152,6 @@ void printm(Matrix& matrix){
 		cout<< endl;
 	}
 }
-
 /**
  * @brief prints vector x
  * @param x
@@ -175,6 +162,6 @@ void printv(vector<T>& x){
 		cout << vx <<'\t';
 }
 
-}
 
+}
 #endif

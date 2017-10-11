@@ -49,7 +49,6 @@ void subst_P(Matrix& L, vector<double>& X, MatrixColMajor& I, bool forward, vect
 		}
 	}
 }
-
 /**
  * @brief Subtitution method for linear sistems, forward or backward
  * @param A Coeficient Matrix
@@ -83,6 +82,7 @@ void subst(Matrix& A, MatrixColMajor& X, vector<double>& B, bool forward, long c
 		X.at(i,col) = sum / A.at(i, i);
 	}
 }
+
 
 }
 #endif

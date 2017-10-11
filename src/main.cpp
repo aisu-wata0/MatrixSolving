@@ -239,13 +239,13 @@ int main(int argc, char **argv) {
 	cout<<"#\n";
 	inverse_refining(A, LU, IA, P, iter_n);
 
-
 	cout<< defaultfloat;
 	cout<<"# Tempo LU: "<< lu_time <<"\n";
 	cout<<"# Tempo iter: "<< total_time_iter/(double)iter_n <<"\n";
 	cout<<"# Tempo residuo: "<< total_time_residue/(double)iter_n <<"\n#\n";
 	printm(IA);
 	
+	LIKWID_MARKER_CLOSE;
 	in_f.close();
 	cout.rdbuf(coutbuf); //redirect
 	o_f.close();

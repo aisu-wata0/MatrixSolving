@@ -9,9 +9,11 @@ HNAMES := $(shell find $(SOURCEDIR) -name '*.h' -type f -exec basename {} \;)
 OBJECTS := $(addprefix $(BUILDDIR)/, $(SRCNAMES:%.cpp=%.o))
 SRCS := $(addprefix $(SRCDIR)/, $(SRCNAMES))
 
-LIKDIR1=/usr/local/likwid/
-LIKDIR2=/home/soft/likwid/
-LIBS =  -DLIKWID_PERFMON -I$(LIKDIR2)include -L$(LIKDIR2)lib -llikwid -lm
+LIKDIR1=/usr/local/likwid
+LIKDIR2=/home/soft/likwid
+LIKDIR3=/usr/include/likwid
+LIKDIR4=/usr/include
+LIBS =  -DLIKWID_PERFMON -llikwid -lm -pthread -I$(LIKDIR1)/include -L$(LIKDIR1)/lib -I$(LIKDIR2)/include -L$(LIKDIR2)/lib -I$(LIKDIR3)/include -L$(LIKDIR3)/lib -I$(LIKDIR4)/include -L$(LIKDIR4)/lib
 
 # warnings and flags
 WARN = -Wall

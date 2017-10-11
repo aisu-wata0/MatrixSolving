@@ -29,9 +29,12 @@ compiler = g++ -std=c++11
 all: pre obj_dir list_srcnames $(bin)
 
 pre:
+	
 
-
-doc:
+rm_doc:
+	rm -rf doc/
+	
+doc: rm_doc
 	doxygen doxyconfig
 
 set_debug:

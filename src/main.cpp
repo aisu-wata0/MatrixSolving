@@ -31,6 +31,7 @@ Timer timer;
 double total_time_iter = 0.0;
 double total_time_residue = 0.0;
 double lu_time = 0.0;
+
 /**
  * @brief Solves LU system using subst functions.
  * @param LU Matrix to find solution
@@ -44,11 +45,9 @@ void solve_lu(Matrix LU, MatrixColMajor& X, MatrixColMajor& B, vector<long>& P, 
 	vector<double> Z(LU.size);
 	// find Z; LZ=B
 	subst_P(LU, Z, B, true, P, true, col);
-
 	// find X; Ux=Z
 	subst(LU, X, Z, false, col);
 }
-
 /**
  * @brief Finds inverse matrix,
  * also solves linear sistems A*IA = I where each of I's columns are different Bs
@@ -68,42 +67,6 @@ void inverse(Matrix& LU, MatrixColMajor& IA, MatrixColMajor& I, vector<long>& P)
 		solve_lu(LU, IA, I, P, j);
 	}
 }
-/**
- * @brief Adds two vectors, returns result
- * @param a
- * @param b
- * @param sign
- * @return sign optional: = -1 if you want a-b
- */
-template <class T>
-vector<T> add_vec(vector<T> a, vector<T> b, int sign = 1){
-	vector<T> x(a.size());
-
-	for(long i=0; i <= ((long)x.size() - 1); i++){
-		x.at(i) = a.at(i) + sign*b.at(i);
-	}
-
-	return x;
-}
-
-/**
- * @brief Calculates left hand side
- * @param A coeficient matrix
- * @param X variable values
- * @return left hand side
- */
-vector<double> lhs_value(Matrix A, vector<double> X){
-	vector<double> lhs(X.size());
-
-	for(long i=0; i <= X.size()-1; i++){
-		lhs.at(i) = 0;
-		for(long j=0; j <= X.size()-1; j++){
-			lhs.at(i) += A.at(i, j)*X.at(j);
-		}
-	}
-	return lhs;
-}
-
 /**
  * @brief  Calculates residue into I, A*IA shuold be close to Identity
  * @param A original coef matrix
@@ -132,10 +95,8 @@ double residue(Matrix& A, MatrixColMajor& IA, MatrixColMajor& I){
 	}
 	return sqrt(err_norm);
 }
-
 /**
  * @brief Calculates inverse of A into IA
- * @param A
  * @param LU decomposition of A
  * @param IA return value, no init needed
  * @param P LU pivot permutation
@@ -186,7 +147,6 @@ void inverse_refining(Matrix& A, Matrix& LU, MatrixColMajor& IA, vector<long>& P
 		cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";
 	}
 }
-
 /**
  * @brief Assigns matrix from cin to M
  * @param A needs to have been allocated
@@ -205,7 +165,8 @@ int main(int argc, char **argv) {
 	cout.precision(17);
 	cout << scientific;
 	srand(20172);
-
+	
+	bool input = true;
 	long size = 0, iter_n = -1;
 
 	int c;
@@ -228,6 +189,7 @@ int main(int argc, char **argv) {
 				cout.rdbuf(o_f.rdbuf()); //redirect
 				break;
 			case 'r':	//Generate random matrix
+				input = false;
 				size = stol(optarg);
 				break;
 			case 'i':
@@ -248,16 +210,17 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "-i Iterations is not optional\n");
 		exit(EXIT_FAILURE);
 	}
-
-	Matrix A, LU;
-
-	if(size == 0){
+	
+	if(input){
 		cin>> size;
-		A.resize(size);
+	}
+	
+	Matrix A(size), LU(size);
+	
+	if(input){
 		readMatrix(A);
 		in_f.close();
-	} else {
-		A.resize(size);
+	}else {
 		randomMatrix(A);
 	}
 
@@ -265,14 +228,8 @@ int main(int argc, char **argv) {
 	MatrixColMajor IA(size);
 	vector<double> B(size), z(size);
 	vector<long> P(size);
-
-	/** Solve SL
-	read B values
-	for(i=0; i<=size-1; i++)
-		cin>> B.at(i);
-	*/
+	
 	timer.start();
-
 	
 	LIKWID_MARKER_START("LU");
 	GaussEl(A, LU, P);

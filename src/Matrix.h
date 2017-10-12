@@ -35,7 +35,7 @@ public:
 	void swap_rows_from(long row0, long row1, long start){
 		if(row0 == row1)
 			return;
-		for(long j = start; j <= size-1; j++){
+		for(long j = start; j < size; j++){
 			// for each collumn
 			swap(this->at(row0, j), this->at(row1, j));
 		}
@@ -55,8 +55,8 @@ public:
 	 * @param sign -1 with you want to add -b
 	 */
 	void add(Matrix& b, double sign = 1){
-		for(long i=0; i <= size-1; i++){
-			for(long j=0; j <= size-1; j++){
+		for(long i=0; i < size; i++){
+			for(long j=0; j < size; j++){
 				this->at(i,j) += sign*b.at(i,j);
 			}
 		}
@@ -65,8 +65,8 @@ public:
 	 * @brief copy matrix M to yourself
 	 */
 	void set(Matrix& M){
-		for(long i=0; i <= size-1; i++){
-			for(long j=0; j <= size-1; j++){
+		for(long i=0; i < size; i++){
+			for(long j=0; j < size; j++){
 				this->at(i,j) = M.at(i,j);
 			}
 		}

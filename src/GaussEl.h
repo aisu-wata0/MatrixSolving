@@ -23,12 +23,6 @@ void GaussEl(Matrix A, MLower& L, MUpper& U, vector<long>& P) {
 	// Optm: test
 	L.set(A);
 	U.set(A);
-	/*// LOG
-	cout<<"L\n";
-	L.print();
-	cout<< endl << "U\n";
-	U.print();
-	cout<< endl;*/
 	
 	// initializing permutation vector
 	for(long i = 0; i < A.size; i++){
@@ -78,14 +72,6 @@ void GaussEl(Matrix A, MLower& L, MUpper& U, vector<long>& P) {
 				// pivot not subtracted from line
 				L.at(i, p) = 0.0;
 			}
-			
-			// LOG
-			cout<<"nulled row "<< i << endl; 
-			cout<<"L\n";
-			L.print();
-			cout<< endl << "U\n";
-			U.print();
-			cout<< endl;
 		}
 	}
 }

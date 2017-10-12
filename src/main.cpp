@@ -240,14 +240,6 @@ int main(int argc, char **argv) {
 	GaussEl(A, L, U, P);
 	//LIKWID_MARKER_STOP("LU");
 	lu_time = timer.elapsed();
-			
-	// LOG
-	cout<<"GaussEL Finish: "<< endl; 
-	cout<<"L\n";
-	L.print();
-	cout<< endl << "U\n";
-	U.print();
-	cout<< endl;
 
 	cout<<"#\n";
 	inverse_refining(A, L, U, IA, P, iter_n);

@@ -211,11 +211,14 @@ public:
 	 * ​pad_btotal = ​padding_before​+​​sum 
 	 * [i*(i+1)/2​ + ​​pad_btota​l​​ + j​​]​		*/
 	double& at(long i, long j) {
+		/* With Padding */
 		long pos = mod(i, CACHE_LINE_SIZE);
 		long sum = pos*(2*CACHE_LINE_SIZE -1 - pos)/2;
 		long pad_btotal = PAD(i) + sum;
+		/* Without Padding *
+		long pad_btotal = 0;
+		/**/
 		return matrix[i*(i+1)/2 + pad_btotal + j];
-		//i*(i+1)/2​ + (i+1)*​​​(x-1)/2 ​+ mod(i,​x​)*(​​2*x ​​-1 - mod(i,​x​)​​)/2​ + j​;
 	}
 	/**
 	 * @brief copy matrix M to yourself
@@ -271,11 +274,14 @@ public:
 	 * pad_btotal = first_pad_seq + PAD(i-desl+1) + sum
 	 * at(i,j) = [i*(i+1)/2​ + ​​pad_btota​l​​ + j​​ -i]​ */
 	double& at(long i, long j) {
+		/* With Padding */
 		long pos = mod(i-desl,CACHE_LINE_SIZE);
 		long sum = pos*(pos+1)/2;
 		long pad_btotal = first_pad_seq + PAD(i-desl-1) + sum;
+		/* Without Padding *
+		long pad_btotal = 0;
+		/**/
 		return matrix[ i*(2*size-i+1)/2 + pad_btotal + j -i];
-		//i*(i+1)/2​ + (i+1)*​​​(x-1)/2 ​+ mod(i,​x​)*(​​2*x ​​-1 - mod(i,​x​)​​)/2​ + j​;
 	}
 	void reserve(long new_size){
 		desl = mod((new_size+1),CACHE_LINE_SIZE);

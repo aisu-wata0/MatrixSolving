@@ -77,13 +77,13 @@ void inverse(Matrix& LU, MatrixColMajor& IA, MatrixColMajor& I, vector<long>& P)
 double residue(Matrix& A, MatrixColMajor& IA, MatrixColMajor& I){
 	double err_norm = 0.0;
 
-	for(long icol=0; icol <= A.size-1; icol++){
+	for(long icol=0; icol < A.size; icol++){
 		// for each column of the inverse
-		for(long i=0; i <= IA.size-1; i++){
+		for(long i=0; i < A.size; i++){
 			// for each line of A
 			I.at(i,icol) = 0;
 			// multiply A line to the current inverse col
-			for(long j=0; j <= IA.size-1; j++){
+			for(long j=0; j < A.size; j++){
 				I.at(i,icol) -= A.at(i,j)*IA.at(j,icol);
 			}
 			if(i == icol){
@@ -152,8 +152,8 @@ void inverse_refining(Matrix& A, Matrix& LU, MatrixColMajor& IA, vector<long>& P
  * @param A needs to have been allocated
  */
 void readMatrix(Matrix& A){
-	for(long i=0; i<=A.size-1; i++){
-		for(long j=0; j<=A.size-1; j++){
+	for(long i=0; i < A.size; i++){
+		for(long j=0; j < A.size; j++){
 			cin>> A.at(i,j);
 		}
 	}

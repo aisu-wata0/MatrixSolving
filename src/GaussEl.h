@@ -60,10 +60,18 @@ void GaussEl(Matrix A, MLower& L, MUpper& U, vector<long>& P) {
 				// only subtract pivot line if coeficient is not null
 				// find pivot multiplier, store in L
 				L.at(i, p) = L.at(i, p)/U.at(p, p);
-				// subtract pivot from current line (in U)
-				for (long k = p+1; k < A.size; k++) {
+				
+				// subtract pivot row U.at(p, _) from current row LU.at(i, _)
+				// L side
+				for (long k = p+1; k < i; k++) {
 					// for each collumn starting from pivot's
 					L.at(i, k) -= U.at(p, k) * L.at(i, p);
+					// mulitply pivot line value to multiplier
+				}
+				// U side
+				for (long k = i; k < A.size; k++) {
+					// for each collumn starting from pivot's
+					U.at(i, k) -= U.at(p, k) * L.at(i, p);
 					// mulitply pivot line value to multiplier
 				}
 			} else {

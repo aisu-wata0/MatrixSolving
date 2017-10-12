@@ -37,7 +37,7 @@ void subst_P(Matrix& L, vector<double>& X, MatrixColMajor& I, bool forward, vect
 		}
 	}
 
-	for (; i >= 0 && i <= size-1 ; i += step) {
+	for (; i >= 0 && i < size; i += step) {
 		sum = I.at(P.at(i), col);
 		if(forward) {j = 0;} else {j = size-1;}
 		for (; j != i; j += step) {
@@ -73,7 +73,7 @@ void subst(Matrix& A, MatrixColMajor& X, vector<double>& B, bool forward, long c
 		X.at(size-1,col) = B.at(size-1) / A.at(size-1, size-1);
 	}
 
-	for (; i >= 0 && i <= size-1 ; i += step) {
+	for (; i >= 0 && i < size; i += step) {
 		sum = B.at(i);
 		if(forward) {j = 0;} else {j = size-1;}
 		for (; j != i; j += step) {

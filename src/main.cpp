@@ -17,7 +17,7 @@ Usage: %s [-e inputFile] [-o outputFile] [-r randSize] -i Iterations
 #include <vector>
 #include <cmath>
 #include <ctgmath>
-#include <likwid.h>
+//#include <likwid.h>
 #include <unistd.h>
 
 #include "Timer.h"
@@ -115,12 +115,12 @@ void inverse_refining(Matrix& A, Matrix& LU, MatrixColMajor& IA, vector<long>& P
 	identity(I);
 
 	// TOptm: inverse_id(LU, IA, P); that doesn't need Identity matrix in the memory
-	LIKWID_MARKER_START("INV");
+	//LIKWID_MARKER_START("INV");
 	inverse(LU, IA, I, P);
-	LIKWID_MARKER_STOP("INV");
-	LIKWID_MARKER_START("RES");
+	//LIKWID_MARKER_STOP("INV");
+	//LIKWID_MARKER_START("RES");
 	c_residue = residue(A, IA, R);
-	LIKWID_MARKER_STOP("RES");
+	//LIKWID_MARKER_STOP("RES");
 	cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";
 	while(i < iter_n){
 		// (abs(l_residue - c_residue)/c_residue > EPSILON) && (l_residue > c_residue)
@@ -129,9 +129,9 @@ void inverse_refining(Matrix& A, Matrix& LU, MatrixColMajor& IA, vector<long>& P
 		// R: residue of IA
 
 		timer.start();
-		LIKWID_MARKER_START("INV");
+		//LIKWID_MARKER_START("INV");
 		inverse(LU, W, R, P);
-		LIKWID_MARKER_STOP("INV");
+		//LIKWID_MARKER_STOP("INV");
 		// W: residues of each variable of IA
 		// adjust IA with found errors
 		IA.add(W);	//TOptm: add at the same time its calculating W
@@ -140,9 +140,9 @@ void inverse_refining(Matrix& A, Matrix& LU, MatrixColMajor& IA, vector<long>& P
 		//l_residue = c_residue;
 
 		timer.start();
-		LIKWID_MARKER_START("RES");
+		//LIKWID_MARKER_START("RES");
 		c_residue = residue(A, IA, R);
-		LIKWID_MARKER_STOP("RES");
+		//LIKWID_MARKER_STOP("RES");
 		total_time_residue += timer.elapsed();
 		cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";
 	}
@@ -160,7 +160,7 @@ void readMatrix(Matrix& A){
 }
 
 int main(int argc, char **argv) {
-	LIKWID_MARKER_INIT;
+	//LIKWID_MARKER_INIT;
 	
 	cout.precision(17);
 	cout << scientific;
@@ -231,9 +231,9 @@ int main(int argc, char **argv) {
 	
 	timer.start();
 	
-	LIKWID_MARKER_START("LU");
+	//LIKWID_MARKER_START("LU");
 	GaussEl(A, LU, P);
-	LIKWID_MARKER_STOP("LU");
+	//LIKWID_MARKER_STOP("LU");
 	lu_time = timer.elapsed();
 
 	cout<<"#\n";
@@ -245,7 +245,7 @@ int main(int argc, char **argv) {
 	cout<<"# Tempo residuo: "<< total_time_residue/(double)iter_n <<"\n#\n";
 	printm(IA);
 	
-	LIKWID_MARKER_CLOSE;
+	//LIKWID_MARKER_CLOSE;
 	in_f.close();
 	cout.rdbuf(coutbuf); //redirect
 	o_f.close();

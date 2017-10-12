@@ -242,7 +242,7 @@ int main(int argc, char **argv) {
 	lu_time = timer.elapsed();
 			
 	// LOG
-	cout<<"GaussEL Finish: "<< i << endl; 
+	cout<<"GaussEL Finish: "<< endl; 
 	cout<<"L\n";
 	L.print();
 	cout<< endl << "U\n";

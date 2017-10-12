@@ -14,49 +14,70 @@ namespace std {
  @param LU Matrix to be decomposed Output: lower triangle of this matrix will store L 1 diagonal implicit, upper triangle stores U
  @param P Permutation vector resulting of the pivoting
  */
-void GaussEl(Matrix A, Matrix& LU, vector<long>& P) {
+template<class MLower, class MUpper>
+void GaussEl(Matrix A, MLower& L, MUpper& U, vector<long>& P) {
 	// copy A to LU
-	LU.resize(A.size);
-	LU.set(A);
+	L.reserve(A.size);
+	U.reserve(A.size);
+	set(L, U, A);
+	// Optm: test
+	L.set(A);
+	U.set(A);
+	/*// LOG
+	cout<<"L\n";
+	L.print();
+	cout<< endl << "U\n";
+	U.print();
+	cout<< endl;*/
+	
 	// initializing permutation vector
-	for(long i = 0; i < LU.size; i++){
+	for(long i = 0; i < A.size; i++){
 		P.at(i) = i;
 	}
 
-	for(long p = 0; p < LU.size; p++){
-		// for each pivot
+	// for each pivot
+	for(long p = 0; p < A.size; p++){
 		/* partial pivoting */
 		long maxRow = p;
-		for(long i = p+1; i < LU.size; i++){
+		for(long i = p+1; i < A.size; i++){
 			// for each value below the p pivot
-			if(abs(LU.at(i,p)) > abs(LU.at(maxRow,p))) maxRow = i;
+			if(abs(L.at(i,p)) > abs(L.at(maxRow,p))) maxRow = i;
 		} // finds max value
 		// pivots rows of U
-		LU.swap_rows(maxRow, p);
+		swap_rows(L, U, maxRow, p);
 		swap(P.at(p), P.at(maxRow));
 
-		// LU.at(p,p) = 1; implicit
-		if(close_zero(LU.at(p,p))){
+		if(close_zero(U.at(p,p))){
 			fprintf(stderr, "Found a pivot == 0, system is not solvable with partial pivoting");
 			exit(EXIT_FAILURE);
 		}
-		//for (long i = p+1; i < LU.size; i++) {	//going from below pivot to end
-		for (long i = LU.size-1; i >= p+1; i--) {	//going from end to pivot
-			// for each line below pivot
-			if (!close_zero(LU.at(i,p))){
+		L.at(p,p) = 1;
+		
+		// for each line below pivot
+		//for (long i = A.size-1; i >= p+1; i--) {	//going from end to pivot
+		for (long i = p+1; i < A.size; i++) {	//going from below pivot to end
+			if (!close_zero(L.at(i,p))){
 				// only subtract pivot line if coeficient is not null
 				// find pivot multiplier, store in L
-				LU.at(i, p) = LU.at(i, p)/LU.at(p, p);
+				L.at(i, p) = L.at(i, p)/U.at(p, p);
 				// subtract pivot from current line (in U)
-				for (long k = p+1; k < LU.size; k++) {
+				for (long k = p+1; k < A.size; k++) {
 					// for each collumn starting from pivot's
-					LU.at(i, k) -= LU.at(p, k) * LU.at(i, p);
+					L.at(i, k) -= U.at(p, k) * L.at(i, p);
 					// mulitply pivot line value to multiplier
 				}
 			} else {
 				// pivot not subtracted from line
-				LU.at(i, p) = 0.0;
+				L.at(i, p) = 0.0;
 			}
+			
+			// LOG
+			cout<<"nulled row "<< i << endl; 
+			cout<<"L\n";
+			L.print();
+			cout<< endl << "U\n";
+			U.print();
+			cout<< endl;
 		}
 	}
 }

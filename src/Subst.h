@@ -15,7 +15,8 @@ namespace std {
  * @param unit_diagonal true if diagonal is equal to 1
  * @param col Column of the matrix I to be used as B
  */
-void subst_P(Matrix& L, vector<double>& X, MatrixColMajor& I, bool forward, vector<long>& P, bool unit_diagonal, long col){
+template<bool forward, bool unit_diagonal, class TMatrix>
+void subst_P(TMatrix& L, vector<double>& X, MatrixColMajor& I, vector<long>& P, long col){
 	double sum;
 	long i, j;
 	int step;
@@ -57,7 +58,8 @@ void subst_P(Matrix& L, vector<double>& X, MatrixColMajor& I, bool forward, vect
  * @param forward true is forward subst, false is backward.
  * @param col Column of the matrix to be used as B
  */
-void subst(Matrix& A, MatrixColMajor& X, vector<double>& B, bool forward, long col) {
+template<bool forward, class TMatrix>
+void subst(TMatrix& A, MatrixColMajor& X, vector<double>& B, long col) {
 	double sum;
 	long i, j;
 	int step;

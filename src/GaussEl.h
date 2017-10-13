@@ -55,7 +55,6 @@ void GaussEl(Matrix& A, MLower& L, MUpper& U, vector<long>& P) {
 				// subtract pivot row U.at(p, _) from current row LU.at(i, _)
 				// L side
 				for (long k = p+1; k < i; k++) {
-					// for each collumn starting from pivot's
 					L.at(i, k) -= U.at(p, k) * L.at(i, p);
 					// mulitply pivot line value to multiplier
 				}

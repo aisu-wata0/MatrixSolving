@@ -13,8 +13,9 @@ long div_down(long n, long d) {
 #define CACHE_LINE_SIZE 16
 #define PAD(X) (div_down((X),CACHE_LINE_SIZE)*(CACHE_LINE_SIZE*(CACHE_LINE_SIZE-1))/2)
 // Optm: test switching, the below doesnt work probably
-// 
 //#define PAD(X) ((long)floor((X)/(double)CACHE_LINE_SIZE)*(CACHE_LINE_SIZE*(CACHE_LINE_SIZE-1))/2)
+
+#define PADDING true
 
 /**
  * @brief Stores values of matrix in a vector, Row Major Order
@@ -159,38 +160,43 @@ void printv(vector<T>& x){
 }
 
 /**
- * @brief Stores values of a triangular matrix in a array, each line goes only until elements of the diagonal
+ * @class MatrixTri
+ * @brief Abstract class, stores values of a triangular matrix in a array, each line goes only until elements of the diagonal
  */
 class MatrixTri
 {
 public:
 	double* matrix;
 	long size;
-	long m_size;
+	long mem_size;
 
-	void mem_alloc(){
-		matrix = (double*)malloc(m_size*sizeof(double));
+	void mem_alloc(long m_size){
+		mem_size = m_size;
+		matrix = (double*)malloc(mem_size*sizeof(double));
 	}
+	
+	protected:
+	MatrixTri(){}
 };
 
 /**
  * @class MatrixTriUpp
- * @brief Stores values of a upper triangular matrix in a array, each line goes only until elements of the diagonal
+ * @brief Lower triangular implementation of MatrixTri
  */
 class MatrixTriLow : public MatrixTri
 {
 public:
-	/* Debug */
-	vector<long> tester;
-	
+	/**
+	 * ex: having CACHE_LINE_SIZE = 3;
+	 * [00, -, -|10,11, -|20,21,22|30,31,32,33, -, -|40,41,42,43,44, -|50,...]
+	 * pad=2;    pad=1;   pad=0;   pad=2;            pad=1;           pad=0;
+	 * pad_total(i = 4) == +2 +1 +0 +2 = 5
+	 * https://docs.google.com/spreadsheets/d/1y2ffNz4jD6LwmL2JnWPCmYlUoSuY7Q04Ey6REYM7DXg/edit?usp=sharing */
 	inline long pad_total(long i) {
-		/* With Padding */
+		if(not PADDING) return 0;
 		long pos = mod(i, CACHE_LINE_SIZE);
 		long sum = pos*(2*CACHE_LINE_SIZE -1 - pos)/2;
 		return (PAD(i) + sum);
-		/* Without Padding *
-		return 0;
-		/**/
 	}
 	
 	inline long m_pos(long i, long j) {
@@ -200,8 +206,7 @@ public:
 	void mem_alloc(long new_size){
 		size = new_size;
 		
-		m_size = m_pos(size-1, size-1) +1;
-		MatrixTri::mem_alloc();
+		MatrixTri::mem_alloc(m_pos(size-1, size-1) +1);
 	}
 	
 	MatrixTriLow(){
@@ -209,36 +214,11 @@ public:
 	/**
 	 * @param size of matrix, total number of lines
 	 */
-	MatrixTriLow(long size) : tester{0, 15, 29, 42, 54, 65, 75, 84, 92, 99, 105, 110, 114, 117, 119, 120, 120, 135, 149, 162, 174}{
+	MatrixTriLow(long size){
 		mem_alloc(size);
 	}
-	/**
-	 * @param i
-	 * @param j
-	 * @return element of position i,j
-	 * ex: having ​​CACHE_LINE_SIZE = ​3​
-	 *   0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5  6  7  8  9  0  1  2
-	 * [00, -​, -​|10,11​, -​|20,21,22|30,31,32,33​, -, -​|40,41,42,43,44, -|​50,...​]
-	 * pad=​2​;​   pad=​1​;   pad=​0;   ​pad=​2​;​            ​pad=​1​;​            pad=0;​
-	 * +2      ​ +1​       +0       +2​ ​               +1​​                +0
-	 * // having i​​ = 4;
-	 * // 3 = ​floor(5/3) * 3*2/2​; // ok​
-	 * padding_before = (i+1)/​​​CACHE_LINE_SIZE *(​​​​​CACHE_LINE_SIZE *(​CACHE_LINE_SIZE-1)/2);
-	 * a1 = ​​​CACHE_LINE_SIZE​ - mod(i,​​CACHE_LINE_SIZE​)​;
-	 * sum = (​CACHE_LINE_SIZE​ ​- a1)*(a1+CACHE_LINE_SIZE​-1​)/2;
-	 * sum = mod(i,​​CACHE_LINE_SIZ​​E​)*(​​2*CACHE_LINE_SIZE​ ​​-1 - mod(i,​​CACHE_LINE_SIZE​)​​)/2​;
-	 * // 2 = mod(4,3)*(2*3 -1 - mod(4,3))/2; // ok
-	 * ​pad_btotal = ​padding_before​+​​sum 
-	 * [i*(i+1)/2​ + ​​pad_btota​l​​ + j​​]​		*/
+	
 	double& at(long i, long j) {
-		/* With Padding */
-//		tester = {0, 15, 29, 42, 54, 65, 75, 84, 92, 99, 105, 110, 114, 117, 119, 120, 120, 135, 149, 162, 174};
-//		// cout << ".at("<< i << "," << j << ") -> " << m_pos(i,j) << endl;
-//		if(tester.at(i) != pad_total(i)){
-//			cerr<<"Wrong padding function call on line "<< i <<" pad = "<< pad_total(i);
-//			cerr<<" should be [" << i <<"] = "<< tester.at(i) << endl;
-//		}
-		/**/
 		return matrix[m_pos(i,j)];
 	}
 	/**
@@ -251,6 +231,7 @@ public:
 			}
 		}
 	}
+	
 	void print(){
 		for(long i = 0; i < size; i++){
 			for(long j = 0; j < i+1; j++){
@@ -283,24 +264,26 @@ public:
 
 /**
  * @class MatrixTriUpp
- * @brief Stores values of a upper triangular matrix in a array, each line goes only until elements of the diagonal
+ * @brief Upper triangular implementation of MatrixTri
  */
 class MatrixTriUpp : public MatrixTri
 {
 public:
 	long desl;
 	long first_pad_seq;
-	/* Debug */
-	vector<long> tester;
-	
+	/**
+	 * ex: having CACHE_LINE_SIZE = 4; (size % CACHE_LINE_SIZE) == 2; (meaning first row will have 2 pads
+	 * row = 0  1  2  3  4  5  6  7  8  9  0  1  2
+	 * pad = 2  3  0  1  2  3  0  1  2  3  0  1  2
+	 *       ----     -------------------     ----
+	 * first_pad_seq       PAD(i-desl+1)       sum
+	 * pad_btotal = first_pad_seq + PAD(i-desl+1) + sum 
+	 * https://docs.google.com/spreadsheets/d/1y2ffNz4jD6LwmL2JnWPCmYlUoSuY7Q04Ey6REYM7DXg/edit?usp=sharing */
 	inline long pad_total(long i){
-		/* With Padding */
+		if(not PADDING) return 0;
 		long pos = mod(i-desl,CACHE_LINE_SIZE);
 		long sum = pos*(pos+1)/2;
 		return (first_pad_seq + PAD(i-desl) + sum);
-		/* Without Padding *
-		return 0;
-		/**/
 	}
 	
 	inline long m_pos(long i, long j){
@@ -319,8 +302,7 @@ public:
 			first_pad_seq = 0;
 		}
 		
-		m_size = m_pos(size-1, size-1) +1;
-		MatrixTri::mem_alloc();
+		MatrixTri::mem_alloc(m_pos(size-1, size-1) +1);
 	}
 	
 	MatrixTriUpp(){
@@ -328,29 +310,11 @@ public:
 	/**
 	 * @param size of matrix, total number of lines
 	 */
-	MatrixTriUpp(long size) : tester{0, 11, 23, 36, 50, 65, 65, 66, 68, 71, 75, 80, 86, 93, 101, 110, 120, 131, 143, 156, 170}{
+	MatrixTriUpp(long size){
 		mem_alloc(size);
 	}
-	/**
-	 * @param i
-	 * @param j
-	 * @return element of position i,j
-	 * ex: having ​​CACHE_LINE_SIZE = ​4; size % CACHE_LINE_SIZE == 2;
-	 * row = 0  1  2  3  4  5  6  7  8  9  0  1  2
-	 * pad = ​2  3  0  1  2  3  0  1  2  3  0  1  2
-	 *       ----     -------------------     ----
-	 * first_pad_seq       PAD(i-desl+1)       sum
-	 * pad_btotal = first_pad_seq + PAD(i-desl+1) + sum
-	 * at(i,j) = [i*(i+1)/2​ + ​​pad_btota​l​​ + j​​ -i]​ */
+	
 	double& at(long i, long j) {
-		/* With Padding */
-//		tester = {0, 11, 23, 36, 50, 65, 65, 66, 68, 71, 75, 80, 86, 93, 101, 110, 120, 131, 143, 156, 170};
-//		// cout << ".at("<< i << "," << j << ") -> " << m_pos(i,j) << endl;
-//		if(tester.at(i) != pad_total(i)){
-//			cerr<<"Wrong padding function call on line "<< i <<" pad = "<< pad_total(i);
-//			cerr<<" should be [" << i <<"] = "<< tester.at(i) << endl;
-//		} 
-		/**/
 		return matrix[m_pos(i,j)];
 	}
 	/**

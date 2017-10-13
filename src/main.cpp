@@ -233,23 +233,21 @@ int main(int argc, char **argv) {
 		randomMatrix(A);
 	}
 
-	// Optm: iterating line by line
-	MatrixColMajor IA(size);
-	vector<long> P(size);
-	
 	MatrixTriLow L(size);
 	MatrixTriUpp U(size);
+	vector<long> P(size);
 	
 	timer.start();
 	//LIKWID_MARKER_START("LU");
-	// L.test();
-	// U.test();
+	
  	GaussEl(A, L, U, P);
-	printLU(L, U);
 	
 	//LIKWID_MARKER_STOP("LU");
 	lu_time = timer.elapsed();
 
+	// Optm: iterating line by line
+	MatrixColMajor IA(size);
+	
 	cout<<"#\n";
 	inverse_refining(A, L, U, IA, P, iter_n);
 

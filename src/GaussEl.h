@@ -14,13 +14,15 @@ namespace std {
  @param LU Matrix to be decomposed Output: lower triangle of this matrix will store L 1 diagonal implicit, upper triangle stores U
  @param P Permutation vector resulting of the pivoting
  */
-//template<class MLower, class MUpper>
-void GaussEl(Matrix& A, MatrixTriLow& L, MatrixTriUpp& U, vector<long>& P) {
+template<class MLower, class MUpper>
+void GaussEl(Matrix& A, MLower& L, MUpper& U, vector<long>& P) {
 	// copy A to LU
-//	set(L, U, A);
-	// Optm: test
+	/* Optm: test *
+	set(L, U, A);
+	/**/
 	L.set(A);
 	U.set(A);
+	/**/
 	
 	// initializing permutation vector
 	for(long i = 0; i < A.size; i++){

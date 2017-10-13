@@ -45,9 +45,8 @@ void GaussEl(Matrix A, Matrix& LU, vector<long>& P) {
 				// only subtract pivot line if coeficient is not null
 				// find pivot multiplier, store in L
 				LU.at(i, p) = LU.at(i, p)/LU.at(p, p);
-				// subtract pivot from current line (in U)
+				// subtract pivot row U.at(p, _) from current row LU.at(i, _)
 				for (long k = p+1; k < A.size; k++) {
-					// for each collumn starting from pivot's
 					LU.at(i, k) -= LU.at(p, k) * LU.at(i, p);
 					// mulitply pivot line value to multiplier
 				}

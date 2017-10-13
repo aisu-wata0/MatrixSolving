@@ -42,48 +42,9 @@ public:
 		return matrix.at(i*size + j);
 	}
 	
-	void swap_rows(long row0, long row1){
-		if(row0 == row1)
-			return;
-		for(long j = 0; j < size; j++){
-			swap(this->at(row0, j), this->at(row1, j));
-		}
-	}
-	
 	void resize(long new_size){
 		 size = new_size;
 		 matrix.resize(size*size);
-	}
-	/**
-	 * @brief Increments b into the matrix
-	 * @param b
-	 * @param sign -1 with you want to add -b
-	 */
-	void add(Matrix& b, double sign = 1){
-		for(long i=0; i < size; i++){
-			for(long j=0; j < size; j++){
-				this->at(i,j) += sign*b.at(i,j);
-			}
-		}
-	}
-	/**
-	 * @brief copy matrix M to yourself
-	 */
-	void set(Matrix& M){
-		for(long i=0; i < size; i++){
-			for(long j=0; j < size; j++){
-				this->at(i,j) = M.at(i,j);
-			}
-		}
-	}
-	
-	void print(){
-		for(long i = 0; i < size; i++){
-			for(long j = 0; j < size; j++){
-				cout << this->at(i, j) <<'\t';
-			}
-			cout << endl;
-		}
 	}
 };
 
@@ -103,20 +64,52 @@ public:
 	double& at(long i, long j) {
 		return matrix.at(j*size + i);
 	}
-	
-	void print(){
-		for(long i = 0; i < size; i++){
-			for(long j = 0; j < size; j++){
-				cout << this->at(i, j) <<'\t';
-			}
-			cout << endl;
-		}
-	}
 };
 
+template<class Mat>
+void swap_rows(Mat& M, long row0, long row1){
+	if(row0 == row1)
+		return;
+	for(long j = 0; j < M.size; j++){
+		swap(M.at(row0, j), M.at(row1, j));
+	}
+}
+/**
+ * @brief Increments b into the matrix
+ * @param b
+ * @param sign -1 with you want to add -b
+ */
+template<class Mat>
+void add(Mat& M, Matrix& b, double sign = 1){
+	for(long i=0; i < M.size; i++){
+		for(long j=0; j < M.size; j++){
+			M.at(i,j) += sign*b.at(i,j);
+		}
+	}
+}
+/**
+ * @brief copy matrix A to yourself
+ */
+template<class Mat>
+void set(Mat& M, Matrix& A){
+	for(long i=0; i < M.size; i++){
+		for(long j=0; j < M.size; j++){
+			M.at(i,j) = A.at(i,j);
+		}
+	}
+}
+
+template<class Mat>
+void print(Mat& M){
+	for(long i = 0; i < M.size; i++){
+		for(long j = 0; j < M.size; j++){
+			cout << M.at(i, j) <<'\t';
+		}
+		cout << endl;
+	}
+}
 /**
  * @brief sets I to identity
- * @param I
  */
 template<class Mat>
 void identity(Mat& I){
@@ -148,7 +141,7 @@ void randomMatrix(Mat& M){
 template<class Mat>
 void printm(Mat& matrix){
 	cout<<  matrix.size <<"\n";
-	matrix.print();
+	print(matrix);
 }
 /**
  * @brief prints vector x

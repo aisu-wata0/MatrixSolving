@@ -141,7 +141,7 @@ void inverse_refining(Matrix& A, MLower& L, MUpper& U, MatrixColMajor& IA, vecto
 		// adjust IA with found errors
 		//LIKWID_MARKER_START("SUM");
 		
-		IA.add(W);	//TOptm: add at the same time its calculating W
+		add(IA, W);	//TOptm: add at the same time its calculating W
 		
 		//LIKWID_MARKER_STOP("SUM");
 		total_time_iter += timer.elapsed();

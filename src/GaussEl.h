@@ -23,12 +23,11 @@ void GaussEl(Matrix& A, MLower& L, MUpper& U, vector<long>& P) {
 	L.set(A);
 	U.set(A);
 	/**/
-	
 	// initializing permutation vector
 	for(long i = 0; i < A.size; i++){
 		P.at(i) = i;
 	}
-	
+
 	// for each pivot
 	for(long p = 0; p < A.size; p++){
 		/* partial pivoting */
@@ -46,20 +45,21 @@ void GaussEl(Matrix& A, MLower& L, MUpper& U, vector<long>& P) {
 			exit(EXIT_FAILURE);
 		}
 		L.at(p,p) = 1;
-		//for (long i = A.size-1; i >= p+1; i--) {	//going from end to pivot
-		for (long i = p+1; i < A.size; i++) {	//going from below pivot to end
-			if (!close_zero(L.at(i,p))){
+		
+		//for(long i = A.size-1; i >= p+1; i--){	// going from end to pivot+1 Optm: If no pivoting ocurred: 1 less cache miss
+		for(long i = p+1; i < A.size; i++){	// going from pivot+1 to end
+			if(not close_zero(L.at(i,p))){
 				// only subtract pivot line if coeficient is not null
 				// find pivot multiplier, store in L
 				L.at(i, p) = L.at(i, p)/U.at(p, p);
 				// subtract pivot row U.at(p, _) from current row LU.at(i, _)
 				// L side
-				for (long k = p+1; k < i; k++) {
+				for(long k = p+1; k < i; k++){
 					L.at(i, k) -= U.at(p, k) * L.at(i, p);
 					// mulitply pivot line value to multiplier
 				}
 				// U side
-				for (long k = i; k < A.size; k++) {
+				for(long k = i; k < A.size; k++){
 					// for each collumn starting from pivot's
 					U.at(i, k) -= U.at(p, k) * L.at(i, p);
 					// mulitply pivot line value to multiplier

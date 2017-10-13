@@ -22,18 +22,18 @@ void subst_P(TMatrix& T, vector<double>& X, MatrixColMajor& I, vector<long>& P, 
 	int step;
 	long size = T.size;
 
-	if (forward){
+	if(forward){
 		i = 1;
 		step = +1;
 		X.at(0) = I.at(P.at(0),col);
-		if(!unit_diagonal){
+		if(not unit_diagonal){
 			X.at(i) /= T.at(0, 0);
 		}
 	} else {
 		i = size-2;
 		step = -1;
 		X.at(size-1) = I.at(P.at(size-1),col);
-		if(!unit_diagonal){
+		if(not unit_diagonal){
 			X.at(i) /= T.at(size-1, size-1);
 		}
 	}
@@ -45,7 +45,7 @@ void subst_P(TMatrix& T, vector<double>& X, MatrixColMajor& I, vector<long>& P, 
 			sum -= X.at(j) * T.at(i, j);
 		}
 		X.at(i) = sum;
-		if(!unit_diagonal){
+		if(not unit_diagonal){
 			X.at(i) /= T.at(i, i);
 		}
 	}
@@ -65,7 +65,7 @@ void subst(TMatrix& T, MatrixColMajor& X, vector<double>& B, long col) {
 	int step;
 	long size = T.size;
 
-	if (forward){
+	if(forward){
 		i = 1;
 		step = +1;
 		X.at(0,col) = B.at(0) / T.at(0, 0);

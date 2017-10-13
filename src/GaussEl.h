@@ -8,6 +8,18 @@ namespace std {
 #include "Double.h"
 #include "Matrix.h"
 
+void calc_multipliers(Matrix& LU, long p) {
+	//for(long i = p+1; i < LU.size; i++){	// going from pivot+1 to end
+	for(long i = LU.size-1; i >= p+1; i--){	// going from end to pivot+1 Optm: If no pivoting ocurred: 1 less cache miss
+		if(not close_zero(LU.at(i,p))){
+			// find pivot multiplier, store in L
+			LU.at(i, p) = LU.at(i, p)/LU.at(p, p);
+		} else {
+			LU.at(i, p) = 0.0;
+		}
+	}
+}
+
 /**
  @brief For the matrix LU finds its LU decomposition overwriting it
  Has partial pivoting, stores final indexes in P
@@ -40,22 +52,14 @@ void GaussEl(Matrix A, Matrix& LU, vector<long>& P) {
 		}
 		// LU.at(p,p) = 1; implicit
 		
-		//for (long i = p+1; i < A.size; i++) {	// going from below pivot to end
-		for (long i = A.size-1; i >= p+1; i--) {	// going from end to pivot. Optm: If no pivoting ocurred: 1 less cache miss
-			if (!close_zero(LU.at(i,p))){
-				// find pivot multiplier, store in L
-				LU.at(i, p) = LU.at(i, p)/LU.at(p, p);
-			} else {
-				LU.at(i, p) = 0.0;
-			}
-		}
+		calc_multipliers(LU, p);
 		
-		//for (long i = p+1; i <= A.size-1; i++) {	//going from below pivot to end
-		for (long i = A.size-1; i >= p+1; i--) {	//going from end to pivot
-			if (LU.at(i,p) != 0.0){
+		for(long i = p+1; i < A.size; i++){   // going from pivot+1 to end
+		//for(long i = A.size-1; i >= p+1; i--){	// going from end to pivot+1 Optm: If no pivoting ocurred: 1 less cache miss
+			if(LU.at(i,p) != 0.0){
 				// only subtract pivot line if coeficient is not null
 				// subtract pivot row U.at(p, _) from current row LU.at(i, _)
-				for (long k = p+1; k < A.size; k++) {
+				for(long k = p+1; k < A.size; k++){
 					LU.at(i, k) -= LU.at(p, k) * LU.at(i, p);
 					// mulitply pivot line value to multiplier
 				}

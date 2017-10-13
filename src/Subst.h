@@ -21,7 +21,7 @@ void subst_P(TMatrix& T, vector<double>& X, MatrixColMajor& I, vector<long>& P, 
 	long i, j;
 	int step;
 	long size = T.size;
-
+	
 	if(forward){
 		i = 1;
 		step = +1;

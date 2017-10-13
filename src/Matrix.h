@@ -30,7 +30,7 @@ public:
 	 */
 	Matrix(long size) : size(size), matrix(size*size){
 	}
-
+	
 	Matrix(){
 	}
 	/**
@@ -41,22 +41,15 @@ public:
 	double& at(long i, long j) {
 		return matrix.at(i*size + j);
 	}
-	/**
-	 * @brief swaps rows starting from col 'start'
-	 */
-	void swap_rows_from(long row0, long row1, long start){
+	
+	void swap_rows(long row0, long row1){
 		if(row0 == row1)
 			return;
-		for(long j = start; j < size; j++){
-			// for each collumn
+		for(long j = 0; j < size; j++){
 			swap(this->at(row0, j), this->at(row1, j));
 		}
 	}
-
-	void swap_rows(long row0, long row1){
-		swap_rows_from(row0, row1, 0);
-	}
-
+	
 	void resize(long new_size){
 		 size = new_size;
 		 matrix.resize(size*size);
@@ -83,7 +76,7 @@ public:
 			}
 		}
 	}
-
+	
 	void print(){
 		for(long i = 0; i < size; i++){
 			for(long j = 0; j < size; j++){
@@ -110,6 +103,15 @@ public:
 	double& at(long i, long j) {
 		return matrix.at(j*size + i);
 	}
+	
+	void print(){
+		for(long i = 0; i < size; i++){
+			for(long j = 0; j < size; j++){
+				cout << this->at(i, j) <<'\t';
+			}
+			cout << endl;
+		}
+	}
 };
 
 /**
@@ -133,7 +135,7 @@ template<class Mat>
 void randomMatrix(Mat& M){
 	long i, j;
 	double invRandMax = 1.0/(double)RAND_MAX;
-
+	
 	for(i = 0; i < M.size; i++){
 		for(j = 0; j < M.size; j++){
 			M.at(i,j) = (double)rand() * invRandMax;
@@ -146,11 +148,7 @@ void randomMatrix(Mat& M){
 template<class Mat>
 void printm(Mat& matrix){
 	cout<<  matrix.size <<"\n";
-	for(long i = 0; i < matrix.size; i++){
-		for(long j = 0; j < matrix.size; j++)
-			cout<< matrix.at(i,j) <<"\t";
-		cout<< endl;
-	}
+	matrix.print();
 }
 /**
  * @brief prints vector x

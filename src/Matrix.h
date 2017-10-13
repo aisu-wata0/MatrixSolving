@@ -217,11 +217,22 @@ public:
 		return PAD(i) + sum;
 	}
 	double& at(long i, long j) {
-		/* With Padding *
-		long pad_btotal = pad_total(i);
-		/* Without Padding */
+		/* With Padding */
+		long pos = mod(i, CACHE_LINE_SIZE);
+		long sum = pos*(2*CACHE_LINE_SIZE -1 - pos)/2;
+		long pad_btotal = PAD(i) + sum;
+		// return PAD(i) + sum;
+		// long pad_btotal = pad_total(i);
+		/* Without Padding *
 		long pad_btotal = 0;
 		/**/
+		vector<long> tester = {0, 15, 29, 42, 54, 65, 75, 84, 92, 99, 105, 110, 114, 117, 119, 120, 120, 135, 149, 162, 174};
+		if(tester[i] != pad_btotal){
+			cerr<<"Wrong padding on line "<< i << endl;
+		}
+		if(tester[i] != pad_total(i)){
+			cerr<<"Wrong padding function call on line "<< i << endl;
+		}
 		return matrix[i*(i+1)/2 + j + pad_btotal];
 	}
 	/**
@@ -299,11 +310,21 @@ public:
 		return first_pad_seq + PAD(i-desl) + sum;
 	 }
 	double& at(long i, long j) {
-		/* With Padding *
-		long pad_btotal = pad_total(i);
-		/* Without Padding */
+		/* With Padding */
+		long pos = mod(i-desl,CACHE_LINE_SIZE);
+		long sum = pos*(pos+1)/2;
+		long pad_btotal = first_pad_seq + PAD(i-desl) + sum;
+		//long pad_btotal = pad_total(i);
+		/* Without Padding *
 		long pad_btotal = 0;
 		/**/
+		vector<long> tester = {0, 11, 23, 36, 50, 65, 65, 66, 68, 71, 75, 80, 86, 93, 101, 110, 120, 131, 143, 156, 170};
+		if(tester[i] != pad_btotal){
+			cerr<<"Wrong padding on line "<< i << endl;
+		}
+		if(tester[i] != pad_total(i)){
+			cerr<<"Wrong padding function call on line "<< i << endl;
+		}
 		return matrix[ i*(2*size-i+1)/2 + j -i + pad_btotal];
 	}
 	void reserve(long new_size){
@@ -345,15 +366,15 @@ public:
 		for(long i = 0; i < size; i++){
 			cout<<"row "<< i << " padding = "<< pad_total(i) <<endl;
 			for(long j = i; j < size; j++){
-				this->at(i, j) = 0;
+				this->at(i, j) = 1;
 			}
 		}
 		for(long i = 0; i < size; i++){
 			for(long j = i; j < size; j++){
-				if(this->at(i, j) == 1){
+				if(this->at(i, j) == 0){
 					cerr<<"TWO POSITIONS ACESSING SAME MEMORY"<<endl;
 				}
-				this->at(i, j) = 1;
+				this->at(i, j) = 0;
 			}
 		}
 	}
@@ -408,6 +429,19 @@ void swap_rows(MLower& Low, MUpper& Upp, long row0, long row1){
 	}
 }
 
+template<class MLower, class MUpper>
+void printLU(MLower& Low, MUpper& Upp){
+	long size = Low.size;
+	for(long i = 0; i < size; i++){
+			for(long j = 0; j < i; j++){
+					cout << Low.at(i,j) <<'\t';
+			}
+			for(long j = i; j < size; j++){
+					cout << Upp.at(i,j) <<'\t';
+			}
+			cout << endl;
+   }
+}
 
 }
 #endif

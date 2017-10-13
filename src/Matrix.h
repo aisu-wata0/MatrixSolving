@@ -232,12 +232,12 @@ public:
 	 * [i*(i+1)/2​ + ​​pad_btota​l​​ + j​​]​		*/
 	double& at(long i, long j) {
 		/* With Padding */
-		tester = {0, 15, 29, 42, 54, 65, 75, 84, 92, 99, 105, 110, 114, 117, 119, 120, 120, 135, 149, 162, 174};
-		// cout << ".at("<< i << "," << j << ") -> " << m_pos(i,j) << endl;
-		if(tester.at(i) != pad_total(i)){
-			cerr<<"Wrong padding function call on line "<< i <<" pad = "<< pad_total(i);
-			cerr<<" should be [" << i <<"] = "<< tester.at(i) << endl;
-		}
+//		tester = {0, 15, 29, 42, 54, 65, 75, 84, 92, 99, 105, 110, 114, 117, 119, 120, 120, 135, 149, 162, 174};
+//		// cout << ".at("<< i << "," << j << ") -> " << m_pos(i,j) << endl;
+//		if(tester.at(i) != pad_total(i)){
+//			cerr<<"Wrong padding function call on line "<< i <<" pad = "<< pad_total(i);
+//			cerr<<" should be [" << i <<"] = "<< tester.at(i) << endl;
+//		}
 		/**/
 		return matrix[m_pos(i,j)];
 	}
@@ -344,12 +344,12 @@ public:
 	 * at(i,j) = [i*(i+1)/2​ + ​​pad_btota​l​​ + j​​ -i]​ */
 	double& at(long i, long j) {
 		/* With Padding */
-		tester = {0, 11, 23, 36, 50, 65, 65, 66, 68, 71, 75, 80, 86, 93, 101, 110, 120, 131, 143, 156, 170};
-		// cout << ".at("<< i << "," << j << ") -> " << m_pos(i,j) << endl;
-		if(tester.at(i) != pad_total(i)){
-			cerr<<"Wrong padding function call on line "<< i <<" pad = "<< pad_total(i);
-			cerr<<" should be [" << i <<"] = "<< tester.at(i) << endl;
-		} 
+//		tester = {0, 11, 23, 36, 50, 65, 65, 66, 68, 71, 75, 80, 86, 93, 101, 110, 120, 131, 143, 156, 170};
+//		// cout << ".at("<< i << "," << j << ") -> " << m_pos(i,j) << endl;
+//		if(tester.at(i) != pad_total(i)){
+//			cerr<<"Wrong padding function call on line "<< i <<" pad = "<< pad_total(i);
+//			cerr<<" should be [" << i <<"] = "<< tester.at(i) << endl;
+//		} 
 		/**/
 		return matrix[m_pos(i,j)];
 	}

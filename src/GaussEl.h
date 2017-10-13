@@ -21,16 +21,6 @@ void GaussEl(Matrix& A, MatrixTriLow& L, MatrixTriUpp& U, vector<long>& P) {
 	// Optm: test
 	L.set(A);
 	U.set(A);
-	cout << "Gauss El tester L: " << endl;
-	for(long i = 0; i < 6; i++){
-		cout << L.tester.at(i) << " ";
-	}
-	cout << endl;
-	cout << "Gauss El tester  U: " << endl;
-	for(long i = 0; i < 6; i++){
-		cout << U.tester.at(i) << " ";
-	}
-	cout << endl;
 	
 	// initializing permutation vector
 	for(long i = 0; i < A.size; i++){

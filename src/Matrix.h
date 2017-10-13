@@ -118,7 +118,8 @@ public:
  * @brief sets I to identity
  * @param I
  */
-void identity(MatrixColMajor& I){
+template<class Mat>
+void identity(Mat& I){
 	for(long i = 0; i < I.size; i++){
 		for(long j = 0; j < I.size; j++){
 			I.at(i, j) = 0;
@@ -130,7 +131,8 @@ void identity(MatrixColMajor& I){
  * @brief Assigns random matrix to M
  * @param M needs to have been allocated
  */
-void randomMatrix(Matrix& M){
+template<class Mat>
+void randomMatrix(Mat& M){
 	long i, j;
 	double invRandMax = 1.0/(double)RAND_MAX;
 
@@ -144,7 +146,8 @@ void randomMatrix(Matrix& M){
  * @brief prints matrix
  * @param matrix
  */
-void printm(Matrix& matrix){
+template<class Mat>
+void printm(Mat& matrix){
 	cout<<  matrix.size <<"\n";
 	for(long i = 0; i <= matrix.size-1; i++){
 		for(long j = 0; j <= matrix.size-1; j++)

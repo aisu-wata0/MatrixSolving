@@ -75,15 +75,14 @@ void swap_rows(Mat& M, long row0, long row1){
 	}
 }
 /**
- * @brief Increments b into the matrix
- * @param b
+ * @brief M += B
  * @param sign -1 with you want to add -b
  */
 template<class Mat>
-void add(Mat& M, Matrix& b, double sign = 1){
+void add(Mat& M, Mat& B, double sign = 1){
 	for(long i=0; i < M.size; i++){
 		for(long j=0; j < M.size; j++){
-			M.at(i,j) += sign*b.at(i,j);
+			M.at(i,j) += sign*B.at(i,j);
 		}
 	}
 }

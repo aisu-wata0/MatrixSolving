@@ -16,15 +16,14 @@ namespace std {
  */
 void GaussEl(Matrix A, Matrix& LU, vector<long>& P) {
 	// copy A to LU
-	LU.resize(A.size);
 	LU.set(A);
 	// initializing permutation vector
 	for(long i = 0; i < A.size; i++){
 		P.at(i) = i;
 	}
 
+	// for each pivot
 	for(long p = 0; p < A.size; p++){
-		// for each pivot
 		/* partial pivoting */
 		long maxRow = p;
 		for(long i = p+1; i < A.size; i++){

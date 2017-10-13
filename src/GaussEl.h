@@ -51,10 +51,10 @@ void GaussEl(Matrix A, Matrix& LU, vector<long>& P) {
 			}
 		}
 		
-		//for (long i = p+1; i <= LU.size-1; i++) {	//going from below pivot to end
-		for (long i = LU.size-1; i >= p+1; i--) {	//going from end to pivot
+		//for (long i = p+1; i <= A.size-1; i++) {	//going from below pivot to end
+		for (long i = A.size-1; i >= p+1; i--) {	//going from end to pivot
 			// for each line below pivot
-			if (LU.at(i,p) == 0.0){
+			if (LU.at(i,p) != 0.0){
 				// only subtract pivot line if coeficient is not null
 				// subtract pivot from current line (in U)
 				for (long k = p+1; k < A.size; k++) {

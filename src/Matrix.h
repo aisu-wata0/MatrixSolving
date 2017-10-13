@@ -167,10 +167,8 @@ public:
 	double* matrix;
 	long size;
 	long m_size;
-	
-	void reserve(long new_size){
-		size = new_size;
-		m_size = size*size + PAD(size); // TODO: less memory
+
+	void mem_alloc(){
 		matrix = (double*)malloc(m_size*sizeof(double));
 	}
 };
@@ -182,16 +180,37 @@ public:
 class MatrixTriLow : public MatrixTri
 {
 public:
-	long desl;
-	long first_pad_seq;
+	/* Debug */
+	vector<long> tester;
+	
+	inline long pad_total(long i) {
+		/* With Padding */
+		long pos = mod(i, CACHE_LINE_SIZE);
+		long sum = pos*(2*CACHE_LINE_SIZE -1 - pos)/2;
+		return (PAD(i) + sum);
+		/* Without Padding *
+		return 0;
+		/**/
+	}
+	
+	inline long m_pos(long i, long j) {
+		return ( i*(i+1)/2 + j + pad_total(i) );
+	}
+	
+	void mem_alloc(long new_size){
+		size = new_size;
+		
+		m_size = m_pos(size-1, size-1) +1;
+		MatrixTri::mem_alloc();
+	}
 	
 	MatrixTriLow(){
 	}
 	/**
 	 * @param size of matrix, total number of lines
 	 */
-	MatrixTriLow(long size){
-		reserve(size);
+	MatrixTriLow(long size) : tester{0, 15, 29, 42, 54, 65, 75, 84, 92, 99, 105, 110, 114, 117, 119, 120, 120, 135, 149, 162, 174}{
+		mem_alloc(size);
 	}
 	/**
 	 * @param i
@@ -211,29 +230,16 @@ public:
 	 * // 2 = mod(4,3)*(2*3 -1 - mod(4,3))/2; // ok
 	 * ​pad_btotal = ​padding_before​+​​sum 
 	 * [i*(i+1)/2​ + ​​pad_btota​l​​ + j​​]​		*/
-	long pad_total(long i) {
-		long pos = mod(i, CACHE_LINE_SIZE);
-		long sum = pos*(2*CACHE_LINE_SIZE -1 - pos)/2;
-		return PAD(i) + sum;
-	}
 	double& at(long i, long j) {
 		/* With Padding */
-		long pos = mod(i, CACHE_LINE_SIZE);
-		long sum = pos*(2*CACHE_LINE_SIZE -1 - pos)/2;
-		long pad_btotal = PAD(i) + sum;
-		// return PAD(i) + sum;
-		// long pad_btotal = pad_total(i);
-		/* Without Padding *
-		long pad_btotal = 0;
+		tester = {0, 15, 29, 42, 54, 65, 75, 84, 92, 99, 105, 110, 114, 117, 119, 120, 120, 135, 149, 162, 174};
+		// cout << ".at("<< i << "," << j << ") -> " << m_pos(i,j) << endl;
+		if(tester.at(i) != pad_total(i)){
+			cerr<<"Wrong padding function call on line "<< i <<" pad = "<< pad_total(i);
+			cerr<<" should be [" << i <<"] = "<< tester.at(i) << endl;
+		}
 		/**/
-		vector<long> tester = {0, 15, 29, 42, 54, 65, 75, 84, 92, 99, 105, 110, 114, 117, 119, 120, 120, 135, 149, 162, 174};
-		if(tester[i] != pad_btotal){
-			cerr<<"Wrong padding on line "<< i << endl;
-		}
-		if(tester[i] != pad_total(i)){
-			cerr<<"Wrong padding function call on line "<< i << endl;
-		}
-		return matrix[i*(i+1)/2 + j + pad_btotal];
+		return matrix[m_pos(i,j)];
 	}
 	/**
 	 * @brief copy matrix M to yourself
@@ -261,15 +267,15 @@ public:
 		for(long i = 0; i < size; i++){
 			cout<<"row "<< i << " padding = "<< pad_total(i) <<endl;
 			for(long j = 0; j < i+1; j++){
-				this->at(i, j) = 0;
+				this->at(i, j) = 1;
 			}
 		}
 		for(long i = 0; i < size; i++){
 			for(long j = 0; j < i+1; j++){
-				if(this->at(i, j) == 1){
+				if(this->at(i, j) == 0){
 					cerr<<"TWO POSITIONS ACESSING SAME MEMORY: "<<"at("<< i <<","<< j <<")"<<endl;
 				}
-				this->at(i, j) = 1;
+				this->at(i, j) = 0;
 			}
 		}
 	}
@@ -284,14 +290,46 @@ class MatrixTriUpp : public MatrixTri
 public:
 	long desl;
 	long first_pad_seq;
+	/* Debug */
+	vector<long> tester;
+	
+	inline long pad_total(long i){
+		/* With Padding */
+		long pos = mod(i-desl,CACHE_LINE_SIZE);
+		long sum = pos*(pos+1)/2;
+		return (first_pad_seq + PAD(i-desl) + sum);
+		/* Without Padding *
+		return 0;
+		/**/
+	}
+	
+	inline long m_pos(long i, long j){
+		return ( i*(2*size-i+1)/2 + j -i + pad_total(i) );
+	}
+	
+	void mem_alloc(long new_size){
+		size = new_size;
+		desl = mod((size+1),CACHE_LINE_SIZE);
+		if(mod(size,CACHE_LINE_SIZE) != CACHE_LINE_SIZE-1){
+			long a1 = CACHE_LINE_SIZE - mod(size,CACHE_LINE_SIZE);
+			long an = CACHE_LINE_SIZE-1;
+			long n = an -a1 +1;
+			first_pad_seq = n*(a1 + an)/2;
+		} else {
+			first_pad_seq = 0;
+		}
+		
+		m_size = m_pos(size-1, size-1) +1;
+		MatrixTri::mem_alloc();
+	}
 	
 	MatrixTriUpp(){
 	}
 	/**
 	 * @param size of matrix, total number of lines
 	 */
-	MatrixTriUpp(long size){
-		reserve(size);
+	MatrixTriUpp(long size) : tester{0, 11, 23, 36, 50, 65, 65, 66, 68, 71, 75, 80, 86, 93, 101, 110, 120, 131, 143, 156, 170}{
+		mem_alloc(size);
 	}
 	/**
 	 * @param i
@@ -304,40 +342,16 @@ public:
 	 * first_pad_seq       PAD(i-desl+1)       sum
 	 * pad_btotal = first_pad_seq + PAD(i-desl+1) + sum
 	 * at(i,j) = [i*(i+1)/2​ + ​​pad_btota​l​​ + j​​ -i]​ */
-	long pad_total(long i){
-		long pos = mod(i-desl,CACHE_LINE_SIZE);
-		long sum = pos*(pos+1)/2;
-		return first_pad_seq + PAD(i-desl) + sum;
-	 }
 	double& at(long i, long j) {
 		/* With Padding */
-		long pos = mod(i-desl,CACHE_LINE_SIZE);
-		long sum = pos*(pos+1)/2;
-		long pad_btotal = first_pad_seq + PAD(i-desl) + sum;
-		//long pad_btotal = pad_total(i);
-		/* Without Padding *
-		long pad_btotal = 0;
+		tester = {0, 11, 23, 36, 50, 65, 65, 66, 68, 71, 75, 80, 86, 93, 101, 110, 120, 131, 143, 156, 170};
+		// cout << ".at("<< i << "," << j << ") -> " << m_pos(i,j) << endl;
+		if(tester.at(i) != pad_total(i)){
+			cerr<<"Wrong padding function call on line "<< i <<" pad = "<< pad_total(i);
+			cerr<<" should be [" << i <<"] = "<< tester.at(i) << endl;
+		} 
 		/**/
-		vector<long> tester = {0, 11, 23, 36, 50, 65, 65, 66, 68, 71, 75, 80, 86, 93, 101, 110, 120, 131, 143, 156, 170};
-		if(tester[i] != pad_btotal){
-			cerr<<"Wrong padding on line "<< i << endl;
-		}
-		if(tester[i] != pad_total(i)){
-			cerr<<"Wrong padding function call on line "<< i << endl;
-		}
-		return matrix[ i*(2*size-i+1)/2 + j -i + pad_btotal];
-	}
-	void reserve(long new_size){
-		desl = mod((new_size+1),CACHE_LINE_SIZE);
-		if(mod(new_size,CACHE_LINE_SIZE) != CACHE_LINE_SIZE-1){
-			long a1 = CACHE_LINE_SIZE - mod(new_size,CACHE_LINE_SIZE);
-			long an = CACHE_LINE_SIZE-1;
-			long n = an -a1 +1;
-			first_pad_seq = n*(a1 + an)/2;
-		} else {
-			first_pad_seq = 0;
-		}
-		MatrixTri::reserve(new_size);
+		return matrix[m_pos(i,j)];
 	}
 	/**
 	 * @brief copy matrix M to yourself

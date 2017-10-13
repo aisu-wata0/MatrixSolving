@@ -242,9 +242,9 @@ int main(int argc, char **argv) {
 	
 	timer.start();
 	//LIKWID_MARKER_START("LU");
-	L.test();
-	U.test();
-	GaussEl(A, L, U, P);
+	// L.test();
+	// U.test();
+ 	GaussEl(A, L, U, P);
 	printLU(L, U);
 	
 	//LIKWID_MARKER_STOP("LU");

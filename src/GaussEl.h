@@ -17,9 +17,7 @@ namespace std {
 template<class MLower, class MUpper>
 void GaussEl(Matrix A, MLower& L, MUpper& U, vector<long>& P) {
 	// copy A to LU
-	L.reserve(A.size);
-	U.reserve(A.size);
-	set(L, U, A);
+//	set(L, U, A);
 	// Optm: test
 	L.set(A);
 	U.set(A);

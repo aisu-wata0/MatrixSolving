@@ -11,9 +11,10 @@ long div_down(long n, long d) {
 
 #define mod(X,Y) ((((X) % (Y)) + (Y)) % Y)
 #define CACHE_LINE_SIZE 16
-#define PAD(X) ((long)floor((X)/(double)CACHE_LINE_SIZE)*(CACHE_LINE_SIZE*(CACHE_LINE_SIZE-1))/2)
-// Optm: test
-//#define PAD(X) (div_down(((X)+1),CACHE_LINE_SIZE)*(CACHE_LINE_SIZE*(CACHE_LINE_SIZE-1))/2)
+#define PAD(X) (div_down((X),CACHE_LINE_SIZE)*(CACHE_LINE_SIZE*(CACHE_LINE_SIZE-1))/2)
+// Optm: test switching, the below doesnt work probably
+// 
+//#define PAD(X) ((long)floor((X)/(double)CACHE_LINE_SIZE)*(CACHE_LINE_SIZE*(CACHE_LINE_SIZE-1))/2)
 
 /**
  * @brief Stores values of matrix in a vector, Row Major Order
@@ -169,7 +170,7 @@ public:
 	
 	void reserve(long new_size){
 		size = new_size;
-		m_size = size*size + PAD(size);
+		m_size = size*size + PAD(size); // TODO: less memory
 		matrix = (double*)malloc(m_size*sizeof(double));
 	}
 };
@@ -211,15 +212,14 @@ public:
 	 * ​pad_btotal = ​padding_before​+​​sum 
 	 * [i*(i+1)/2​ + ​​pad_btota​l​​ + j​​]​		*/
 	long pad_total(long i) {
-		/* With Padding */
 		long pos = mod(i, CACHE_LINE_SIZE);
 		long sum = pos*(2*CACHE_LINE_SIZE -1 - pos)/2;
 		return PAD(i) + sum;
 	}
 	double& at(long i, long j) {
-		/* With Padding */
+		/* With Padding *
 		long pad_btotal = pad_total(i);
-		/* Without Padding *
+		/* Without Padding */
 		long pad_btotal = 0;
 		/**/
 		return matrix[i*(i+1)/2 + j + pad_btotal];
@@ -299,9 +299,9 @@ public:
 		return first_pad_seq + PAD(i-desl) + sum;
 	 }
 	double& at(long i, long j) {
-		/* With Padding */
+		/* With Padding *
 		long pad_btotal = pad_total(i);
-		/* Without Padding *
+		/* Without Padding */
 		long pad_btotal = 0;
 		/**/
 		return matrix[ i*(2*size-i+1)/2 + j -i + pad_btotal];

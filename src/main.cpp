@@ -60,11 +60,7 @@ void solve_lu(MLower& L, MUpper& U, MatrixColMajor& X, MatrixColMajor& B, vector
  */
 template<class MLower, class MUpper>
 void inverse(MLower& L, MUpper& U, MatrixColMajor& IA, MatrixColMajor& I, vector<long>& P){
-	int j;
-	long size = IA.size;
-	vector<double> X(size), B(size), lhs(size);
-
-	for(j = 0; j < size; j++){
+	for(int j = 0; j < IA.size; j++){
 		// for each IA col solve SL to find the IA col values
 		solve_lu(L, U, IA, I, P, j);
 	}
@@ -133,20 +129,29 @@ void inverse_refining(Matrix& A, MLower& L, MUpper& U, MatrixColMajor& IA, vecto
 
 		timer.start();
 		//LIKWID_MARKER_START("INV");
+		
 		inverse(L, U, W, R, P);
+		
 		//LIKWID_MARKER_STOP("INV");
+		//LIKWID_MARKER_START("SUM");
+		
 		// W: residues of each variable of IA
 		// adjust IA with found errors
 		IA.add(W);	//TOptm: add at the same time its calculating W
+		
+		//LIKWID_MARKER_STOP("SUM");
 		total_time_iter += timer.elapsed();
 
 		//l_residue = c_residue;
 
 		timer.start();
 		//LIKWID_MARKER_START("RES");
+		
 		c_residue = residue(A, IA, R);
+		
 		//LIKWID_MARKER_STOP("RES");
 		total_time_residue += timer.elapsed();
+		
 		cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";
 	}
 }
@@ -220,8 +225,6 @@ int main(int argc, char **argv) {
 	}
 	
 	Matrix A(size);
-	MatrixTriLow L(size);
-	MatrixTriUpp U(size);
 	
 	if(input){
 		readMatrix(A);
@@ -234,10 +237,14 @@ int main(int argc, char **argv) {
 	MatrixColMajor IA(size);
 	vector<long> P(size);
 	
-	timer.start();
+	MatrixTriLow L(size);
+	MatrixTriUpp U(size);
 	
+	timer.start();
 	//LIKWID_MARKER_START("LU");
+	
 	GaussEl(A, L, U, P);
+	
 	//LIKWID_MARKER_STOP("LU");
 	lu_time = timer.elapsed();
 

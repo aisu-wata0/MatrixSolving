@@ -39,6 +39,7 @@ void GaussEl(Matrix A, Matrix& LU, vector<long>& P) {
 			exit(EXIT_FAILURE);
 		}
 		// LU.at(p,p) = 1; implicit
+		
 		//for (long i = p+1; i < A.size; i++) {	// going from below pivot to end
 		for (long i = A.size-1; i >= p+1; i--) {	// going from end to pivot. Optm: If no pivoting ocurred: 1 less cache miss
 			if (!close_zero(LU.at(i,p))){
@@ -53,9 +54,8 @@ void GaussEl(Matrix A, Matrix& LU, vector<long>& P) {
 		for (long i = A.size-1; i >= p+1; i--) {	//going from end to pivot
 			if (LU.at(i,p) != 0.0){
 				// only subtract pivot line if coeficient is not null
-				// subtract pivot from current line (in U)
+				// subtract pivot row U.at(p, _) from current row LU.at(i, _)
 				for (long k = p+1; k < A.size; k++) {
-					// for each collumn starting from pivot's
 					LU.at(i, k) -= LU.at(p, k) * LU.at(i, p);
 					// mulitply pivot line value to multiplier
 				}

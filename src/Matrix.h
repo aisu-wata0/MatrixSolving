@@ -10,8 +10,8 @@ long div_down(long n, long d) {
 }
 
 #define mod(X,Y) ((((X) % (Y)) + (Y)) % Y)
-#define CACHE_LINE_SIZE 4
-#define PAD(X) ((long)floor(((X)+1)/(double)CACHE_LINE_SIZE)*(CACHE_LINE_SIZE*(CACHE_LINE_SIZE-1))/2)
+#define CACHE_LINE_SIZE 16
+#define PAD(X) ((long)floor((X)/(double)CACHE_LINE_SIZE)*(CACHE_LINE_SIZE*(CACHE_LINE_SIZE-1))/2)
 // Optm: test
 //#define PAD(X) (div_down(((X)+1),CACHE_LINE_SIZE)*(CACHE_LINE_SIZE*(CACHE_LINE_SIZE-1))/2)
 
@@ -210,15 +210,19 @@ public:
 	 * // 2 = mod(4,3)*(2*3 -1 - mod(4,3))/2; // ok
 	 * ​pad_btotal = ​padding_before​+​​sum 
 	 * [i*(i+1)/2​ + ​​pad_btota​l​​ + j​​]​		*/
-	double& at(long i, long j) {
+	long pad_total(long i) {
 		/* With Padding */
 		long pos = mod(i, CACHE_LINE_SIZE);
 		long sum = pos*(2*CACHE_LINE_SIZE -1 - pos)/2;
-		long pad_btotal = PAD(i) + sum;
+		return PAD(i) + sum;
+	}
+	double& at(long i, long j) {
+		/* With Padding */
+		long pad_btotal = pad_total(i);
 		/* Without Padding *
 		long pad_btotal = 0;
 		/**/
-		return matrix[i*(i+1)/2 + pad_btotal + j];
+		return matrix[i*(i+1)/2 + j + pad_btotal];
 	}
 	/**
 	 * @brief copy matrix M to yourself
@@ -242,6 +246,22 @@ public:
 		}
 	}
 	
+	void test(){
+		for(long i = 0; i < size; i++){
+			cout<<"row "<< i << " padding = "<< pad_total(i) <<endl;
+			for(long j = 0; j < i+1; j++){
+				this->at(i, j) = 0;
+			}
+		}
+		for(long i = 0; i < size; i++){
+			for(long j = 0; j < i+1; j++){
+				if(this->at(i, j) == 1){
+					cerr<<"TWO POSITIONS ACESSING SAME MEMORY: "<<"at("<< i <<","<< j <<")"<<endl;
+				}
+				this->at(i, j) = 1;
+			}
+		}
+	}
 };
 
 /**
@@ -273,22 +293,29 @@ public:
 	 * first_pad_seq       PAD(i-desl+1)       sum
 	 * pad_btotal = first_pad_seq + PAD(i-desl+1) + sum
 	 * at(i,j) = [i*(i+1)/2​ + ​​pad_btota​l​​ + j​​ -i]​ */
-	double& at(long i, long j) {
-		/* With Padding */
+	long pad_total(long i){
 		long pos = mod(i-desl,CACHE_LINE_SIZE);
 		long sum = pos*(pos+1)/2;
-		long pad_btotal = first_pad_seq + PAD(i-desl-1) + sum;
+		return first_pad_seq + PAD(i-desl) + sum;
+	 }
+	double& at(long i, long j) {
+		/* With Padding */
+		long pad_btotal = pad_total(i);
 		/* Without Padding *
 		long pad_btotal = 0;
 		/**/
-		return matrix[ i*(2*size-i+1)/2 + pad_btotal + j -i];
+		return matrix[ i*(2*size-i+1)/2 + j -i + pad_btotal];
 	}
 	void reserve(long new_size){
 		desl = mod((new_size+1),CACHE_LINE_SIZE);
-		long a1 = mod(new_size,CACHE_LINE_SIZE);
-		long an = CACHE_LINE_SIZE-1;
-		long n = an -a1 +1;
-		first_pad_seq = n*(a1 + an)/2;
+		if(mod(new_size,CACHE_LINE_SIZE) != CACHE_LINE_SIZE-1){
+			long a1 = CACHE_LINE_SIZE - mod(new_size,CACHE_LINE_SIZE);
+			long an = CACHE_LINE_SIZE-1;
+			long n = an -a1 +1;
+			first_pad_seq = n*(a1 + an)/2;
+		} else {
+			first_pad_seq = 0;
+		}
 		MatrixTri::reserve(new_size);
 	}
 	/**
@@ -311,6 +338,23 @@ public:
 				cout << this->at(i, j) <<'\t';
 			}
 			cout << endl;
+		}
+	}
+	
+	void test(){
+		for(long i = 0; i < size; i++){
+			cout<<"row "<< i << " padding = "<< pad_total(i) <<endl;
+			for(long j = i; j < size; j++){
+				this->at(i, j) = 0;
+			}
+		}
+		for(long i = 0; i < size; i++){
+			for(long j = i; j < size; j++){
+				if(this->at(i, j) == 1){
+					cerr<<"TWO POSITIONS ACESSING SAME MEMORY"<<endl;
+				}
+				this->at(i, j) = 1;
+			}
 		}
 	}
 };

@@ -75,13 +75,13 @@ void inverse(MLower& L, MUpper& U, MatrixColMajor& IA, MatrixColMajor& I, vector
 double residue(Matrix& A, MatrixColMajor& IA, MatrixColMajor& I){
 	double err_norm = 0.0;
 
-	for(long icol=0; icol <= A.size-1; icol++){
+	for(long icol=0; icol < A.size; icol++){
 		// for each column of the inverse
-		for(long i=0; i <= IA.size-1; i++){
+		for(long i=0; i < A.size; i++){
 			// for each line of A
 			I.at(i,icol) = 0;
 			// multiply A line to the current inverse col
-			for(long j=0; j <= IA.size-1; j++){
+			for(long j=0; j < A.size; j++){
 				I.at(i,icol) -= A.at(i,j)*IA.at(j,icol);
 			}
 			if(i == icol){
@@ -103,23 +103,27 @@ double residue(Matrix& A, MatrixColMajor& IA, MatrixColMajor& I){
 template<class MLower, class MUpper>
 void inverse_refining(Matrix& A, MLower& L, MUpper& U, MatrixColMajor& IA, vector<long>& P, long iter_n){
 	long i=0;
-	// number of digits of iter_n
-	long digits = iter_n > 0 ? (long) log10((double) iter_n) + 1 : 1;
+	// number of digits of iter_n, for pretty printing
+	long digits = (long)log10((double) iter_n) + 1;
 	double c_residue;
 	//double l_residue;
 	
 	// Optm: iterating line by line
-	MatrixColMajor W(A.size), R(A.size), I(A.size);
+	MatrixColMajor W(A.size), R(A.size);
 
-	identity(I);
+	identity(R);
 
-	// TOptm: inverse_id(LU, IA, P); that doesn't need Identity matrix in the memory
 	//LIKWID_MARKER_START("INV");
-	inverse(L, U, IA, I, P);
+	
+	inverse(L, U, IA, R, P);
+	
 	//LIKWID_MARKER_STOP("INV");
 	//LIKWID_MARKER_START("RES");
+	
 	c_residue = residue(A, IA, R);
+	
 	//LIKWID_MARKER_STOP("RES");
+	
 	cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";
 	while(i < iter_n){
 		// (abs(l_residue - c_residue)/c_residue > EPSILON) && (l_residue > c_residue)
@@ -133,10 +137,10 @@ void inverse_refining(Matrix& A, MLower& L, MUpper& U, MatrixColMajor& IA, vecto
 		inverse(L, U, W, R, P);
 		
 		//LIKWID_MARKER_STOP("INV");
-		//LIKWID_MARKER_START("SUM");
-		
 		// W: residues of each variable of IA
 		// adjust IA with found errors
+		//LIKWID_MARKER_START("SUM");
+		
 		IA.add(W);	//TOptm: add at the same time its calculating W
 		
 		//LIKWID_MARKER_STOP("SUM");
@@ -159,8 +163,8 @@ void inverse_refining(Matrix& A, MLower& L, MUpper& U, MatrixColMajor& IA, vecto
  * @brief Assigns matrix from cin to M
  * @param A needs to have been allocated
  */
-template <class T>
-void readMatrix(T& A){
+template <class Mat>
+void readMatrix(Mat& A){
 	for(long i=0; i < A.size; i++){
 		for(long j=0; j < A.size; j++){
 			cin>> A.at(i,j);
@@ -240,7 +244,7 @@ int main(int argc, char **argv) {
 	timer.start();
 	//LIKWID_MARKER_START("LU");
 	
- 	GaussEl(A, L, U, P);
+	GaussEl(A, L, U, P);
 	
 	//LIKWID_MARKER_STOP("LU");
 	lu_time = timer.elapsed();

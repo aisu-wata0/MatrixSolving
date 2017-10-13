@@ -28,7 +28,7 @@ void GaussEl(Matrix& A, MLower& L, MUpper& U, vector<long>& P) {
 	for(long i = 0; i < A.size; i++){
 		P.at(i) = i;
 	}
-
+	
 	// for each pivot
 	for(long p = 0; p < A.size; p++){
 		/* partial pivoting */
@@ -40,7 +40,7 @@ void GaussEl(Matrix& A, MLower& L, MUpper& U, vector<long>& P) {
 		// pivots rows of U
 		swap_rows(L, U, maxRow, p);
 		swap(P.at(p), P.at(maxRow));
-
+		
 		if(close_zero(U.at(p,p))){
 			fprintf(stderr, "Found a pivot == 0, system is not solvable with partial pivoting");
 			exit(EXIT_FAILURE);
@@ -54,7 +54,6 @@ void GaussEl(Matrix& A, MLower& L, MUpper& U, vector<long>& P) {
 				// only subtract pivot line if coeficient is not null
 				// find pivot multiplier, store in L
 				L.at(i, p) = L.at(i, p)/U.at(p, p);
-				
 				// subtract pivot row U.at(p, _) from current row LU.at(i, _)
 				// L side
 				for (long k = p+1; k < i; k++) {

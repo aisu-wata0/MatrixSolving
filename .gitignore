@@ -1,11 +1,14 @@
 
 invmat
 
+out*
+test*
+
 doc/
 Release/
 Debug/
 
-MatrixSolving
+MatrixSolving*.exe
 MatrixSolving.mk
 MatrixSolving.txt
 

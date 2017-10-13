@@ -17,7 +17,7 @@ Usage: %s [-e inputFile] [-o outputFile] [-r randSize] -i Iterations
 #include <vector>
 #include <cmath>
 #include <ctgmath>
-#include <likwid.h>
+//#include <likwid.h>
 #include <unistd.h>
 
 #include "Timer.h"
@@ -44,9 +44,9 @@ double lu_time = 0.0;
 void solve_lu(Matrix LU, MatrixColMajor& X, MatrixColMajor& B, vector<long>& P, long col){
 	vector<double> Z(LU.size);
 	// find Z; LZ=B
-	subst_P(LU, Z, B, true, P, true, col);
+	subst_P<true, true>(LU, Z, B, P, col);
 	// find X; Ux=Z
-	subst(LU, X, Z, false, col);
+	subst<false>(LU, X, Z, col);
 }
 /**
  * @brief Finds inverse matrix,
@@ -58,11 +58,7 @@ void solve_lu(Matrix LU, MatrixColMajor& X, MatrixColMajor& B, vector<long>& P, 
  * @param P Permutation vector resulting of the pivoting
  */
 void inverse(Matrix& LU, MatrixColMajor& IA, MatrixColMajor& I, vector<long>& P){
-	int j;
-	long size = LU.size;
-	vector<double> X(size), B(size), lhs(size);
-
-	for(j = 0; j < size; j++){
+	for(long j = 0; j < IA.size; j++){
 		// for each IA col solve SL to find the IA col values
 		solve_lu(LU, IA, I, P, j);
 	}
@@ -104,23 +100,26 @@ double residue(Matrix& A, MatrixColMajor& IA, MatrixColMajor& I){
  */
 void inverse_refining(Matrix& A, Matrix& LU, MatrixColMajor& IA, vector<long>& P, long iter_n){
 	long i=0;
-	// number of digits of iter_n
-	long digits = iter_n > 0 ? (long) log10((double) iter_n) + 1 : 1;
+	// number of digits of iter_n, for pretty printing
+	long digits = (long)log10((double) iter_n) + 1;
 	double c_residue;
 	//double l_residue;
 	
 	// Optm: iterating line by line
-	MatrixColMajor W(A.size), R(A.size), I(A.size);
+	MatrixColMajor W(A.size), R(A.size);
+	identity(R);
 
-	identity(I);
-
-	// TOptm: inverse_id(LU, IA, P); that doesn't need Identity matrix in the memory
-	LIKWID_MARKER_START("INV");
-	inverse(LU, IA, I, P);
-	LIKWID_MARKER_STOP("INV");
-	LIKWID_MARKER_START("RES");
+	//LIKWID_MARKER_START("INV");
+	
+	inverse(LU, IA, R, P);
+	
+	//LIKWID_MARKER_STOP("INV");
+	//LIKWID_MARKER_START("RES");
+	
 	c_residue = residue(A, IA, R);
-	LIKWID_MARKER_STOP("RES");
+	
+	//LIKWID_MARKER_STOP("RES");
+	
 	cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";
 	while(i < iter_n){
 		// (abs(l_residue - c_residue)/c_residue > EPSILON) && (l_residue > c_residue)
@@ -129,21 +128,29 @@ void inverse_refining(Matrix& A, Matrix& LU, MatrixColMajor& IA, vector<long>& P
 		// R: residue of IA
 
 		timer.start();
-		LIKWID_MARKER_START("INV");
+		//LIKWID_MARKER_START("INV");
+		
 		inverse(LU, W, R, P);
-		LIKWID_MARKER_STOP("INV");
+		
+		//LIKWID_MARKER_STOP("INV");
 		// W: residues of each variable of IA
 		// adjust IA with found errors
+		//LIKWID_MARKER_START("SUM");
+		
 		IA.add(W);	//TOptm: add at the same time its calculating W
+		
+		//LIKWID_MARKER_STOP("SUM");
 		total_time_iter += timer.elapsed();
 
 		//l_residue = c_residue;
-
 		timer.start();
-		LIKWID_MARKER_START("RES");
+		//LIKWID_MARKER_START("RES");
+		
 		c_residue = residue(A, IA, R);
-		LIKWID_MARKER_STOP("RES");
+		
+		//LIKWID_MARKER_STOP("RES");
 		total_time_residue += timer.elapsed();
+		
 		cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";
 	}
 }
@@ -151,7 +158,8 @@ void inverse_refining(Matrix& A, Matrix& LU, MatrixColMajor& IA, vector<long>& P
  * @brief Assigns matrix from cin to M
  * @param A needs to have been allocated
  */
-void readMatrix(Matrix& A){
+template <class Mat>
+void readMatrix(Mat& A){
 	for(long i=0; i < A.size; i++){
 		for(long j=0; j < A.size; j++){
 			cin>> A.at(i,j);
@@ -160,7 +168,7 @@ void readMatrix(Matrix& A){
 }
 
 int main(int argc, char **argv) {
-	LIKWID_MARKER_INIT;
+	//LIKWID_MARKER_INIT;
 	
 	cout.precision(17);
 	cout << scientific;
@@ -215,7 +223,7 @@ int main(int argc, char **argv) {
 		cin>> size;
 	}
 	
-	Matrix A(size), LU(size);
+	Matrix A(size);
 	
 	if(input){
 		readMatrix(A);
@@ -223,19 +231,21 @@ int main(int argc, char **argv) {
 	}else {
 		randomMatrix(A);
 	}
-
-	// Optm: iterating line by line
-	MatrixColMajor IA(size);
-	vector<double> B(size), z(size);
+	
+	Matrix LU(size);
 	vector<long> P(size);
 	
 	timer.start();
+	//LIKWID_MARKER_START("LU");
 	
-	LIKWID_MARKER_START("LU");
 	GaussEl(A, LU, P);
-	LIKWID_MARKER_STOP("LU");
+	
+	//LIKWID_MARKER_STOP("LU");
 	lu_time = timer.elapsed();
 
+	// Optm: iterating line by line
+	MatrixColMajor IA(size);
+	
 	cout<<"#\n";
 	inverse_refining(A, LU, IA, P, iter_n);
 
@@ -245,7 +255,7 @@ int main(int argc, char **argv) {
 	cout<<"# Tempo residuo: "<< total_time_residue/(double)iter_n <<"\n#\n";
 	printm(IA);
 	
-	LIKWID_MARKER_CLOSE;
+	//LIKWID_MARKER_CLOSE;
 	in_f.close();
 	cout.rdbuf(coutbuf); //redirect
 	o_f.close();

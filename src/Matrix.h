@@ -5,6 +5,18 @@
 */
 namespace std {
 
+long div_down(long n, long d) {
+    return n / d - (((n > 0) ^ (d > 0)) && (n % d));
+}
+
+#define mod(X,Y) ((((X) % (Y)) + (Y)) % Y)
+#define CACHE_LINE_SIZE 16
+#define PAD(X) (div_down((X),CACHE_LINE_SIZE)*(CACHE_LINE_SIZE*(CACHE_LINE_SIZE-1))/2)
+// Optm: test switching, the below doesnt work probably
+//#define PAD(X) ((long)floor((X)/(double)CACHE_LINE_SIZE)*(CACHE_LINE_SIZE*(CACHE_LINE_SIZE-1))/2)
+
+#define PADDING true
+
 /**
  * @brief Stores values of matrix in a vector, Row Major Order
  */
@@ -71,27 +83,13 @@ public:
 			}
 		}
 	}
-	/**
-	 * @brief prints matrix coeficients
-	 */
+
 	void print(){
 		for(long i = 0; i < size; i++){
 			for(long j = 0; j < size; j++){
 				cout << this->at(i, j) <<'\t';
 			}
 			cout << endl;
-		}
-	}
-	/**
-	 * @brief prints matrix coeficients together with B
-	 * @param B
-	 */
-	void print(vector<double>& B){
-		for (long i = 0; i < size; i++) {
-			for (long j = 0; j < size; j++) {
-				cout << this->at(i, j) <<"x"<< j <<'\t';
-			}
-			cout <<"=\t"<< B[i] << endl;
 		}
 	}
 };
@@ -143,21 +141,19 @@ void randomMatrix(Mat& M){
 	}
 }
 /**
- * @brief prints matrix
- * @param matrix
+ * @brief prints matrix with size in the first line
  */
 template<class Mat>
 void printm(Mat& matrix){
 	cout<<  matrix.size <<"\n";
-	for(long i = 0; i <= matrix.size-1; i++){
-		for(long j = 0; j <= matrix.size-1; j++)
+	for(long i = 0; i < matrix.size; i++){
+		for(long j = 0; j < matrix.size; j++)
 			cout<< matrix.at(i,j) <<"\t";
 		cout<< endl;
 	}
 }
 /**
  * @brief prints vector x
- * @param x
  */
 template <class T>
 void printv(vector<T>& x){

@@ -16,7 +16,7 @@ namespace std {
  */
 void GaussEl(Matrix A, Matrix& LU, vector<long>& P) {
 	// copy A to LU
-	LU.set(A);
+	set(LU, A);
 	// initializing permutation vector
 	for(long i = 0; i < A.size; i++){
 		P.at(i) = i;
@@ -31,7 +31,7 @@ void GaussEl(Matrix A, Matrix& LU, vector<long>& P) {
 			if(abs(LU.at(i,p)) > abs(LU.at(maxRow,p))) maxRow = i;
 		} // finds max value
 		// pivots rows of U
-		LU.swap_rows(maxRow, p);
+		swap_rows(LU, maxRow, p);
 		swap(P.at(p), P.at(maxRow));
 
 		if(close_zero(LU.at(p,p))){

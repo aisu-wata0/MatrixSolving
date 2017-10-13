@@ -42,7 +42,6 @@ void GaussEl(Matrix A, Matrix& LU, vector<long>& P) {
 		
 		//for (long i = p+1; i < A.size; i++) {	// going from below pivot to end
 		for (long i = A.size-1; i >= p+1; i--) {	// going from end to pivot. Optm: If no pivoting ocurred: 1 less cache miss
-			// for each line below pivot
 			if (!close_zero(LU.at(i,p))){
 				// find pivot multiplier, store in L
 				LU.at(i, p) = LU.at(i, p)/LU.at(p, p);

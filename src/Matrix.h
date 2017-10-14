@@ -122,7 +122,7 @@ void set(Mat& M, const Matrix& A){
 }
 
 template<class Mat>
-void print(Mat& M){
+void print(const Mat& M){
 	for(long i = 0; i < M.size; i++){
 		for(long j = 0; j < M.size; j++){
 			cout << M.at(i, j) <<'\t';
@@ -161,7 +161,7 @@ void randomMatrix(Mat& M){
  * @brief prints matrix with size in the first line
  */
 template<class Mat>
-void printm(Mat& M){
+void printm(const Mat& M){
 	cout<<  M.size <<"\n";
 	print(M);
 }
@@ -207,14 +207,14 @@ public:
 	 * pad=2;    pad=1;   pad=0;   pad=2;            pad=1;           pad=0;
 	 * pad_total(i = 4) == +2 +1 +0 +2 = 5
 	 * https://docs.google.com/spreadsheets/d/1y2ffNz4jD6LwmL2JnWPCmYlUoSuY7Q04Ey6REYM7DXg/edit?usp=sharing */
-	inline long pad_total(long i) {
+	inline long pad_total(long i) const {
 		if(not PADDING) return 0;
 		long pos = mod(i, CACHE_LINE_SIZE);
 		long sum = pos*(2*CACHE_LINE_SIZE -1 - pos)/2;
 		return (PAD(i) + sum);
 	}
 	
-	inline long m_pos(long i, long j) {
+	inline long m_pos(long i, long j) const {
 		return ( i*(i+1)/2 + j + pad_total(i) );
 	}
 	
@@ -236,6 +236,9 @@ public:
 	double& at(long i, long j) {
 		return matrix[m_pos(i,j)];
 	}
+	const double& at(long i, long j) const {
+		return matrix[m_pos(i,j)];
+	}
 	/**
 	 * @brief copy matrix M to yourself
 	 */
@@ -244,18 +247,6 @@ public:
 			for(long j=0; j < i+1; j++){
 				this->at(i,j) = M.at(i,j);
 			}
-		}
-	}
-	
-	void print(){
-		for(long i = 0; i < size; i++){
-			for(long j = 0; j < i+1; j++){
-				cout << this->at(i, j) <<'\t';
-			}
-			for(long j = i+1; j < size; j++){
-				cout << (double)0.0 <<'\t';
-			}
-			cout << endl;
 		}
 	}
 	
@@ -277,6 +268,19 @@ public:
 	}
 };
 
+void print(const MatrixTriLow& L){
+	long size = L.size;
+	for(long i = 0; i < size; i++){
+		for(long j = 0; j < i+1; j++){
+			cout << L.at(i, j) <<'\t';
+		}
+		for(long j = i+1; j < size; j++){
+			cout << (double)0.0 <<'\t';
+		}
+		cout << endl;
+	}
+}
+
 /**
  * @class MatrixTriUpp
  * @brief Upper triangular implementation of MatrixTri
@@ -294,14 +298,14 @@ public:
 	 * first_pad_seq       PAD(i-desl+1)       sum
 	 * pad_btotal = first_pad_seq + PAD(i-desl+1) + sum 
 	 * https://docs.google.com/spreadsheets/d/1y2ffNz4jD6LwmL2JnWPCmYlUoSuY7Q04Ey6REYM7DXg/edit?usp=sharing */
-	inline long pad_total(long i){
+	inline long pad_total(long i) const {
 		if(not PADDING) return 0;
 		long pos = mod(i-desl,CACHE_LINE_SIZE);
 		long sum = pos*(pos+1)/2;
 		return (first_pad_seq + PAD(i-desl) + sum);
 	}
 	
-	inline long m_pos(long i, long j){
+	inline long m_pos(long i, long j) const {
 		return ( i*(2*size-i+1)/2 + j -i + pad_total(i) );
 	}
 	
@@ -330,6 +334,9 @@ public:
 	}
 	
 	double& at(long i, long j) {
+		return matrix[m_pos(i,j)];
+	}
+	const double& at(long i, long j) const {
 		return matrix[m_pos(i,j)];
 	}
 	/**

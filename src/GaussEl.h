@@ -15,7 +15,7 @@ namespace std {
  @param P Permutation vector resulting of the pivoting
  */
 template<class MLower, class MUpper>
-void GaussEl(Matrix& A, MLower& L, MUpper& U, vector<long>& P) {
+void GaussEl(const Matrix& A, MLower& L, MUpper& U, vector<long>& P) {
 	// copy A to LU
 	/* Optm: test *
 	set(L, U, A);

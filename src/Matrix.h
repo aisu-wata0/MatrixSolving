@@ -24,27 +24,40 @@ class Matrix
 {
 public:
 	long size;
-	vector<double> matrix;
+	double* arr;
+	
+	void mem_alloc(long size){
+		arr = (double*)malloc((size*size)*sizeof(double));
+	}
 	/**
 	 * @param size of matrix, total number of lines
 	 */
-	Matrix(long size) : size(size), matrix(size*size){
+	Matrix(long size)
+	:	size(size){
+		mem_alloc(size);
 	}
 	
-	Matrix(){
+	~Matrix(){
+		free(arr);
 	}
-	/**
-	 * @param i
-	 * @param j
-	 * @return element of position i,j
-	 */
+	
+	Matrix(const Matrix& other)
+	: Matrix(other.size) {
+		for(long i = 0; i < size; i++){
+			for(long j = 0; j < size; j++){
+				this->at(i,j) = other.at(i,j);
+			}
+		}
+	}
+	
+	inline long m_pos(long i, long j) const {
+		return i*size + j;
+	}
 	double& at(long i, long j) {
-		return matrix.at(i*size + j);
+		return arr[m_pos(i,j)];
 	}
-	
-	void resize(long new_size){
-		 size = new_size;
-		 matrix.resize(size*size);
+	const double& at(long i, long j) const {
+		return arr[m_pos(i,j)];
 	}
 };
 
@@ -56,13 +69,23 @@ class MatrixColMajor : public Matrix
 public:
 	using Matrix::Matrix;
 	
-	/**
-	 * @param i
-	 * @param j
-	 * @return element of position i,j
-	 */
+	MatrixColMajor(const MatrixColMajor& other)
+	: Matrix(other.size) {
+		for(long i = 0; i < size; i++){
+			for(long j = 0; j < size; j++){
+				this->at(i,j) = other.at(i,j);
+			}
+		}
+	}
+	
+	inline long m_pos(long i, long j) const {
+		return j*size + i;
+	}
 	double& at(long i, long j) {
-		return matrix.at(j*size + i);
+		return arr[m_pos(i,j)];
+	}
+	const double& at(long i, long j) const {
+		return arr[m_pos(i,j)];
 	}
 };
 
@@ -90,7 +113,7 @@ void add(Mat& M, Mat& B, double sign = 1){
  * @brief copy matrix A to yourself
  */
 template<class Mat>
-void set(Mat& M, Matrix& A){
+void set(Mat& M, const Matrix& A){
 	for(long i=0; i < M.size; i++){
 		for(long j=0; j < M.size; j++){
 			M.at(i,j) = A.at(i,j);
@@ -138,9 +161,9 @@ void randomMatrix(Mat& M){
  * @brief prints matrix with size in the first line
  */
 template<class Mat>
-void printm(Mat& matrix){
-	cout<<  matrix.size <<"\n";
-	print(matrix);
+void printm(Mat& M){
+	cout<<  M.size <<"\n";
+	print(M);
 }
 /**
  * @brief prints vector x
@@ -216,7 +239,7 @@ public:
 	/**
 	 * @brief copy matrix M to yourself
 	 */
-	void set(Matrix& M){
+	void set(const Matrix& M){
 		for(long i=0; i < size; i++){
 			for(long j=0; j < i+1; j++){
 				this->at(i,j) = M.at(i,j);
@@ -312,7 +335,7 @@ public:
 	/**
 	 * @brief copy matrix M to yourself
 	 */
-	void set(Matrix& M){
+	void set(const Matrix& M){
 		for(long i=0; i < size; i++){
 			for(long j=i; j < size; j++){
 				this->at(i,j) = M.at(i,j);

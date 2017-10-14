@@ -41,7 +41,7 @@ double lu_time = 0.0;
  * @param P Permutation vector resulting of the pivoting
  * @param col Column of the matrix to be used as B
  */
-void solve_lu(Matrix LU, MatrixColMajor& X, MatrixColMajor& B, vector<long>& P, long col){
+void solve_lu(Matrix& LU, MatrixColMajor& X, MatrixColMajor& B, vector<long>& P, long col){
 	vector<double> Z(LU.size);
 	// find Z; LZ=B
 	subst_P<true, true>(LU, Z, B, P, col);

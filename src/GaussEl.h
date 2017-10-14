@@ -26,7 +26,7 @@ void calc_multipliers(Matrix& LU, long p) {
  @param LU Matrix to be decomposed Output: lower triangle of this matrix will store L 1 diagonal implicit, upper triangle stores U
  @param P Permutation vector resulting of the pivoting
  */
-void GaussEl(Matrix A, Matrix& LU, vector<long>& P) {
+void GaussEl(const Matrix& A, Matrix& LU, vector<long>& P) {
 	// copy A to LU
 	set(LU, A);
 	// initializing permutation vector

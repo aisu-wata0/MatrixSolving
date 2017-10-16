@@ -44,9 +44,9 @@ double lu_time = 0.0;
 void solve_lu(Matrix& LU, MatrixColMajor& X, MatrixColMajor& B, vector<long>& P, long col){
 	vector<double> Z(LU.size);
 	// find Z; LZ=B
-	subst_P<true, true>(LU, Z, B, P, col);
+	subst_P<SubstForwards, DiagonalUnit>(LU, Z, B, P, col);
 	// find X; Ux=Z
-	subst<false>(LU, X, Z, col);
+	subst<SubstBackwards>(LU, X, Z, col);
 }
 /**
  * @brief Finds inverse matrix,

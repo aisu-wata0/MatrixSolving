@@ -167,7 +167,7 @@ void readMatrix(Mat& A){
 	}
 }
 
-int main(int argc, char **argv) {
+int mainBAK(int argc, char **argv) {
 	//LIKWID_MARKER_INIT;
 	
 	cout.precision(17);
@@ -259,5 +259,56 @@ int main(int argc, char **argv) {
 	in_f.close();
 	cout.rdbuf(coutbuf); //redirect
 	o_f.close();
+	return 0;
+}
+
+
+int main()
+{
+	long size = 3;
+	long step = 1;
+	#define CACHE_LSZ 2
+	long bstep = step * CACHE_LSZ;
+	long bi, bj;
+	long i, j, s;
+	// TODO test iterate blocks by col (bj) instead of as currently by row (bi)
+	// forwards
+	for(bj = 0; bj < size; bj += bstep){
+		long jmax = bj + bstep > size ? size : bj + bstep;
+		// go though diagonal block
+		for(i = bj; i < jmax; i += step){
+			if(bj == 0)
+				cout << "started line (" << i << "," << 0 << ") dia" << endl;
+			for(j = bj; j < jmax && j != i; j += step){
+				cout << "(" << i << "," << j << ") dia" << endl; 
+			}
+			cout << "divided by (" << i << "," << i << ") dia" << endl;
+		}
+		for(bi = bj+bstep; bi < size; bi += bstep){
+			long imax = bi + bstep > size ? size : bi + bstep;
+			if(bj == 0)
+				for(i = bi; i < imax; i += step)
+					cout << "started line (" << i << "," << 0 << ")" << endl;
+			// go though current block
+			for(i = bi; i < imax; i += step){
+				for(j = bj; j < jmax && j != i; j += step){
+					cout << "(" << i << "," << j << ")" << endl; 
+				}
+			}
+		}
+		// remainder
+//		for(i = size - mod(size, bstep); i < size; i += step){
+//			for(j = bj; j < bj+bstep; j += step){
+//				cout << "(" << i << "," << j << ")" << endl; 
+//			}
+//		}
+	}
+	// remainder
+//	for(i = size - mod(size, bstep); i < size; i += step){
+//		for(j = size - mod(size, bstep); j != i; j += step){
+//			cout << "(" << i << "," << j << ")" << endl; 
+//		}
+//		cout << "divided by (" << i << "," << i << ") dia" << endl;
+//	}
 	return 0;
 }

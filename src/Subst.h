@@ -3,8 +3,12 @@
 /**
 @file Subst.h
 */
+
+#include "Matrix.h"
+
 namespace std {
-	
+
+
 enum SubstDirection {
 	SubstForwards,
 	SubstBackwards,
@@ -75,7 +79,6 @@ void subst_P(TMatrix& T, vector<double>& X, MatrixColMajor& I, vector<long>& P, 
  */
 template<SubstDirection direction, class TMatrix>
 void subst(TMatrix& T, MatrixColMajor& X, vector<double>& B, long col) {
-	double sum;
 	long i, j;
 	int step;
 	long size = T.size;
@@ -89,15 +92,30 @@ void subst(TMatrix& T, MatrixColMajor& X, vector<double>& B, long col) {
 		step = -1;
 		X.at(size-1,col) = B.at(size-1) / T.at(size-1, size-1);
 	}
-
+	
 	for (; i >= 0 && i < size; i += step) {
-		sum = B.at(i);
+		X.at(i,col) = B.at(i);
 		if(direction == SubstForwards) {j = 0;} else {j = size-1;}
 		for (; j != i; j += step) {
-			sum -= X.at(j,col) * T.at(i, j);
+			X.at(i,col) -= X.at(j,col) * T.at(i, j);
 		}
-		X.at(i,col) = sum / T.at(i, i);
+		X.at(i,col) = X.at(i,col) / T.at(i, i);
 	}
+	
+//	int bstep = CACHE_LINE_SIZE * step;
+//	// forwards
+//	for(long bi = 0; bi < size; bi += bstep){
+//		X.at(i,col) = B.at(i);
+//		for(long bj = 0; bj != bi; bj += bstep){
+//			// go though current block
+//			for(long i = bi; i < bi+bstep; i += step){
+//				for(long j = bj; j < bj+bstep; j += step){
+//					X.at(i,col) -= X.at(j,col) * T.at(i, j);
+//				}
+//			}
+//		}
+//		X.at(i,col) = X.at(i,col) / T.at(i, i);
+//	}
 }
 
 

@@ -167,7 +167,7 @@ void readMatrix(Mat& A){
 	}
 }
 
-int mainBAK(int argc, char **argv) {
+int main(int argc, char **argv) {
 	//LIKWID_MARKER_INIT;
 	
 	cout.precision(17);
@@ -263,35 +263,64 @@ int mainBAK(int argc, char **argv) {
 }
 
 
-int main()
+int mainTEST()
 {
+	SubstDirection direction = SubstForwards;
 	long size = 3;
-	long step = 1;
-	#define CACHE_LSZ 2
-	long bstep = step * CACHE_LSZ;
-	long bi, bj;
-	long i, j, s;
+	Matrix A(size);
+	set(A, 0);
+	// TODO test iterate blocks by col (bj) instead of as currently by row (bi)
+	long bi; long bj;
+	long i; long j;
+	long iend; long jend;
+	long step;
 	// TODO test iterate blocks by col (bj) instead of as currently by row (bi)
 	// forwards
-	for(bj = 0; bj < size; bj += bstep){
-		long jmax = bj + bstep > size ? size : bj + bstep;
+	if(direction == SubstForwards){
+		bj = 0;
+		step = +1;
+	} else {
+		bj = size-1;
+		step = -1;
+	}
+	long bstep = step * CACHE_LSZ;
+	
+	for(; bj >= 0 && bj < size; bj += bstep){
+		if(direction == SubstForwards) {
+			jend = bj + bstep > size ? size : bj + bstep;
+		} else {
+			jend = bj + bstep < 0 ? -1 : bj + bstep;
+		}
 		// go though diagonal block
-		for(i = bj; i < jmax; i += step){
-			if(bj == 0)
-				cout << "started line (" << i << "," << 0 << ") dia" << endl;
-			for(j = bj; j < jmax && j != i; j += step){
+		for(i = bj; i != jend; i += step){
+			if((bj == 0 && direction == SubstForwards) || (bj == size-1 && direction == SubstBackwards)){
+				cout << "started line (" << i << "," << bj << ") dia" << endl;
+				if(A.at(i,i) != 0) { cout << "ERROR: already started" << endl; }
+				A.at(i,i) = 1;
+			}
+			for(j = bj; j != jend && j != i; j += step){
 				cout << "(" << i << "," << j << ") dia" << endl; 
+				if(A.at(j,j) != -1 || A.at(i,i) < 1) cout << "ERROR: X not found yet or not inited" << endl; 
 			}
 			cout << "divided by (" << i << "," << i << ") dia" << endl;
+			if(A.at(i,i) < 1) cout << "ERROR: dividend not inited" ;
+			A.at(i,i) = -1;
 		}
-		for(bi = bj+bstep; bi < size; bi += bstep){
-			long imax = bi + bstep > size ? size : bi + bstep;
-			if(bj == 0)
-				for(i = bi; i < imax; i += step)
-					cout << "started line (" << i << "," << 0 << ")" << endl;
+		for(bi = bj+bstep; bi >= 0 && bi < size; bi += bstep){
+			if(direction == SubstForwards) {
+				iend = bi + bstep > size ? size : bi + bstep;
+			} else {
+				iend = bi + bstep < 0 ? -1 : bi + bstep;
+			}
+			if((bj == 0 && direction == SubstForwards) || (bj == size-1 && direction == SubstBackwards))
+				for(i = bi; i != iend; i += step){
+					cout << "started line (" << i << "," << bj << ")" << endl;
+					if(A.at(i,i) != 0) { cout << "ERROR: already started" << endl; }
+					A.at(i,i) = 1;
+				}
 			// go though current block
-			for(i = bi; i < imax; i += step){
-				for(j = bj; j < jmax && j != i; j += step){
+			for(i = bi; i != iend; i += step){
+				for(j = bj; j != jend && j != i; j += step){
 					cout << "(" << i << "," << j << ")" << endl; 
 				}
 			}

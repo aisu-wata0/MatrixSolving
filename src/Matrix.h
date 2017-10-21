@@ -10,9 +10,12 @@ long div_down(long n, long d) {
 }
 
 #define mod(X,Y) ((((X) % (Y)) + (Y)) % Y)
+
 #define CACHE_LINE_SIZE 16
 #define CACHE_SIZE 64 // likwid-topology: Cache line size:	64
 //#define CACHE_LSZ CACHE_SIZE/sizeof(double) // TODO use this instead of CACHE_LINE_SIZE, careful with Tri branch
+#define CACHE_LSZ 16
+
 #define PAD(X) (div_down((X),CACHE_LINE_SIZE)*(CACHE_LINE_SIZE*(CACHE_LINE_SIZE-1))/2)
 // Optm: test switching, the below doesnt work probably
 //#define PAD(X) ((long)floor((X)/(double)CACHE_LINE_SIZE)*(CACHE_LINE_SIZE*(CACHE_LINE_SIZE-1))/2)
@@ -135,12 +138,23 @@ void set(Mat& M, const Matrix& A){
 		}
 	}
 }
+/**
+ * @brief sets all matrix to parameter
+ */
+template<class Mat>
+void set(Mat& M, double x){
+	for(long i=0; i < M.size; i++){
+		for(long j=0; j < M.size; j++){
+			M.at(i,j) = x;
+		}
+	}
+}
 
 template<class Mat>
 void print(Mat& M){
 	for(long i = 0; i < M.size; i++){
 		for(long j = 0; j < M.size; j++){
-			cout << M.at(i, j) <<'\t';
+			cout << M.at(i, j) <<' ';
 		}
 		cout << endl;
 	}

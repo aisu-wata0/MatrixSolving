@@ -79,42 +79,68 @@ void subst_P(TMatrix& T, vector<double>& X, MatrixColMajor& I, vector<long>& P, 
  */
 template<SubstDirection direction, class TMatrix>
 void subst(TMatrix& T, MatrixColMajor& X, vector<double>& B, long col) {
-	long i, j;
-	int step;
 	long size = T.size;
+	long bi; long bj;
+	long i; long j;
+	long iend; long jend;
+	long step;
 
+	// TODO test iterate blocks by col (bj) instead of as currently by row (bi)
 	if(direction == SubstForwards){
-		i = 1;
+		bj = 0;
 		step = +1;
-		X.at(0,col) = B.at(0) / T.at(0, 0);
 	} else {
-		i = size-2;
+		bj = size-1;
 		step = -1;
-		X.at(size-1,col) = B.at(size-1) / T.at(size-1, size-1);
 	}
+	long bstep = step * CACHE_LSZ;
 	
-	for (; i >= 0 && i < size; i += step) {
-		X.at(i,col) = B.at(i);
-		if(direction == SubstForwards) {j = 0;} else {j = size-1;}
-		for (; j != i; j += step) {
-			X.at(i,col) -= X.at(j,col) * T.at(i, j);
+	for(; bj >= 0 && bj < size; bj += bstep){
+		if(direction == SubstForwards) {
+			jend = bj + bstep > size ? size : bj + bstep;
+		} else {
+			jend = bj + bstep < 0 ? -1 : bj + bstep;
 		}
-		X.at(i,col) = X.at(i,col) / T.at(i, i);
-	}
-	
-//	int bstep = CACHE_LINE_SIZE * step;
-//	// forwards
-//	for(long bi = 0; bi < size; bi += bstep){
-//		X.at(i,col) = B.at(i);
-//		for(long bj = 0; bj != bi; bj += bstep){
-//			// go though current block
-//			for(long i = bi; i < bi+bstep; i += step){
-//				for(long j = bj; j < bj+bstep; j += step){
-//					X.at(i,col) -= X.at(j,col) * T.at(i, j);
-//				}
+		// go though diagonal block
+		for(i = bj; i != jend; i += step){
+			if((bj == 0 && direction == SubstForwards) || (bj == size-1 && direction == SubstBackwards)){
+				X.at(i,col) = B.at(i);
+			}
+			for(j = bj; j != jend && j != i; j += step){
+				X.at(i,col) -= X.at(j,col) * T.at(i, j);
+			}
+			X.at(i,col) = X.at(i,col) / T.at(i, i);
+		}
+		for(bi = bj+bstep; bi >= 0 && bi < size; bi += bstep){
+			if(direction == SubstForwards) {
+				iend = bi + bstep > size ? size : bi + bstep;
+			} else {
+				iend = bi + bstep < 0 ? -1 : bi + bstep;
+			}
+			if((bj == 0 && direction == SubstForwards) || (bj == size-1 && direction == SubstBackwards))
+				for(i = bi; i != iend; i += step){
+					X.at(i,col) = B.at(i);
+				}
+			// go though current block
+			for(i = bi; i != iend; i += step){
+				for(j = bj; j != jend && j != i; j += step){
+					X.at(i,col) -= X.at(j,col) * T.at(i, j);
+				}
+			}
+		}
+		// remainder
+//		for(i = size - mod(size, bstep); i < size; i += step){
+//			for(j = bj; j < bj+bstep; j += step){
+//				cout << "(" << i << "," << j << ")" << endl; 
 //			}
 //		}
-//		X.at(i,col) = X.at(i,col) / T.at(i, i);
+	}
+	// remainder
+//	for(i = size - mod(size, bstep); i < size; i += step){
+//		for(j = size - mod(size, bstep); j != i; j += step){
+//			cout << "(" << i << "," << j << ")" << endl; 
+//		}
+//		cout << "divided by (" << i << "," << i << ") dia" << endl;
 //	}
 }
 

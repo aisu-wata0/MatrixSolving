@@ -8,7 +8,6 @@
 
 namespace std {
 
-
 enum SubstDirection {
 	SubstForwards,
 	SubstBackwards,

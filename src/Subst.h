@@ -4,7 +4,7 @@
 @file Subst.h
 */
 namespace std {
-	
+
 enum SubstDirection {
 	SubstForwards,
 	SubstBackwards,

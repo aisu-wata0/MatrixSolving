@@ -11,14 +11,13 @@ long div_down(long n, long d) {
 
 #define mod(X,Y) ((((X) % (Y)) + (Y)) % Y)
 
-#define CACHE_LINE_SIZE 16
-#define CACHE_SIZE 64 // likwid-topology: Cache line size:	64
-//#define CACHE_LSZ CACHE_SIZE/sizeof(double) // TODO use this instead of CACHE_LINE_SIZE, careful with Tri branch
+#define CACHE_LINE_SIZE 64 // likwid-topology: Cache line size:	64
+//#define CACHE_LSZ CACHE_L_SIZE/sizeof(double)
 #define CACHE_LSZ 16
 
-#define PAD(X) (div_down((X),CACHE_LINE_SIZE)*(CACHE_LINE_SIZE*(CACHE_LINE_SIZE-1))/2)
+#define PAD(X) (div_down((X),CACHE_LSZ)*(CACHE_LSZ*(CACHE_LSZ-1))/2)
 // Optm: test switching, the below doesnt work probably
-//#define PAD(X) ((long)floor((X)/(double)CACHE_LINE_SIZE)*(CACHE_LINE_SIZE*(CACHE_LINE_SIZE-1))/2)
+//#define PAD(X) ((long)floor((X)/(double)CACHE_LSZ)*(CACHE_LSZ*(CACHE_LSZ-1))/2)
 
 #define PADDING true
 
@@ -51,9 +50,9 @@ public:
 	Matrix(long size)
 	:	size(size){
 		if(PADDING){
-			m_size = size + mod(CACHE_LINE_SIZE - size, CACHE_LINE_SIZE);
-			if(mod(m_size/CACHE_LINE_SIZE, 2) == 0){
-				m_size = m_size + CACHE_LINE_SIZE; // make sure m_size is odd multiple of cache line
+			m_size = size + mod(CACHE_LSZ - size, CACHE_LSZ);
+			if(mod(m_size/CACHE_LSZ, 2) == 0){
+				m_size = m_size + CACHE_LSZ; // make sure m_size is odd multiple of cache line
 			}
 		} else {
 			m_size = size;

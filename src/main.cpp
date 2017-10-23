@@ -241,8 +241,10 @@ int main(int argc, char **argv) {
 	
 	timer.start();
 	//LIKWID_MARKER_START("LU");
-	
-	GaussEl(A, LU, P);
+	int num = 4;
+	for(int i=0; i<num; i++){
+		GaussEl(A, LU, P);
+	}
 	
 	//LIKWID_MARKER_STOP("LU");
 	lu_time = timer.elapsed();
@@ -251,10 +253,10 @@ int main(int argc, char **argv) {
 	MatrixColMajor IA(size);
 	
 	cout<<"#\n";
-	inverse_refining(A, LU, IA, P, iter_n);
+	//inverse_refining(A, LU, IA, P, iter_n);
 
 	cout<< defaultfloat;
-	cout<<"# Tempo LU: "<< lu_time <<"\n";
+	cout<<"# Tempo LU: "<< lu_time/num <<"\n";
 	cout<<"# Tempo iter: "<< total_time_iter/(double)iter_n <<"\n";
 	cout<<"# Tempo residuo: "<< total_time_residue/(double)iter_n <<"\n#\n";
 	printm(IA);

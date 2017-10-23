@@ -8,6 +8,8 @@
 
 namespace std {
 
+#define max(x,y) ((x) > (y) ? x : y)
+
 enum SubstDirection {
 	SubstForwards,
 	SubstBackwards,
@@ -23,6 +25,15 @@ enum SubstPermutation {
 	SubstNoPermute,
 };
 
+template<typename T, typename A>
+inline double& at(std::vector<T,A>& vec, long i, long j) {
+	return vec.at(i);
+}
+template<typename T, typename A>
+inline const double& at(std::vector<T,A> const& vec, long i, long j) {
+	return vec.at(i);
+}
+
 /**
  * @brief Subtitution method for linear sistems, forward or backward, uses P from pivoting on the LU decomposition
  * @param T Triangular coeficient Matrix
@@ -33,39 +44,139 @@ enum SubstPermutation {
  * @param unit_diagonal true if diagonal is equal to 1
  * @param col Column of the matrix I to be used as B
  */
-template<SubstDirection direction, SubstDiagonal diagonal, class TMatrix>
-void subst_P(TMatrix& T, vector<double>& X, MatrixColMajor& I, vector<long>& P, long col){
-	double sum;
+template<SubstDirection direction, SubstDiagonal diagonal, SubstPermutation Permutation, class TMatrix, class XMatrix, class IMatrix>
+void subst(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
 	long i, j;
 	int step;
 	long size = T.size;
 	
 	if(direction == SubstForwards){
-		i = 1;
+		i = 0;
 		step = +1;
-		X.at(0) = I.at(P.at(0),col);
-		if(diagonal != DiagonalUnit){
-			X.at(i) /= T.at(0, 0);
-		}
 	} else {
-		i = size-2;
+		i = size-1;
 		step = -1;
-		X.at(size-1) = I.at(P.at(size-1),col);
-		if(diagonal != DiagonalUnit){
-			X.at(i) /= T.at(size-1, size-1);
-		}
 	}
 
 	for (; i >= 0 && i < size; i += step) {
-		sum = I.at(P.at(i), col);
-		if(direction == SubstForwards) {j = 0;} else {j = size-1;}
+		if(Permutation == SubstPermute)
+			{ at(X, i,col) = at(I, P.at(i),col); }
+		else{ at(X, i,col) = at(I, i,col); }
+		if(direction == SubstForwards)
+			{ j = 0; }
+		else{ j = size-1; }
+		
 		for (; j != i; j += step) {
-			sum -= X.at(j) * T.at(i, j);
+			at(X, i,col) -= at(X, j,col) * T.at(i,j);
 		}
-		X.at(i) = sum;
-		if(diagonal != DiagonalUnit){
-			X.at(i) /= T.at(i, i);
+		
+		if(diagonal != DiagonalUnit)
+			{ at(X, i,col) /= T.at(i,i); }
+	}
+}
+/**
+ * @brief Subtitution method for linear sistems, forward or backward, uses P from pivoting on the LU decomposition
+ * @param T Triangular coeficient Matrix
+ * @param X Variables to be found
+ * @param I Independant terms
+ * @param forward true is forward subst, false is backward.
+ * @param P from LU Decomposition
+ * @param unit_diagonal true if diagonal is equal to 1
+ * @param col Column of the matrix I to be used as B
+ */
+template<SubstDirection direction, SubstDiagonal diagonal, SubstPermutation Permutation, class TMatrix, class XMatrix, class IMatrix>
+void substR(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
+	long i, j;
+	long bi, bj;
+	int step;
+	int bstep;
+	long size = T.size;
+	long endi, endj;
+	
+	if(direction == SubstForwards){
+		bi = 0;
+		step = +1;
+		bstep = step * CACHE_LSZ;
+	} else {
+		bi = size-1;
+		step = -1;
+		bstep = step * CACHE_LSZ;
+	}
+	
+	for (; bi >= 0 && bi < size ; bi += bstep) {
+		if(direction == SubstForwards)
+			{ bj = 0;		endi = min(bi + bstep, size); }
+		else{ bj = size-1;	endi = max(bi + bstep, -1); }
+		
+		for(int i = bi; i != endi; i += step)
+			if(Permutation == SubstPermute)
+				{ at(X, i,col) = at(I, P.at(i),col); }
+			else{ at(X, i,col) = at(I, i,col); }
+		
+		for (; bj != bi; bj += bstep) {
+			for (i = bi; i != endi; i += step) {
+//				if(direction == SubstForwards)
+//					{ endj = min(bj + bstep, i); }
+//				else{ endj = max(bj + bstep, i); }
+				endj = bj + bstep;
+				for (j = bj; j != endj; j += step) {
+					at(X, i,col) = at(X, i,col) - T.at(i,j) * at(X, j,col);
+				}
+			}
 		}
+		// Remainder diagonal
+		for (i = bi; i != endi; i += step) {
+			if(direction == SubstForwards)
+				{ endj = min(bj + bstep, i); }
+			else{ endj = max(bj + bstep, i); }
+			
+			for (j = bj; j != endj; j += step) {
+				at(X, i,col) = at(X, i,col) - T.at(i,j) * at(X, j,col);
+			}
+			if(diagonal != DiagonalUnit)
+				{ at(X, i,col) /= T.at(i,i); }
+		}
+	}
+}
+/**
+ * @brief Subtitution method for linear sistems, forward or backward, uses P from pivoting on the LU decomposition
+ * @param T Triangular coeficient Matrix
+ * @param X Variables to be found
+ * @param I Independant terms
+ * @param forward true is forward subst, false is backward.
+ * @param P from LU Decomposition
+ * @param unit_diagonal true if diagonal is equal to 1
+ * @param col Column of the matrix I to be used as B
+ */
+template<SubstDirection direction, SubstDiagonal diagonal, SubstPermutation Permutation, class TMatrix, class XMatrix, class IMatrix>
+void substUnroll(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
+	long i, j;
+	int step;
+	int bstep;
+	long size = T.size;
+	
+	if(direction == SubstForwards){
+		i = 0;
+		step = +1;
+		bstep = step * CACHE_LSZ;
+	} else {
+		i = size-1;
+		step = -1;
+	}
+	
+	#define ROUND_DOWN(x, s) ((x) & ~((s)-1))
+	for (; i >= 0 && i < size; i += step) {
+		at(X, i,col) = at(I, i,col);
+		for (j = 0; j < ROUND_DOWN(i,CACHE_LSZ); j += bstep) {
+			for(int c = 0; c < bstep; ++c)
+				at(X, i,col) -= at(X, j+c,col) * T.at(i,j+c);
+		}
+		// Remainder
+		for(; j < i; ++j)
+			{ at(X, i,col) -= at(X, j,col) * T.at(i,j); }
+		
+		if(diagonal != DiagonalUnit)
+			{ at(X, i,col) /= T.at(i,i); }
 	}
 }
 /**

@@ -11,16 +11,25 @@ long div_down(long n, long d) {
 
 #define mod(X,Y) ((((X) % (Y)) + (Y)) % Y)
 
-#define CACHE_LINE_SIZE 16
-#define CACHE_SIZE 64 // likwid-topology: Cache line size:	64
-//#define CACHE_LSZ CACHE_SIZE/sizeof(double) // TODO use this instead of CACHE_LINE_SIZE, careful with Tri branch
+#define CACHE_LINE_SIZE 64 // likwid-topology: Cache line size:	64
+//#define CACHE_LSZ CACHE_LINE_SIZE/sizeof(double)
 #define CACHE_LSZ 16
 
-#define PAD(X) (div_down((X),CACHE_LINE_SIZE)*(CACHE_LINE_SIZE*(CACHE_LINE_SIZE-1))/2)
+#define PAD(X) (div_down((X),CACHE_LSZ)*(CACHE_LSZ*(CACHE_LSZ-1))/2)
 // Optm: test switching, the below doesnt work probably
-//#define PAD(X) ((long)floor((X)/(double)CACHE_LINE_SIZE)*(CACHE_LINE_SIZE*(CACHE_LINE_SIZE-1))/2)
+//#define PAD(X) ((long)floor((X)/(double)CACHE_LSZ)*(CACHE_LSZ*(CACHE_LSZ-1))/2)
 
 #define PADDING true
+
+// Non member access functions
+template<class Mat>
+double& at(Mat& M, long i, long j){
+	return M.at(i,j);
+}
+template<class Mat>
+const double& at(Mat const& M, long i, long j){
+	return M.at(i,j);
+}
 
 /**
  * @brief Stores values of matrix in a vector, Row Major Order
@@ -41,9 +50,9 @@ public:
 	Matrix(long size)
 	:	size(size){
 		if(PADDING){
-			m_size = size + mod(CACHE_LINE_SIZE - size, CACHE_LINE_SIZE);
-			if(mod(m_size/CACHE_LINE_SIZE, 2) == 0){
-				m_size = m_size + 8; // make sure m_size is odd multiple of cache line
+			m_size = size + mod(CACHE_LSZ - size, CACHE_LSZ);
+			if(mod(m_size/CACHE_LSZ, 2) == 0){
+				m_size = m_size + CACHE_LSZ; // make sure m_size is odd multiple of cache line
 			}
 		} else {
 			m_size = size;
@@ -65,9 +74,7 @@ public:
 	}
 	
 	inline long m_pos(long i, long j) const {
-		if(PADDING)
-			return i*m_size + j;
-		return i*size + j;
+		return i*m_size + j;
 	}
 	double& at(long i, long j) {
 		return arr[m_pos(i,j)];
@@ -95,9 +102,7 @@ public:
 	}
 	
 	inline long m_pos(long i, long j) const {
-		if(PADDING)
-			return j*m_size + i;
-		return j*size + i;
+		return j*m_size + i;
 	}
 	double& at(long i, long j) {
 		return arr[m_pos(i,j)];

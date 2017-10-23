@@ -8,7 +8,9 @@
 #include "Matrix.h"
 
 namespace std {
-
+double total = 0.0;
+double average = 0.0;
+Timer gauss_timer;
 /**
  @brief For the matrix LU finds its LU decomposition overwriting it
  Has partial pivoting, stores final indexes in P
@@ -16,18 +18,23 @@ namespace std {
  @param P Permutation vector resulting of the pivoting
  */
 void GaussEl(const Matrix& A, Matrix& LU, vector<long>& P) {
+	long p, i, j;
+	long bi, bj;
+	long endi, endj;
+	int bstep = CACHE_LSZ;
+	long size = A.size;
 	// copy A to LU
 	set(LU, A);
 	// initializing permutation vector
 	for(long i = 0; i < A.size; i++){
 		P.at(i) = i;
 	}
-
+	total = 0.0;
 	// for each pivot
-	for(long p = 0; p < A.size; p++){
+	for(p = 0; p < A.size; p++){
 		/* partial pivoting */
 		long maxRow = p;
-		for(long i = p+1; i < A.size; i++){
+		for(i = p+1; i < A.size; i++){
 			// for each value below the p pivot
 			if(abs(LU.at(i,p)) > abs(LU.at(maxRow,p))) maxRow = i;
 		} // finds max value
@@ -43,19 +50,39 @@ void GaussEl(const Matrix& A, Matrix& LU, vector<long>& P) {
 		
 		// Calc pivot multipliers
 		//for(long i = p+1; i < LU.size; i++){	// going from pivot+1 to end
-		for(long i = LU.size-1; i >= p+1; i--){	// going from end to pivot+1 Optm: If no pivoting ocurred: 1 less cache miss
+		for(i = LU.size-1; i != p; i--){	// going from end to pivot+1 Optm: If no pivoting ocurred: 1 less cache miss
 			LU.at(i, p) = LU.at(i, p)/LU.at(p, p);
 		}
 		
-		for(long i = p+1; i < A.size; i++){   // going from pivot+1 to end
+		/**
+		for(i = p+1; i < A.size; i++){   // going from pivot+1 to end
 		//for(long i = A.size-1; i >= p+1; i--){	// going from end to pivot+1 Optm: If no pivoting ocurred: 1 less cache miss
 			// subtract pivot row U.at(p, _) from current row LU.at(i, _)
-			for(long k = p+1; k < A.size; k++){
-				LU.at(i, k) = LU.at(i, k) - LU.at(p, k) * LU.at(i, p);
+			for(j = p+1; j < A.size; j++){
+				LU.at(i, j) = LU.at(i, j) - LU.at(p, j) * LU.at(i, p);
 				// mulitply pivot line value to multiplier
 			}
 		}
+		/**/
+		// TEST
+		if((p+1) % bstep == 0) {
+			gauss_timer.start();
+			/* Streaming *
+			for(i = p+1; i < A.size; i++)
+				for(j = p+1; j < A.size; j++)
+					LU.at(i, j) = LU.at(i, j) - LU.at(p, j) * LU.at(i, p);
+			/* Blocking */
+			for (bi = p+1; bi < size ; bi += bstep)
+				for(j = p+1; j != size; j += 1)
+					for(int c = 0; c != bstep; c += 1)
+						LU.at(bi+c, j) = LU.at(bi+c, j) - LU.at(p, j) * LU.at(bi+c, p);
+			/**/
+			double el = gauss_timer.elapsed();
+			if((size-(p+1))>0)
+				total += el;
+		}
 	}
+	average += total;
 }
 
 

@@ -241,7 +241,7 @@ int main(int argc, char **argv) {
 	
 	timer.start();
 	//LIKWID_MARKER_START("LU");
-	int num = 4;
+	int num = 32;
 	for(int i=0; i<num; i++){
 		GaussEl(A, LU, P);
 	}
@@ -255,11 +255,12 @@ int main(int argc, char **argv) {
 	cout<<"#\n";
 	//inverse_refining(A, LU, IA, P, iter_n);
 
-	cout<< defaultfloat;
+	//cout<< defaultfloat;
+	cout<<"# Average time per col: "<< average/num <<"\n";
 	cout<<"# Tempo LU: "<< lu_time/num <<"\n";
 	cout<<"# Tempo iter: "<< total_time_iter/(double)iter_n <<"\n";
 	cout<<"# Tempo residuo: "<< total_time_residue/(double)iter_n <<"\n#\n";
-	printm(IA);
+	printm(LU);
 	
 	//LIKWID_MARKER_CLOSE;
 	in_f.close();

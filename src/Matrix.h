@@ -10,12 +10,27 @@ long div_down(long n, long d) {
 }
 
 #define mod(X,Y) ((((X) % (Y)) + (Y)) % Y)
+
 #define CACHE_LINE_SIZE 16
+#define CACHE_SIZE 64 // likwid-topology: Cache line size:	64
+//#define CACHE_LSZ CACHE_SIZE/sizeof(double) // TODO use this instead of CACHE_LINE_SIZE, careful with Tri branch
+#define CACHE_LSZ 16
+
 #define PAD(X) (div_down((X),CACHE_LINE_SIZE)*(CACHE_LINE_SIZE*(CACHE_LINE_SIZE-1))/2)
 // Optm: test switching, the below doesnt work probably
 //#define PAD(X) ((long)floor((X)/(double)CACHE_LINE_SIZE)*(CACHE_LINE_SIZE*(CACHE_LINE_SIZE-1))/2)
 
 #define PADDING true
+
+// Non member access functions
+template<class Mat>
+double& at(Mat& M, long i, long j){
+	return M.at(i,j);
+}
+template<class Mat>
+const double& at(Mat const& M, long i, long j){
+	return M.at(i,j);
+}
 
 /**
  * @brief Stores values of matrix in a vector, Row Major Order
@@ -23,8 +38,9 @@ long div_down(long n, long d) {
 class Matrix
 {
 public:
-	long size;
 	double* arr;
+	long size;
+	long m_size;
 	
 	void mem_alloc(long size){
 		arr = (double*)malloc((size*size)*sizeof(double));
@@ -34,7 +50,15 @@ public:
 	 */
 	Matrix(long size)
 	:	size(size){
-		mem_alloc(size);
+		if(PADDING){
+			m_size = size + mod(CACHE_LINE_SIZE - size, CACHE_LINE_SIZE);
+			if(mod(m_size/CACHE_LINE_SIZE, 2) == 0){
+				m_size = m_size + CACHE_LINE_SIZE; // make sure m_size is odd multiple of cache line
+			}
+		} else {
+			m_size = size;
+		}
+		mem_alloc(m_size);
 	}
 	
 	~Matrix(){
@@ -51,7 +75,7 @@ public:
 	}
 	
 	inline long m_pos(long i, long j) const {
-		return i*size + j;
+		return i*m_size + j;
 	}
 	double& at(long i, long j) {
 		return arr[m_pos(i,j)];
@@ -79,7 +103,7 @@ public:
 	}
 	
 	inline long m_pos(long i, long j) const {
-		return j*size + i;
+		return j*m_size + i;
 	}
 	double& at(long i, long j) {
 		return arr[m_pos(i,j)];
@@ -120,12 +144,23 @@ void set(Mat& M, const Matrix& A){
 		}
 	}
 }
+/**
+ * @brief sets all matrix to parameter
+ */
+template<class Mat>
+void set(Mat& M, double x){
+	for(long i=0; i < M.size; i++){
+		for(long j=0; j < M.size; j++){
+			M.at(i,j) = x;
+		}
+	}
+}
 
 template<class Mat>
 void print(Mat& M){
 	for(long i = 0; i < M.size; i++){
 		for(long j = 0; j < M.size; j++){
-			cout << M.at(i, j) <<'\t';
+			cout << M.at(i, j) <<' ';
 		}
 		cout << endl;
 	}

@@ -41,12 +41,13 @@ double lu_time = 0.0;
  * @param P Permutation vector resulting of the pivoting
  * @param col Column of the matrix to be used as B
  */
-void solve_lu(Matrix& LU, MatrixColMajor& X, MatrixColMajor& B, vector<long>& P, long col){
-	vector<double> Z(LU.size);
+template<class LUMatrix, class XMatrix, class BMatrix>
+void solve_lu(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P, long col){
+	static vector<double> Z(LU.m_size);
 	// find Z; LZ=B
-	subst_P<SubstForwards, DiagonalUnit>(LU, Z, B, P, col);
+	subst<SubstForwards, DiagonalUnit, SubstPermute>(LU, Z, B, P, col);
 	// find X; Ux=Z
-	subst<SubstBackwards>(LU, X, Z, col);
+	subst<SubstBackwards, DiagonalValue, SubstNoPermute>(LU, X, Z, P, col);
 }
 /**
  * @brief Finds inverse matrix,
@@ -57,7 +58,8 @@ void solve_lu(Matrix& LU, MatrixColMajor& X, MatrixColMajor& B, vector<long>& P,
  * @param I Identity matrix
  * @param P Permutation vector resulting of the pivoting
  */
-void inverse(Matrix& LU, MatrixColMajor& IA, MatrixColMajor& I, vector<long>& P){
+template<class LUMatrix, class IAMatrix, class IMatrix>
+void inverse(LUMatrix& LU, IAMatrix& IA, IMatrix& I, vector<long>& P){
 	for(long j = 0; j < IA.size; j++){
 		// for each IA col solve SL to find the IA col values
 		solve_lu(LU, IA, I, P, j);
@@ -70,7 +72,8 @@ void inverse(Matrix& LU, MatrixColMajor& IA, MatrixColMajor& I, vector<long>& P)
  * @param I Output residue, no init needed
  * @return Norm of the residue
  */
-double residue(Matrix& A, MatrixColMajor& IA, MatrixColMajor& I){
+template<class AMatrix, class IAMatrix, class IMatrix>
+double residue(AMatrix& A, IAMatrix& IA, IMatrix& I){
 	double err_norm = 0.0;
 
 	for(long icol=0; icol < A.size; icol++){
@@ -98,7 +101,8 @@ double residue(Matrix& A, MatrixColMajor& IA, MatrixColMajor& I){
  * @param P LU pivot permutation
  * @param iter_n
  */
-void inverse_refining(Matrix& A, Matrix& LU, MatrixColMajor& IA, vector<long>& P, long iter_n){
+template<class AMatrix, class LUMatrix, class IAMatrix>
+void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, vector<long>& P, long iter_n){
 	long i=0;
 	// number of digits of iter_n, for pretty printing
 	long digits = (long)log10((double) iter_n) + 1;
@@ -233,7 +237,7 @@ int main(int argc, char **argv) {
 	}
 	
 	Matrix LU(size);
-	vector<long> P(size);
+	vector<long> P(A.m_size);
 	
 	timer.start();
 	//LIKWID_MARKER_START("LU");

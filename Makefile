@@ -13,12 +13,12 @@ LIKDIR1=/usr/local/likwid
 LIKDIR2=/home/soft/likwid
 LIKDIR3=/usr/include/likwid
 LIKDIR4=/usr/include
-LIBS =  -DLIKWID_PERFMON -llikwid -lm -pthread -I$(LIKDIR1)/include -L$(LIKDIR1)/lib -I$(LIKDIR2)/include -L$(LIKDIR2)/lib -I$(LIKDIR3)/include -L$(LIKDIR3)/lib -I$(LIKDIR4)/include -L$(LIKDIR4)/lib
+LIBS = -DLIKWID_PERFMON -llikwid -lm -pthread -I$(LIKDIR1)/include -L$(LIKDIR1)/lib -I$(LIKDIR2)/include -L$(LIKDIR2)/lib -I$(LIKDIR3)/include -L$(LIKDIR3)/lib -I$(LIKDIR4)/include -L$(LIKDIR4)/lib
 
 # warnings and flags
 WARN = -Wall
 WNO = -Wno-comment  -Wno-sign-compare
-FLAGS = -O3 $(WARN) $(WNO)
+FLAGS = -O3 -mavx -march=native $(WARN) $(WNO)
 
 # Executable filename
 bin = invmat

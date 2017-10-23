@@ -10,12 +10,26 @@ long div_down(long n, long d) {
 }
 
 #define mod(X,Y) ((((X) % (Y)) + (Y)) % Y)
-#define CACHE_LINE_SIZE 16
-#define PAD(X) (div_down((X),CACHE_LINE_SIZE)*(CACHE_LINE_SIZE*(CACHE_LINE_SIZE-1))/2)
+
+#define CACHE_LINE_SIZE 64 // likwid-topology: Cache line size:	64
+//#define CACHE_LSZ CACHE_LINE_SIZE/sizeof(double)
+#define CACHE_LSZ 16 // how many doubles in a line
+
+#define PAD(X) (div_down((X),CACHE_LSZ)*(CACHE_LSZ*(CACHE_LSZ-1))/2)
 // Optm: test switching, the below doesnt work probably
-//#define PAD(X) ((long)floor((X)/(double)CACHE_LINE_SIZE)*(CACHE_LINE_SIZE*(CACHE_LINE_SIZE-1))/2)
+//#define PAD(X) ((long)floor((X)/(double)CACHE_LSZ)*(CACHE_LSZ*(CACHE_LSZ-1))/2)
 
 #define PADDING true
+
+// Non member access functions
+template<class Mat>
+double& at(Mat& M, long i, long j){
+	return M.at(i,j);
+}
+template<class Mat>
+const double& at(Mat const& M, long i, long j){
+	return M.at(i,j);
+}
 
 /**
  * @brief Stores values of matrix in a vector, Row Major Order
@@ -23,35 +37,42 @@ long div_down(long n, long d) {
 class Matrix
 {
 public:
-	long size;
 	double* arr;
+	long size;
+	long m_size;
 	
 	void mem_alloc(long size){
 		arr = (double*)malloc((size*size)*sizeof(double));
 	}
+	
+	void set_size(long new_size){
+		size = new_size;
+		if(PADDING){
+			m_size = size + mod(CACHE_LSZ - size, CACHE_LSZ);
+			if(mod(m_size/CACHE_LSZ, 2) == 0){
+				m_size = m_size + CACHE_LSZ; // make sure m_size is odd multiple of cache line
+			}
+		} else {
+			m_size = size;
+		}
+		mem_alloc(m_size);
+	}
+	
+	Matrix(){
+	}
 	/**
 	 * @param size of matrix, total number of lines
 	 */
-	Matrix(long size)
-	:	size(size){
-		mem_alloc(size);
+	Matrix(long size){
+		set_size(size);
 	}
 	
 	~Matrix(){
 		free(arr);
 	}
 	
-	Matrix(const Matrix& other)
-	: Matrix(other.size) {
-		for(long i = 0; i < size; i++){
-			for(long j = 0; j < size; j++){
-				this->at(i,j) = other.at(i,j);
-			}
-		}
-	}
-	
 	inline long m_pos(long i, long j) const {
-		return i*size + j;
+		return i*m_size + j;
 	}
 	double& at(long i, long j) {
 		return arr[m_pos(i,j)];
@@ -69,17 +90,8 @@ class MatrixColMajor : public Matrix
 public:
 	using Matrix::Matrix;
 	
-	MatrixColMajor(const MatrixColMajor& other)
-	: Matrix(other.size) {
-		for(long i = 0; i < size; i++){
-			for(long j = 0; j < size; j++){
-				this->at(i,j) = other.at(i,j);
-			}
-		}
-	}
-	
 	inline long m_pos(long i, long j) const {
-		return j*size + i;
+		return j*m_size + i;
 	}
 	double& at(long i, long j) {
 		return arr[m_pos(i,j)];
@@ -120,12 +132,23 @@ void set(Mat& M, const Matrix& A){
 		}
 	}
 }
+/**
+ * @brief sets all matrix to parameter
+ */
+template<class Mat>
+void set(Mat& M, double x){
+	for(long i=0; i < M.size; i++){
+		for(long j=0; j < M.size; j++){
+			M.at(i,j) = x;
+		}
+	}
+}
 
 template<class Mat>
 void print(const Mat& M){
 	for(long i = 0; i < M.size; i++){
 		for(long j = 0; j < M.size; j++){
-			cout << M.at(i, j) <<'\t';
+			cout << M.at(i, j) <<' ';
 		}
 		cout << endl;
 	}
@@ -175,53 +198,39 @@ void printv(vector<T>& x){
 }
 
 /**
- * @class MatrixTri
- * @brief Abstract class, stores values of a triangular matrix in a array, each line goes only until elements of the diagonal
- */
-class MatrixTri
-{
-public:
-	double* matrix;
-	long size;
-	long mem_size;
-
-	void mem_alloc(long m_size){
-		mem_size = m_size;
-		matrix = (double*)malloc(mem_size*sizeof(double));
-	}
-	
-	protected:
-	MatrixTri(){}
-};
-
-/**
  * @class MatrixTriUpp
  * @brief Lower triangular implementation of MatrixTri
  */
-class MatrixTriLow : public MatrixTri
+class MatrixTriLow : public Matrix
 {
 public:
 	/**
-	 * ex: having CACHE_LINE_SIZE = 3;
+	 * ex: having CACHE_LSZ = 3;
 	 * [00, -, -|10,11, -|20,21,22|30,31,32,33, -, -|40,41,42,43,44, -|50,...]
 	 * pad=2;    pad=1;   pad=0;   pad=2;            pad=1;           pad=0;
 	 * pad_total(i = 4) == +2 +1 +0 +2 = 5
 	 * https://docs.google.com/spreadsheets/d/1y2ffNz4jD6LwmL2JnWPCmYlUoSuY7Q04Ey6REYM7DXg/edit?usp=sharing */
 	inline long pad_total(long i) const {
 		if(not PADDING) return 0;
-		long pos = mod(i, CACHE_LINE_SIZE);
-		long sum = pos*(2*CACHE_LINE_SIZE -1 - pos)/2;
+		long pos = mod(i, CACHE_LSZ);
+		long sum = pos*(2*CACHE_LSZ -1 - pos)/2;
 		return (PAD(i) + sum);
 	}
 	
 	inline long m_pos(long i, long j) const {
 		return ( i*(i+1)/2 + j + pad_total(i) );
 	}
+	double& at(long i, long j) {
+		return arr[m_pos(i,j)];
+	}
+	const double& at(long i, long j) const {
+		return arr[m_pos(i,j)];
+	}
 	
-	void mem_alloc(long new_size){
+	void set_size(long new_size){
 		size = new_size;
-		
-		MatrixTri::mem_alloc(m_pos(size-1, size-1) +1);
+		m_size = m_pos(size-1, size-1) +1;
+		mem_alloc(m_size);
 	}
 	
 	MatrixTriLow(){
@@ -230,15 +239,9 @@ public:
 	 * @param size of matrix, total number of lines
 	 */
 	MatrixTriLow(long size){
-		mem_alloc(size);
+		set_size(size);
 	}
 	
-	double& at(long i, long j) {
-		return matrix[m_pos(i,j)];
-	}
-	const double& at(long i, long j) const {
-		return matrix[m_pos(i,j)];
-	}
 	/**
 	 * @brief copy matrix M to yourself
 	 */
@@ -283,15 +286,15 @@ void print(const MatrixTriLow& L){
 
 /**
  * @class MatrixTriUpp
- * @brief Upper triangular implementation of MatrixTri
+ * @brief Upper triangular implementation of Matrix
  */
-class MatrixTriUpp : public MatrixTri
+class MatrixTriUpp : public Matrix
 {
 public:
 	long desl;
 	long first_pad_seq;
 	/**
-	 * ex: having CACHE_LINE_SIZE = 4; (size % CACHE_LINE_SIZE) == 2; (meaning first row will have 2 pads
+	 * ex: having CACHE_LSZ = 4; (size % CACHE_LSZ) == 2; (meaning first row will have 2 pads
 	 * row = 0  1  2  3  4  5  6  7  8  9  0  1  2
 	 * pad = 2  3  0  1  2  3  0  1  2  3  0  1  2
 	 *       ----     -------------------     ----
@@ -300,7 +303,7 @@ public:
 	 * https://docs.google.com/spreadsheets/d/1y2ffNz4jD6LwmL2JnWPCmYlUoSuY7Q04Ey6REYM7DXg/edit?usp=sharing */
 	inline long pad_total(long i) const {
 		if(not PADDING) return 0;
-		long pos = mod(i-desl,CACHE_LINE_SIZE);
+		long pos = mod(i-desl,CACHE_LSZ);
 		long sum = pos*(pos+1)/2;
 		return (first_pad_seq + PAD(i-desl) + sum);
 	}
@@ -308,20 +311,26 @@ public:
 	inline long m_pos(long i, long j) const {
 		return ( i*(2*size-i+1)/2 + j -i + pad_total(i) );
 	}
+	double& at(long i, long j) {
+		return arr[m_pos(i,j)];
+	}
+	const double& at(long i, long j) const {
+		return arr[m_pos(i,j)];
+	}
 	
-	void mem_alloc(long new_size){
+	void set_size(long new_size){
 		size = new_size;
-		desl = mod((size+1),CACHE_LINE_SIZE);
-		if(mod(size,CACHE_LINE_SIZE) != CACHE_LINE_SIZE-1){
-			long a1 = CACHE_LINE_SIZE - mod(size,CACHE_LINE_SIZE);
-			long an = CACHE_LINE_SIZE-1;
+		desl = mod((size+1),CACHE_LSZ);
+		if(mod(size,CACHE_LSZ) != CACHE_LSZ-1){
+			long a1 = CACHE_LSZ - mod(size,CACHE_LSZ);
+			long an = CACHE_LSZ-1;
 			long n = an -a1 +1;
 			first_pad_seq = n*(a1 + an)/2;
 		} else {
 			first_pad_seq = 0;
 		}
-		
-		MatrixTri::mem_alloc(m_pos(size-1, size-1) +1);
+		m_size = m_pos(size-1, size-1) +1;
+		mem_alloc(m_size);
 	}
 	
 	MatrixTriUpp(){
@@ -330,14 +339,7 @@ public:
 	 * @param size of matrix, total number of lines
 	 */
 	MatrixTriUpp(long size){
-		mem_alloc(size);
-	}
-	
-	double& at(long i, long j) {
-		return matrix[m_pos(i,j)];
-	}
-	const double& at(long i, long j) const {
-		return matrix[m_pos(i,j)];
+		set_size(size);
 	}
 	/**
 	 * @brief copy matrix M to yourself

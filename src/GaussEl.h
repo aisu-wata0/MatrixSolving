@@ -3,10 +3,11 @@
 /**
 @file GaussEl.h
 */
-namespace std {
 
 #include "Double.h"
 #include "Matrix.h"
+
+namespace std {
 
 /**
  @brief For the matrix LU finds its LU decomposition overwriting it

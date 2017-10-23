@@ -3,10 +3,11 @@
 /**
 @file GaussEl.h
 */
-namespace std {
 
 #include "Double.h"
 #include "Matrix.h"
+
+namespace std {
 
 void calc_multipliers(Matrix& LU, long p) {
 	//for(long i = p+1; i < LU.size; i++){	// going from pivot+1 to end

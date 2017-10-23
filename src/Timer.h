@@ -5,14 +5,13 @@
 */
 
 #include <sys/time.h>
+#include <iostream>
 
 /**
  * @return returns current clock time in seconds 
  */
-double timestamp(void){
-	struct timeval tp;
-	gettimeofday(&tp, NULL);
-	return ((double)(tp.tv_sec + tp.tv_usec/1000000.0));
+double tv_sec(struct timeval* tp){
+	return ((tp->tv_sec + tp->tv_usec*1.0e-6));
 }
 
 /**
@@ -22,20 +21,24 @@ double timestamp(void){
 class Timer
 {
 private:
-	double start_timer;
+	struct timeval start_tv;
 	
 public:
 	/**
 	 * @brief Starts timer
 	 */
 	void start(){
-		start_timer = timestamp();
+		gettimeofday(&start_tv, NULL);
 	}
 	/**
 	 * @return time elapsed since last start
 	 */
 	double elapsed(){
-		return timestamp() - start_timer;
+		struct timeval elapsed_tv;
+		gettimeofday(&elapsed_tv, NULL);
+		elapsed_tv.tv_sec -= start_tv.tv_sec;
+		elapsed_tv.tv_usec -= start_tv.tv_usec;
+		return tv_sec(&elapsed_tv);
 	}
 };
 

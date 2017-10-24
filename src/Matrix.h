@@ -13,7 +13,7 @@ long div_down(long n, long d) {
 
 #define CACHE_LINE_SIZE 64 // likwid-topology: Cache line size:	64
 //#define CACHE_LSZ CACHE_LINE_SIZE/sizeof(double) // how many doubles in a line
-#define CACHE_LSZ 16 // how many doubles in a line
+#define CACHE_LSZ 8 // how many doubles in a line
 
 #define PAD(X) (div_down((X),CACHE_LSZ)*(CACHE_LSZ*(CACHE_LSZ-1))/2)
 // Optm: test switching, the below doesnt work probably

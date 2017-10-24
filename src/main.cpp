@@ -171,7 +171,7 @@ void readMatrix(Mat& A){
 	}
 }
 
-int main(int argc, char **argv) {
+int mainBAK(int argc, char **argv) {
 	//LIKWID_MARKER_INIT;
 	
 	cout.precision(17);
@@ -266,82 +266,127 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
-
-int mainTEST()
-{
-	SubstDirection direction = SubstForwards;
-	long size = 3;
-	Matrix A(size);
-	set(A, 0);
-	// TODO test iterate blocks by col (bj) instead of as currently by row (bi)
-	long bi; long bj;
-	long i; long j;
+inline void tester(Matrix& LU, MatrixColMajor& B, Matrix& X){
+	long bi, bj, bk;
+	long i, j, k;
 	long iend; long jend;
 	long step;
-	// TODO test iterate blocks by col (bj) instead of as currently by row (bi)
-	// forwards
-	if(direction == SubstForwards){
+	
+	long size = LU.m_size;
+	
+	//asm("SETUP");
+	for(i = 0; i < size; i++){
+		for(j = 0; j < size; j++){
+			LU.at(i,j) = i*size + j;
+		}
+	}
+	for(i = 0; i < size; i++){
+		for(j = 0; j < size; j++){
+			B.at(i,j) = j*size + i;
+		}
+	}
+	
+	SubstDirection direction = SubstForwards;
+	if(true){
 		bj = 0;
 		step = +1;
 	} else {
 		bj = size-1;
 		step = -1;
 	}
-	long bstep = step * CACHE_LSZ;
+	long bstep = step * CACHE_LSZ; // CACHE
 	
-	for(; bj >= 0 && bj < size; bj += bstep){
-		if(direction == SubstForwards) {
-			jend = bj + bstep > size ? size : bj + bstep;
-		} else {
-			jend = bj + bstep < 0 ? -1 : bj + bstep;
-		}
-		// go though diagonal block
-		for(i = bj; i != jend; i += step){
-			if((bj == 0 && direction == SubstForwards) || (bj == size-1 && direction == SubstBackwards)){
-				cout << "started line (" << i << "," << bj << ") dia" << endl;
-				if(A.at(i,i) != 0) { cout << "ERROR: already started" << endl; }
-				A.at(i,i) = 1;
-			}
-			for(j = bj; j != jend && j != i; j += step){
-				cout << "(" << i << "," << j << ") dia" << endl; 
-				if(A.at(j,j) != -1 || A.at(i,i) < 1) cout << "ERROR: X not found yet or not inited" << endl; 
-			}
-			cout << "divided by (" << i << "," << i << ") dia" << endl;
-			if(A.at(i,i) < 1) cout << "ERROR: dividend not inited" ;
-			A.at(i,i) = -1;
-		}
-		for(bi = bj+bstep; bi >= 0 && bi < size; bi += bstep){
-			if(direction == SubstForwards) {
-				iend = bi + bstep > size ? size : bi + bstep;
-			} else {
-				iend = bi + bstep < 0 ? -1 : bi + bstep;
-			}
-			if((bj == 0 && direction == SubstForwards) || (bj == size-1 && direction == SubstBackwards))
-				for(i = bi; i != iend; i += step){
-					cout << "started line (" << i << "," << bj << ")" << endl;
-					if(A.at(i,i) != 0) { cout << "ERROR: already started" << endl; }
-					A.at(i,i) = 1;
-				}
-			// go though current block
-			for(i = bi; i != iend; i += step){
-				for(j = bj; j != jend && j != i; j += step){
-					cout << "(" << i << "," << j << ")" << endl; 
-				}
+	set(X,0);
+	timer.start();
+	//asm("NO BLOCKING");
+	for(i=0; i < size; i += step){
+		for(j=0; j < size; j += step){
+			X.at(i,j) = 0;
+			for(k=0; k < size; k += 1){	
+				at(X, i,j) = at(X, i,j) + LU.at(i,k) * at(B, k,j);
 			}
 		}
-		// remainder
-//		for(i = size - mod(size, bstep); i < size; i += step){
-//			for(j = bj; j < bj+bstep; j += step){
-//				cout << "(" << i << "," << j << ")" << endl; 
-//			}
-//		}
 	}
-	// remainder
-//	for(i = size - mod(size, bstep); i < size; i += step){
-//		for(j = size - mod(size, bstep); j != i; j += step){
-//			cout << "(" << i << "," << j << ")" << endl; 
-//		}
-//		cout << "divided by (" << i << "," << i << ") dia" << endl;
-//	}
+	//asm("END NO BLOCKING");
+	cout<<"# "<< timer.elapsed() <<"\n";
+	// printm(X);
+	
+	set(X,0);
+	timer.start();
+	double acc00, acc01, acc10, acc11;
+	//asm("BLOCKING BI");
+	for (bi = 0; bi < size; bi += bstep){
+		for (j = 0; j < size; j += 2){
+			for (i = bi; i < bi + bstep; i += 2){
+				acc00 = acc01 = acc10 = acc11 = 0;
+				for (k = 0; k < size; k++){
+					acc00 += LU.at(i+0, k) * at(B, k, j+0);
+					acc01 += LU.at(i+0, k) * at(B, k, j+1);
+					acc10 += LU.at(i+1, k) * at(B, k, j+0);
+					acc11 += LU.at(i+1, k) * at(B, k, j+1);
+				}
+				at(X, i+0,j +0) = acc00;
+				at(X, i+0,j +1) = acc01;
+				at(X, i+1,j +0) = acc10;
+				at(X, i+1,j +1) = acc11;
+			}
+		}
+	}
+	//asm("END BLOCKING BI");
+	cout<<"# "<< timer.elapsed() <<"\n";
+	// printm(X);
+	
+	set(X,0);
+	timer.start();
+	//asm("BLOCKING BK");
+	for(bi = 0; bi < size; bi += bstep){
+		for(bk = 0; bk < size; bk += bstep){
+			for(j=0; j < size; j += 2){
+				for(i = bi; i < bi + bstep; i += 2 ){
+					if(bk == 0){
+						acc00 = acc01 = acc10 = acc11 = 0;
+					} else {
+						acc00 = at(X, i+0,j +0);
+						acc01 = at(X, i+0,j +1);
+						acc10 = at(X, i+1,j +0);
+						acc11 = at(X, i+1,j +1);
+					}
+					for(k = bk; k < bk + bstep; k++){
+						acc00 += LU.at(i+0, k) * at(B, k, j+0);
+						acc01 += LU.at(i+0, k) * at(B, k, j+1);
+						acc10 += LU.at(i+1, k) * at(B, k, j+0);
+						acc11 += LU.at(i+1, k) * at(B, k, j+1);
+					}
+					at(X, i+0,j +0) = acc00;
+					at(X, i+0,j +1) = acc01;
+					at(X, i+1,j +0) = acc10;
+					at(X, i+1,j +1) = acc11;
+				}
+			}
+		}
+	}
+	//asm("END BLOCKING BK");
+	cout<<"# "<< timer.elapsed() <<"\n";
+	// printm(X);
+}
+
+int main()
+{
+	cout.precision(4);
+	cout << scientific;
+	srand(20172);
+	
+	long size = 513;
+	
+	Matrix LU(size);
+	MatrixColMajor B(size);
+	Matrix X(size);
+	/**
+	for(size = 511; size < 514; size++){
+		tester(size);
+		cout << endl;
+	}
+	/**/
+	tester(LU, B, X);
 	return 0;
 }

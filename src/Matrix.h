@@ -64,15 +64,6 @@ public:
 		free(arr);
 	}
 	
-	Matrix(const Matrix& other)
-	: Matrix(other.size) {
-		for(long i = 0; i < size; i++){
-			for(long j = 0; j < size; j++){
-				this->at(i,j) = other.at(i,j);
-			}
-		}
-	}
-	
 	inline long m_pos(long i, long j) const {
 		return i*m_size + j;
 	}
@@ -82,6 +73,68 @@ public:
 	const double& at(long i, long j) const {
 		return arr[m_pos(i,j)];
 	}
+};
+
+#define REG_SZ 32
+#define nd 4
+typedef double v4df __attribute__ ((vector_size (REG_SZ))); // vector of four doubles
+
+typedef union v4double
+{
+  v4df v;
+  double d[nd];
+} v4double;
+
+typedef union v4doublep
+{
+  v4double* v;
+  double* d;
+} v4doublep;
+
+/**
+ * @brief Stores values of matrix in a vector, Row Major Order
+ */
+class MatrixV
+{
+public:
+	v4doublep arr;
+	long size;
+	long m_size;
+	
+	void mem_alloc(long size){
+		arr.d = (double*)malloc((size*size)*sizeof(double));
+	}
+	/**
+	 * @param size of matrix, total number of lines
+	 */
+	MatrixV(long size)
+	:	size(size){
+		if(PADDING){
+			m_size = size + mod(CACHE_LSZ - size, CACHE_LSZ);
+			if(mod(m_size/CACHE_LSZ, 2) == 0){
+				m_size = m_size + CACHE_LSZ; // make sure m_size is odd multiple of cache line
+			}
+		} else {
+			m_size = size;
+		}
+		mem_alloc(m_size);
+	}
+	
+	inline long m_pos(long i, long j) const {
+		return i*m_size + j;
+	}
+	v4double& atv(long i, long j) {
+		return arr.v[m_pos(i,j)];
+	}
+	const v4double& atv(long i, long j) const {
+		return arr.v[m_pos(i,j)];
+	}
+	double& at(long i, long j){
+		return arr.d[m_pos(i,j)];
+	}
+	/*const double& at(long i, long j) const {
+		return arr[m_pos(i,j>>nd)].d[j%nd];
+	}*/
 };
 
 /**

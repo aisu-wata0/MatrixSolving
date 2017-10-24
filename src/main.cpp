@@ -66,6 +66,132 @@ void inverse(LUMatrix& LU, IAMatrix& IA, IMatrix& I, vector<long>& P){
 	}
 }
 /**
+ * @brief Finds inverse matrix,
+ * also solves linear sistems A*IA = I where each of I's columns are different Bs
+ * @param LU Matrix to find inverse
+ * @param IA Inverse matrix to be found
+ * Output: Inverse matrix is stored in IA
+ * @param I Identity matrix
+ * @param P Permutation vector resulting of the pivoting
+ */
+template<class LUMatrix, class IAMatrix, class IMatrix>
+void inverseB(LUMatrix& LU, IAMatrix& X, IMatrix& B, vector<long>& P){
+	long bi, bj, bk;
+	long i, j, k;
+	long iend; long jend;
+	long step;
+	
+	size = LU.m_size;
+	
+	SubstDirection direction = SubstForwards;
+	if(true){
+		bj = 0;
+		step = +1;
+	} else {
+		bj = size-1;
+		step = -1;
+	}
+	long bstep = step * CACHE_LSZ;
+	
+	#define unroll(i,j,unr) for(i = 0; i < unr; i++) for(j = 0; j < unr; j++)
+	
+	long unr = 2;
+	vector<double> acc(unr*unr);
+	long ci, cj;
+	for (bi = 0; bi < size; bi += bstep){
+		for (j = 0; j < size; j += unr){
+			for(i = bi; i != bi + bstep; i += unr){
+//				if(direction == SubstForwards)
+//					{ endk = min(bk + bstep, i); }
+//				else{ endk = max(bk + bstep, i); }
+				// Reset acc
+				unroll(ci,cj,unr) acc.at(ci*unr + cj) = 0;
+				// Iterate to calculate at(X, i, j) .. at(X, i+unr-1, j+unr-1)
+				for(k = 0; k != i; k += step){
+					unroll(ci,cj,unr) acc.at(ci*unr + cj) += LU.at(i+ci, k) * at(X, k, j+cj);
+				}
+				// Remaining in unr
+				unroll(ci,cj,unr) {
+					for(ck = 0; i+ck != i+ci; ck++)
+						acc.at(ci*unr + cj) += LU.at(i+ci, k+ck) * acc.at(ck*unr + cj);
+						// acc.at(ci*unr + cj) += LU.at(i+ci, k+ck) * at(X, i+ck, j+cj);
+					acc.at(ci*unr + cj) /= LU.at(i+ci, i+ci);
+				}
+				// Atribute acc to at(X, i, j) .. at(X, i+unr-1, j+unr-1)
+				unroll(ci,cj,unr) at(X, i+ci, j+cj) = acc.at(ci*unr + cj);
+			}
+		}
+	}
+	///////////////////////////
+			for(i = bi; i != bi + bstep; i += unr){
+//				if(direction == SubstForwards)
+//					{ endk = min(bk + bstep, i); }
+//				else{ endk = max(bk + bstep, i); }
+				// Reset acc
+				unroll(ci,cj,unr) acc.at(ci*unr + cj) = 0;
+				// Iterate to calculate at(X, i, j) .. at(X, i+unr-1, j+unr-1)
+				for(k = 0; k != i; k += step){
+					unroll(ci,cj,unr) acc.at(ci*unr + cj) += LU.at(i+ci, k) * at(X, k, j+cj);
+				}
+				// Remaining in unr
+				unroll(ci,cj,unr) {
+					for(ck = 0; i+ck != i+ci; ck++)
+						acc.at(ci*unr + cj) += LU.at(i+ci, k+ck) * acc.at(ck*unr + cj);
+						// acc.at(ci*unr + cj) += LU.at(i+ci, k+ck) * at(X, i+ck, j+cj);
+					acc.at(ci*unr + cj) /= LU.at(i+ci, i+ci);
+				}
+				// Atribute acc to at(X, i, j) .. at(X, i+unr-1, j+unr-1)
+				unroll(ci,cj,unr) at(X, i+ci, j+cj) = acc.at(ci*unr + cj);
+			}
+			// Remainder diagonal
+			for (i = bi; i != endi; i += step) {
+				if(direction == SubstForwards)
+					{ endk = min(bk + bstep, i); }
+				else{ endk = max(bk + bstep, i); }
+				
+				for (k = bk; k != endk; k += step) {
+					at(X, i,col) = at(X, i,col) - T.at(i,k) * at(X, k,col);
+				}
+				if(diagonal != DiagonalUnit)
+					{ at(X, i,col) /= T.at(i,i); }
+			}
+	///////////////////////////
+	for (; bi >= 0 && bi < size ; bi += bstep) {
+		if(direction == SubstForwards)
+			{ bk = 0;		endi = min(bi + bstep, size); }
+		else{ bk = size-1;	endi = max(bi + bstep, -1); }
+		
+		for(int i = bi; i != endi; i += step)
+			if(Permutation == SubstPermute)
+				{ at(X, i,col) = at(I, P.at(i),col); }
+			else{ at(X, i,col) = at(I, i,col); }
+		
+		for (; bk != bi; bk += bstep) {
+			for (i = bi; i != endi; i += step) {
+//				if(direction == SubstForwards)
+//					{ endk = min(bk + bstep, i); }
+//				else{ endk = max(bk + bstep, i); }
+				endk = bk + bstep;
+				for (k = bk; k != endk; k += step) {
+					at(X, i,col) = at(X, i,col) - T.at(i,k) * at(X, k,col);
+				}
+			}
+		}
+		// Remainder diagonal
+		for (i = bi; i != endi; i += step) {
+			if(direction == SubstForwards)
+				{ endk = min(bk + bstep, i); }
+			else{ endk = max(bk + bstep, i); }
+			
+			for (k = bk; k != endk; k += step) {
+				at(X, i,col) = at(X, i,col) - T.at(i,k) * at(X, k,col);
+			}
+			if(diagonal != DiagonalUnit)
+				{ at(X, i,col) /= T.at(i,i); }
+		}
+	}
+}
+/**
  * @brief  Calculates residue into I, A*IA shuold be close to Identity
  * @param A original coef matrix
  * @param IA solution to A*IA = I
@@ -266,13 +392,18 @@ int mainBAK(int argc, char **argv) {
 	return 0;
 }
 
-inline void tester(Matrix& LU, MatrixColMajor& B, Matrix& X){
+//inline void tester(Matrix& LU, MatrixColMajor& B, Matrix& X){
+void tester(long size){
+	Matrix LU(size);
+	MatrixColMajor B(size);
+	Matrix X(size);
 	long bi, bj, bk;
 	long i, j, k;
 	long iend; long jend;
 	long step;
 	
-	long size = LU.m_size;
+	size = LU.m_size;
+	cout << size <<endl;
 	
 	//asm("SETUP");
 	for(i = 0; i < size; i++){
@@ -336,6 +467,29 @@ inline void tester(Matrix& LU, MatrixColMajor& B, Matrix& X){
 	cout<<"# "<< timer.elapsed() <<"\n";
 	// printm(X);
 	
+	long unr = 2;
+	#define unroll(i,j,unr) for(i = 0; i < unr; i++) for(j = 0; j < unr; j++)
+	vector<double> acc(unr*unr);
+	long ci, cj;
+	set(X,0);
+	timer.start();
+	//asm("BLOCKING BI");
+	for (bi = 0; bi < size; bi += bstep){
+		for (j = 0; j < size; j += unr){
+			for (i = bi; i < bi + bstep; i += unr){
+				unroll(ci,cj,unr) acc.at(ci*unr + cj) = 0;
+				for (k = 0; k < size; k++){
+					unroll(ci,cj,unr) acc.at(ci*unr + cj) += LU.at(i+ci, k) * at(B, k, j+cj);
+				}
+				unroll(ci,cj,unr) at(X, i+ci, j+ci) = acc.at(ci*unr + cj);
+			}
+		}
+	}
+	//asm("END BLOCKING BI");
+	cout<<"# "<< timer.elapsed() <<"\n";
+	// printm(X);
+	
+	
 	set(X,0);
 	timer.start();
 	//asm("BLOCKING BK");
@@ -378,15 +532,25 @@ int main()
 	
 	long size = 513;
 	
-	Matrix LU(size);
-	MatrixColMajor B(size);
-	Matrix X(size);
-	/**
-	for(size = 511; size < 514; size++){
+	/**/
+	for(size = 128; size < 130; size++){
 		tester(size);
 		cout << endl;
 	}
-	/**/
+	for(size = 256; size < 258; size++){
+		tester(size);
+		cout << endl;
+	}
+	for(size = 512; size < 514; size++){
+		tester(size);
+		cout << endl;
+	}
+	for(size = 1024; size < 1026; size++){
+		tester(size);
+		cout << endl;
+	}
+	/**
 	tester(LU, B, X);
+	/**/
 	return 0;
 }

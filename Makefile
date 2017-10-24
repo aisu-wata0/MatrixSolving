@@ -42,6 +42,11 @@ set_debug:
 
 debug: set_debug all
 
+set_assembly:
+	$(eval FLAGS = -S $(FLAGS))
+
+assembly: set_assembly all
+
 rebuild: clean all
 
 buildclean: all clean

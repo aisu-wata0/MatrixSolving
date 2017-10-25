@@ -91,7 +91,7 @@ void inverse(LUMatrix& LU, IAMatrix& IA, IMatrix& I, vector<long>& P){
 //		bj = size-1;
 //		step = -1;
 //	}
-//	long bstep = step * CACHE_LSZ;
+//	long bstep = step * L1_DN;
 //	
 //	#define unroll(i,j,unr) for(i = 0; i < unr; i++) for(j = 0; j < unr; j++)
 //	
@@ -392,198 +392,130 @@ int mainBAK(int argc, char **argv) {
 	return 0;
 }
 
-//inline void tester(Matrix& LU, MatrixColMajor& B, Matrix& X){
-void tester(long size){
-	Matrix LU(size);
-	MatrixColMajor B(size);
-	Matrix X(size);
-	
-//	MatrixV LUv(size);
-//	MatrixV Bv(size);
-//	MatrixV Xv(size);
-	
-	long bi, bj, bk;
-	long i, j, k;
-	long iend; long jend;
-	long step;
-	
-	size = LU.m_size;
-	cout << size <<endl;
-	
-	//asm("SETUP");
-	for(i = 0; i < size; i++){
-		for(j = 0; j < size; j++){
-			LU.at(i,j) = i*size + j;
-			B.at(i,j) = j*size + i;
-		}
-	}
-	
-	SubstDirection direction = SubstForwards;
-	if(true){
-		bj = 0;
-		step = +1;
-	} else {
-		bj = size-1;
-		step = -1;
-	}
-	long bstep = step * CACHE_LSZ; // CACHE
-	
-	set(X,0);
-	timer.start();
-	//asm("NO BLOCKING");
-	for(i=0; i < size; i += step){
-		for(j=0; j < size; j += step){
-			X.at(i,j) = 0;
-			for(k=0; k < size; k += 1){	
-				at(X, i,j) = at(X, i,j) + LU.at(i,k) * at(B, k,j);
-			}
-		}
-	}
-	//asm("END NO BLOCKING");
-	cout<<"# "<< timer.elapsed() <<"\n";
-	// printm(X);
-	
-	double acc00, acc01, acc10, acc11;
-	/**
-	set(X,0);
-	timer.start();
-	//asm("BLOCKING BI");
-	for (bi = 0; bi < size; bi += bstep){
-		for (j = 0; j < size; j += 2){
-			for (i = bi; i < bi + bstep; i += 2){
-				acc00 = acc01 = acc10 = acc11 = 0;
-				for (k = 0; k < size; k++){
-					acc00 += LU.at(i+0, k) * at(B, k, j+0);
-					acc01 += LU.at(i+0, k) * at(B, k, j+1);
-					acc10 += LU.at(i+1, k) * at(B, k, j+0);
-					acc11 += LU.at(i+1, k) * at(B, k, j+1);
-				}
-				at(X, i+0,j +0) = acc00;
-				at(X, i+0,j +1) = acc01;
-				at(X, i+1,j +0) = acc10;
-				at(X, i+1,j +1) = acc11;
-			}
-		}
-	}
-	//asm("END BLOCKING BI");
-	cout<<"# "<< timer.elapsed() <<"\n";
-	// printm(X);
-	/**/
-	
-	long unr = 2;
-	#define unroll(i,j,unr) for(i = 0; i < unr; i++) for(j = 0; j < unr; j++)
-	vector<double> acc(unr*unr);
-	long ci, cj;
-	set(X,0);
-	timer.start();
-	//asm("BLOCKING BI");
-	for (bi = 0; bi < size; bi += bstep){
-		for (j = 0; j < size; j += unr){
-			for (i = bi; i < bi + bstep; i += unr){
-				unroll(ci,cj,unr) acc.at(ci*unr + cj) = 0;
-				for (k = 0; k < size; k += 4){
-					unroll(ci,cj,unr) for(long ck = 0; ck < 4; ck++) acc.at(ci*unr + cj) += LU.at(i+ci, k+ck) * at(B, k+ck, j+cj);
-				}
-				unroll(ci,cj,unr) at(X, i+ci, j+ci) = acc.at(ci*unr + cj);
-			}
-		}
-	}
-	//asm("END BLOCKING BI");
-	cout<<"# "<< timer.elapsed() <<"\n";
-	// printm(X);
-	
-	
-	set(X,0);
-	timer.start();
-	//asm("BLOCKING BK");
-	for(bi = 0; bi < size; bi += bstep){
-		for(bk = 0; bk < size; bk += bstep){
-			for(j=0; j < size; j += 2){
-				for(i = bi; i < bi + bstep; i += 2 ){
-					if(bk == 0){
-						acc00 = acc01 = acc10 = acc11 = 0;
-					} else {
-						acc00 = at(X, i+0,j +0);
-						acc01 = at(X, i+0,j +1);
-						acc10 = at(X, i+1,j +0);
-						acc11 = at(X, i+1,j +1);
-					}
-					for(k = bk; k < bk + bstep; k++){
-						acc00 += LU.at(i+0, k) * at(B, k, j+0);
-						acc01 += LU.at(i+0, k) * at(B, k, j+1);
-						acc10 += LU.at(i+1, k) * at(B, k, j+0);
-						acc11 += LU.at(i+1, k) * at(B, k, j+1);
-					}
-					at(X, i+0,j +0) = acc00;
-					at(X, i+0,j +1) = acc01;
-					at(X, i+1,j +0) = acc10;
-					at(X, i+1,j +1) = acc11;
-				}
-			}
-		}
-	}
-	//asm("END BLOCKING BK");
-	cout<<"# "<< timer.elapsed() <<"\n";
-	// printm(X);
-}
 
-void tester2(long size){
-	srand(time(0));
-	MatrixV LUv(size);
-	MatrixV Bv(size);
-	MatrixV Xv(size);
-	
-	long bi, bj, bk;
-	long i, j, k;
-	long iend; long jend;
-	long step;
-    #define vec(vj) for(long vj = 0; vj < nd; vj++)
-	size = LUv.m_size;
-	
-	for(i = 0; i < size; i++){
-		for(j = 0; j < size; j += nd){
-			vec(vj) {
-				LUv.at(i,j+vj) = i*size + j+vj;
-			}
-			Bv.atv(i,j/nd).v = LUv.atv(i,j/nd).v;
-		}
-	}
 
-	for(i = 0; i < size; i++){
-		for(j = 0; j < size; j += nd){
-			vec(vj) cout << LUv.at(i,j+vj)<< "\t";
-		}
-		cout << endl;
-	}
-}
 
-int main()
+
+
+
+#define asm(x) ;
+
+#include "test.h"
+
+#include "test2.h"
+
+int maind()
 {
-	cout.precision(4);
-	cout << scientific;
+	//LIKWID_MARKER_INIT;
+	//cout.precision(4);
+	//cout << scientific;
 	srand(20172);
-	
-	long size = 513;
-	
+	long size = 8;
+	/**
+	test2(size);
 	/**/
 	for(size = 128; size < 130; size++){
-		tester(size);
+		test(size);
 		cout << endl;
 	}
 	for(size = 256; size < 258; size++){
-		tester(size);
+		test(size);
 		cout << endl;
 	}
 	for(size = 512; size < 514; size++){
-		tester(size);
+		test(size);
 		cout << endl;
 	}
 	for(size = 1024; size < 1026; size++){
-		tester(size);
+		test(size);
 		cout << endl;
 	}
-	/**
-	tester(LU, B, X);
 	/**/
 	return 0;
+}
+
+#include "stdlib.h"
+#include "stdio.h"
+#include <time.h>
+
+#define REP 512
+int main() {
+	//LIKWID_MARKER_INIT;
+	int i,j,r;
+	size_t size = 1024*1024*32/sizeof(double);
+	double* arr = (double*)malloc(size*sizeof(double));
+
+	for (i = 0; i < size; i++) {  // warmup to make things equal if array happens to fit in your L3
+		arr[i] = 0;
+	}
+	
+	int c = 0;
+	clock_t t[REP];
+	t[c++] = clock();
+	
+	// Tiled
+	//LIKWID_MARKER_START("Tiled");
+	for (i = 0; i < size; i += L1_DN) {
+		for (r = 0; r < REP; r++) {
+			 for (j = i; j < (i + L1_DN); j += L1_LINE_DN) {
+				arr[j] = r;
+			}
+		}
+	}
+	//LIKWID_MARKER_STOP("Tiled");
+	t[c++] = clock();
+	printf ("Tiled: %f sec\n", (double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC);
+	
+	size_t msize = sqrt(size);
+	size_t bi, bj;
+	#define BLS 16
+	// Tiled blocks
+	//LIKWID_MARKER_START("Tiled blocks");
+	for (bi = 0; bi < (msize - BLS); bi += BLS) {
+		for (bj = 0; bj < (msize - BLS); bj += BLS) {
+			for (r = 0; r < REP; r++) {
+				for (i = bi; i < (bi + BLS); i += 1) {
+					for (j = bj; j < (bj + BLS); j += L1_LINE_DN) {
+						arr[i*msize + j] = r;
+					}
+				 }
+			}
+		}
+	}
+	//LIKWID_MARKER_STOP("Tiled blocks");
+	t[c++] = clock();
+	printf ("Tiled blocks: %f sec\n", (double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC);
+	
+	// Tiled row
+	size_t BLi = (L1_DN/msize);
+	size_t BLl = min(L1_DN, msize);
+	cout << "CACHE_L1_SIZE=" << CACHE_L1_SIZE << " L1_DN=" << L1_DN << " sz=" << msize << endl;
+	//LIKWID_MARKER_START("Tiled row");
+	for (bi = 0; bi < (msize - BLi); bi += BLi) {
+		for (bj = 0; bj < msize; bj += BLl) {
+			for (r = 0; r < REP; r++) {
+				for (i = bi; i < (bi + BLi); i += 1) {
+					for (j = bj; j < msize; j += L1_LINE_DN) {
+						arr[i*msize + j] = r;
+					}
+				 }
+			}
+		}
+	}
+	//LIKWID_MARKER_STOP("Tiled row");
+	t[c++] = clock();
+	printf ("Tiled row: %f sec\n", (double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC);
+
+	// Naive
+	//LIKWID_MARKER_START("Naive");
+	for (r = 0; r < REP; r++) {
+		for (i = 0; i < size; i += L1_LINE_DN) {
+			arr[i] = r;
+		}
+	}
+	//LIKWID_MARKER_STOP("Naive");
+	t[c++] = clock();
+	printf ("Naive: %f sec\n", (double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC);
+	
+    printf ("arr[0] = %f\n", arr[0]);    // to prevent optimizing out all the writes
 }

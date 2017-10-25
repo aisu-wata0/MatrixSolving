@@ -96,11 +96,11 @@ void substR(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
 	if(direction == SubstForwards){
 		bi = 0;
 		step = +1;
-		bstep = step * CACHE_LSZ;
+		bstep = step * BL1;
 	} else {
 		bi = size-1;
 		step = -1;
-		bstep = step * CACHE_LSZ;
+		bstep = step * BL1;
 	}
 	
 	for (; bi >= 0 && bi < size ; bi += bstep) {
@@ -158,7 +158,7 @@ void substUnroll(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
 	if(direction == SubstForwards){
 		i = 0;
 		step = +1;
-		bstep = step * CACHE_LSZ;
+		bstep = step * BL1;
 	} else {
 		i = size-1;
 		step = -1;
@@ -167,7 +167,7 @@ void substUnroll(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
 	#define ROUND_DOWN(x, s) ((x) & ~((s)-1))
 	for (; i >= 0 && i < size; i += step) {
 		at(X, i,col) = at(I, i,col);
-		for (j = 0; j < ROUND_DOWN(i,CACHE_LSZ); j += bstep) {
+		for (j = 0; j < ROUND_DOWN(i,BL1); j += bstep) {
 			for(int c = 0; c < bstep; ++c)
 				at(X, i,col) -= at(X, j+c,col) * T.at(i,j+c);
 		}
@@ -203,7 +203,7 @@ void subst(TMatrix& T, MatrixColMajor& X, vector<double>& B, long col) {
 		bj = size-1;
 		step = -1;
 	}
-	long bstep = step * CACHE_LSZ;
+	long bstep = step * BL1;
 	
 	for(; bj >= 0 && bj < size; bj += bstep){
 		if(direction == SubstForwards) {

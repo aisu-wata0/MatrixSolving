@@ -431,6 +431,7 @@ int maind()
 		cout << endl;
 	}
 	/**/
+	//LIKWID_MARKER_CLOSE;
 	return 0;
 }
 
@@ -518,4 +519,6 @@ int main() {
 	printf ("Naive: %f sec\n", (double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC);
 	
     printf ("arr[0] = %f\n", arr[0]);    // to prevent optimizing out all the writes
+	//LIKWID_MARKER_CLOSE;
+	return 0;
 }

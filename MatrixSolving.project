@@ -14,6 +14,8 @@
     <File Name="src/Double.h"/>
     <File Name="src/GaussEl.h"/>
     <File Name="src/Subst.h"/>
+    <File Name="src/test2.h"/>
+    <File Name="src/test.h"/>
   </VirtualDirectory>
   <VirtualDirectory Name="MatrixSolving">
     <File Name="Makefile"/>

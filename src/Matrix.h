@@ -12,12 +12,37 @@ long div_down(long n, long d) {
 #define mod(X,Y) ((((X) % (Y)) + (Y)) % Y)
 
 #define CACHE_LINE_SIZE 64 // likwid-topology: Cache line size:	64
-//#define CACHE_LSZ CACHE_LINE_SIZE/sizeof(double) // how many doubles in a line
-#define CACHE_LSZ 8 // how many doubles in a line
+#define L1_LINE_DN (CACHE_LINE_SIZE/sizeof(double)) // how many doubles in a line
 
-#define PAD(X) (div_down((X),CACHE_LSZ)*(CACHE_LSZ*(CACHE_LSZ-1))/2)
+#define CACHE_L1_SIZE 32*1024/2 // likwid-topology: Size:	 32 kB
+// divided by 2 because we wont be able to fill L1 completely without throwing
+// useful values out
+#define L1_DN (CACHE_L1_SIZE/sizeof(double)) // how many doubles in L1 cache
+// 2048
+// size of the block that should fit into L1
+#define BL1 (((size_t)sqrt(L1_DN)) - mod(((size_t)sqrt(L1_DN)), L1_LINE_DN))
+// 40 % 8 == 0, (40*40 < 2048)
+
+#define REG_SZ 32 // how many bytes in a register
+#define dn (REG_SZ/sizeof(double)) // how many doubles is a register
+typedef double v4df __attribute__ ((vector_size (REG_SZ))); // vector of four doubles
+
+typedef union vdouble
+{
+  v4df v;
+  double d[dn];
+} vdouble;
+
+typedef union vdoublep
+{
+  vdouble* v;
+  double* d;
+} vdoublep;
+
+
+#define PAD(X) (div_down((X),L1_LINE_DN)*(L1_LINE_DN*(L1_LINE_DN-1))/2)
 // Optm: test switching, the below doesnt work probably
-//#define PAD(X) ((long)floor((X)/(double)CACHE_LSZ)*(CACHE_LSZ*(CACHE_LSZ-1))/2)
+//#define PAD(X) ((long)floor((X)/(double)L1_LINE_DN)*(L1_LINE_DN*(L1_LINE_DN-1))/2)
 
 #define PADDING true
 
@@ -37,69 +62,10 @@ const double& at(Mat const& M, long i, long j){
 class Matrix
 {
 public:
-	double* arr;
+	vdoublep arr;
 	long size;
 	long m_size;
-	
-	void mem_alloc(long size){
-		arr = (double*)malloc((size*size)*sizeof(double));
-	}
-	/**
-	 * @param size of matrix, total number of lines
-	 */
-	Matrix(long size)
-	:	size(size){
-		if(PADDING){
-			m_size = size + mod(CACHE_LSZ - size, CACHE_LSZ);
-			if(mod(m_size/CACHE_LSZ, 2) == 0){
-				m_size = m_size + CACHE_LSZ; // make sure m_size is odd multiple of cache line
-			}
-		} else {
-			m_size = size;
-		}
-		mem_alloc(m_size);
-	}
-	
-	~Matrix(){
-		free(arr);
-	}
-	
-	inline long m_pos(long i, long j) const {
-		return i*m_size + j;
-	}
-	double& at(long i, long j) {
-		return arr[m_pos(i,j)];
-	}
-	const double& at(long i, long j) const {
-		return arr[m_pos(i,j)];
-	}
-};
-
-#define REG_SZ 32
-#define nd 4
-typedef double v4df __attribute__ ((vector_size (REG_SZ))); // vector of four doubles
-
-typedef union v4double
-{
-  v4df v;
-  double d[nd];
-} v4double;
-
-typedef union v4doublep
-{
-  v4double* v;
-  double* d;
-} v4doublep;
-
-/**
- * @brief Stores values of matrix in a vector, Row Major Order
- */
-class MatrixV
-{
-public:
-	v4doublep arr;
-	long size;
-	long m_size;
+	long m_sizev;
 	
 	void mem_alloc(long size){
 		arr.d = (double*)malloc((size*size)*sizeof(double));
@@ -107,34 +73,38 @@ public:
 	/**
 	 * @param size of matrix, total number of lines
 	 */
-	MatrixV(long size)
+	Matrix(long size)
 	:	size(size){
 		if(PADDING){
-			m_size = size + mod(CACHE_LSZ - size, CACHE_LSZ);
-			if(mod(m_size/CACHE_LSZ, 2) == 0){
-				m_size = m_size + CACHE_LSZ; // make sure m_size is odd multiple of cache line
+			m_size = size + mod(L1_LINE_DN - size, L1_LINE_DN);
+			if(mod(m_size/L1_LINE_DN, 2) == 0){
+				m_size = m_size + L1_LINE_DN; // make sure m_size is odd multiple of cache line
 			}
 		} else {
 			m_size = size;
 		}
+		m_sizev = m_size/dn;
 		mem_alloc(m_size);
 	}
 	
-	inline long m_pos(long i, long j) const {
+	long m_posv(long i, long j) const {
+		return i*m_sizev + j;
+	}
+	vdouble& atv(long i, long j) {
+		return arr.v[m_posv(i,j)];
+	}
+	const vdouble& atv(long i, long j) const {
+		return arr.v[m_posv(i,j)];
+	}
+	long m_pos(long i, long j) const {
 		return i*m_size + j;
-	}
-	v4double& atv(long i, long j) {
-		return arr.v[m_pos(i,j)];
-	}
-	const v4double& atv(long i, long j) const {
-		return arr.v[m_pos(i,j)];
 	}
 	double& at(long i, long j){
 		return arr.d[m_pos(i,j)];
 	}
-	/*const double& at(long i, long j) const {
-		return arr[m_pos(i,j>>nd)].d[j%nd];
-	}*/
+	const double& at(long i, long j) const {
+		return arr.d[m_pos(i,j)];
+	}
 };
 
 /**
@@ -145,23 +115,23 @@ class MatrixColMajor : public Matrix
 public:
 	using Matrix::Matrix;
 	
-	MatrixColMajor(const MatrixColMajor& other)
-	: Matrix(other.size) {
-		for(long i = 0; i < size; i++){
-			for(long j = 0; j < size; j++){
-				this->at(i,j) = other.at(i,j);
-			}
-		}
+	long m_posv(long i, long j) const {
+		return j*m_sizev + i;
 	}
-	
-	inline long m_pos(long i, long j) const {
+	vdouble& atv(long i, long j) {
+		return arr.v[m_posv(i,j)];
+	}
+	const vdouble& atv(long i, long j) const {
+		return arr.v[m_posv(i,j)];
+	}
+	long m_pos(long i, long j) const {
 		return j*m_size + i;
 	}
-	double& at(long i, long j) {
-		return arr[m_pos(i,j)];
+	double& at(long i, long j){
+		return arr.d[m_pos(i,j)];
 	}
 	const double& at(long i, long j) const {
-		return arr[m_pos(i,j)];
+		return arr.d[m_pos(i,j)];
 	}
 };
 

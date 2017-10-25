@@ -400,9 +400,9 @@ int mainBAK(int argc, char **argv) {
 
 #define asm(x) ;
 
-#include "test.h"
+#include "t_matrix_mult.h"
 
-#include "test2.h"
+#include "t_vector.h"
 
 int maind()
 {

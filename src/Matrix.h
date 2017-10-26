@@ -64,13 +64,16 @@ public:
 	long size;
 	long m_size;
 	long m_sizev;
+	void* mem;
 	
 	void mem_alloc(long size){
-		arr.d = (double*)malloc((size*size)*sizeof(double));
+		arr.d = (double*)malloc((size*size)*sizeof(double) + CACHE_LINE_SIZE-1);
 		if(arr.d == NULL){
 			cerr <<"failed to malloc "<< (size*size)*sizeof(double)/1024 <<" KiB"<< endl;
 			exit(0);
 		}
+		void *mem = arr.d;
+		arr.d = (double*)(((uintptr_t)mem+CACHE_LINE_SIZE-1) & (uintptr_t)~0x3f);
 	}
 	/**
 	 * @param size of matrix, total number of lines
@@ -90,7 +93,7 @@ public:
 	}
 	
 	~Matrix(){
-		free(arr.d);
+		free(mem);
 	}
 	
 	long m_posv(long i, long j) const {

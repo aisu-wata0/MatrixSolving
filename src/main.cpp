@@ -411,7 +411,7 @@ int main()
 	//cout << scientific;
 	srand(20172);
 	size_t size = 8192*2;
-	vector<size_t> vsz = {8192/4,8192/2,8192,8192*2};
+	vector<size_t> vsz = {8192/4,8192/2,8192};
 	//vector<size_t> vsz = {42}; // TODO fix segfault on small sizes
 	/**/
 	for (auto sz : vsz){

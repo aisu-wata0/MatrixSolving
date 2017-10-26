@@ -11,27 +11,21 @@ long div_down(long n, long d) {
 
 #define mod(X,Y) ((((X) % (Y)) + (Y)) % Y)
 
-#define CACHE_LINE_SIZE 64 // likwid-topology: Cache line size:	64
+#define CACHE_LINE_SIZE (64) // likwid-topology: Cache line size:	64
 #define L1_LINE_DN (CACHE_LINE_SIZE/sizeof(double)) // how many doubles in a line
 
-#define CACHE_L1_SIZE 32*1024/2 // likwid-topology: Size:	 32 kB
+#define CACHE_L1_SIZE (32*1024/2) // likwid-topology: Size:	 32 kB
 // divided by 2 because we wont be able to fill L1 completely without throwing
 // useful values out
 #define L1_DN (CACHE_L1_SIZE/sizeof(double)) // how many doubles in L1 cache
 // 2048
 // size of the block that should fit into L1
-#define BL1 (((size_t)sqrt(L1_DN)) - mod(((size_t)sqrt(L1_DN)), L1_LINE_DN))
+#define BL1 ((long)((sqrt(L1_DN)) - mod(((long)sqrt(L1_DN)), L1_LINE_DN)))
 // 40 % 8 == 0, (40*40 < 2048)
 
-#define REG_SZ 32 // how many bytes in a register
+#define REG_SZ (32) // how many bytes in a register
 #define dn (REG_SZ/sizeof(double)) // how many doubles is a register
-typedef double v4df __attribute__ ((vector_size (REG_SZ))); // vector of four doubles
-
-typedef union vdouble
-{
-  v4df v;
-  double d[dn];
-} vdouble;
+typedef double vdouble __attribute__ ((vector_size (REG_SZ))); // vector of four doubles
 
 typedef union vdoublep
 {
@@ -45,6 +39,10 @@ typedef union vdoublep
 //#define PAD(X) ((long)floor((X)/(double)L1_LINE_DN)*(L1_LINE_DN*(L1_LINE_DN-1))/2)
 
 #define PADDING true
+
+#define unroll(v,n) for(size_t v = 0; v < n; v++)
+#define unroll2(vi,vj,n) unroll(vi,n)unroll(vj,n)
+#define vec(v) for(size_t v = 0; v < dn; v++)
 
 // Non member access functions
 template<class Mat>
@@ -69,22 +67,30 @@ public:
 	
 	void mem_alloc(long size){
 		arr.d = (double*)malloc((size*size)*sizeof(double));
+		if(arr.d == NULL){
+			cerr <<"failed to malloc "<< (size*size)*sizeof(double)/1024 <<" KiB"<< endl;
+			exit(0);
+		}
 	}
 	/**
 	 * @param size of matrix, total number of lines
 	 */
 	Matrix(long size)
 	:	size(size){
+		m_size = size;
 		if(PADDING){
-			m_size = size + mod(L1_LINE_DN - size, L1_LINE_DN);
-			if(mod(m_size/L1_LINE_DN, 2) == 0){
-				m_size = m_size + L1_LINE_DN; // make sure m_size is odd multiple of cache line
+			m_size += mod(-size,(long)BL1);
+			
+			if(((m_size/L1_LINE_DN) % 2) == 0){
+				m_size = m_size + BL1; // make sure m_size is odd multiple of cache line
 			}
-		} else {
-			m_size = size;
 		}
 		m_sizev = m_size/dn;
 		mem_alloc(m_size);
+	}
+	
+	~Matrix(){
+		free(arr.d);
 	}
 	
 	long m_posv(long i, long j) const {
@@ -182,7 +188,7 @@ template<class Mat>
 void print(Mat& M){
 	for(long i = 0; i < M.size; i++){
 		for(long j = 0; j < M.size; j++){
-			cout << M.at(i, j) <<' ';
+			cout << M.at(i, j) <<'\t';
 		}
 		cout << endl;
 	}

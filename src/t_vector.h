@@ -6,6 +6,7 @@ void t_vector(long size){
 	
 	long bi, bk;
 	long i, j, k;
+	long vj, vk;
 	size = LU.m_size;
 	
 	cout << size << endl;
@@ -13,9 +14,9 @@ void t_vector(long size){
 	asm("Setup");
 	for(i = 0; i < size; i++){
 		X.at(i) = 0;
-		for(j = 0; j != size/dn; j += 1){
-			vec(dj) LU.at(i,j*dn+dj) = (i*size + j*dn+dj);
-			B.atv(j,i) = LU.atv(i,j);
+		for(vj = 0; vj < size/dn; vj += 1){
+			vec(dj) LU.at(i, vj*dn+dj) = (i*size + vj*dn+dj);
+			B.atv(vj,i) = LU.atv(i,vj);
 		}
 	}
 	asm("END Setup");
@@ -25,21 +26,23 @@ void t_vector(long size){
 	int c = 0;
 	clock_t t[128];
 	t[c++] = clock();
+	
+	
 	asm("VECmult_Tilroll");
 	for(bi = 0; bi < size; bi += BL1){
 		unroll(ui,BL1) X.at(bi+ui) = 0;
-		for(bk = 0; bk < size/dn; bk += BL1/dn){
+		for(bk = 0; bk < size; bk += BL1){
 			asm("VECmult_Tilroll inner");
 			for(i = bi; i < (bi + BL1); i += unr){
-				vdouble acc[unr];
-				//vdouble acc[unr];
+				v<double> acc[unr];
+				//v<double> acc[unr];
 				//memset(acc, 0, sizeof(acc));
-				unroll(ui,unr) vec(d) acc[ui][d] = 0;
-				for(k = bk; k < (bk + BL1/dn); k++){
-					unroll(ui,unr) acc[ui] = acc[ui] + LU.atv(i+ui,k) * B.atv(k,0);
+				unroll(ui,unr) vec(d) acc[ui].v[d] = 0;
+				for(vk = bk/dn; vk < (bk + BL1)/dn; vk++){
+					unroll(ui,unr) acc[ui].v = acc[ui].v + LU.atv(i+ui,vk).v * B.atv(vk,0).v;
 				}
 				unroll(ui,unr)
-					vec(d) X.at(i+ui) += acc[ui][d];
+					vec(d) X.at(i+ui) += acc[ui].v[d];
 			}
 			asm("END VECmult_Tilroll inner");
 		}
@@ -54,13 +57,13 @@ void t_vector(long size){
 	asm("VECmult_Tiling");
 	for(bi = 0; bi < size; bi += BL1){
 		unroll(ui,BL1) X.at(bi+ui) = 0;
-		for(bk = 0; bk < size/dn; bk += BL1/dn){
+		for(bk = 0; bk < size; bk += BL1){
 			for(i = bi; i < (bi + BL1); i++){
-				vdouble acc = {0};
-				for(k = bk; k < (bk + BL1/dn); k++){
-					acc = acc + LU.atv(i,k) * B.atv(k,0);
+				v<double> acc = {0};
+				for(vk = bk/dn; vk < (bk + BL1)/dn; vk++){
+					acc.v = acc.v + LU.atv(i,vk).v * B.atv(vk,0).v;
 				}
-				vec(d) X.at(i) += acc[d];
+				vec(d) X.at(i) += acc.v[d];
 			}
 		}
 	}
@@ -73,15 +76,15 @@ void t_vector(long size){
 	
 	asm("VECmult_Unroll");
 	for(i = 0; i < size; i += unr){
-		vdouble acc[unr];
+		v<double> acc[unr];
 		unroll(ui,unr)
-			vec(d) acc[ui][d] = 0;
+			vec(d) acc[ui].v[d] = 0;
 		for(k = 0; k < size/dn; k++){
-			unroll(ui,unr) acc[ui] = acc[ui] + LU.atv(i+ui,k) * B.atv(k,0);
+			unroll(ui,unr) acc[ui].v = acc[ui].v + LU.atv(i+ui,k).v * B.atv(k,0).v;
 		}
 		unroll(ui,unr) X.at(i+ui) = 0;
 		unroll(ui,unr)
-			vec(d) X.at(i+ui) += acc[ui][d];
+			vec(d) X.at(i+ui) += acc[ui].v[d];
 	}
 	asm("END VECmult_Unroll");
 	t[c++] = clock();
@@ -92,12 +95,12 @@ void t_vector(long size){
 	
 	asm("VECmult");
 	for(i = 0; i < size; i++){
-		vdouble acc = {0};
+		v<double> acc = {0};
 		for(k = 0; k < size/dn; k++){
-			acc = acc + LU.atv(i,k) * B.atv(k,0);
+			acc.v = acc.v + LU.atv(i,k).v * B.atv(k,0).v;
 		}
 		X.at(i) = 0;
-		vec(d) X.at(i) += acc[d];
+		vec(d) X.at(i) += acc.v[d];
 	}
 	asm("END VECmult");
 	t[c++] = clock();

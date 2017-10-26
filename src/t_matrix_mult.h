@@ -1,9 +1,9 @@
 
 //inline void test(Matrix& LU, MatrixColMajor& B, Matrix& X){
-void test(long size){
+void t_matrix_mult(long size){
 	Matrix LU(size);
+	MatrixColMajor X(size);
 	MatrixColMajor B(size);
-	Matrix X(size);
 	
 	long bi, bj, bk;
 	long i, j, k;
@@ -73,9 +73,7 @@ void test(long size){
 	// printm(X);
 	/**/
 	
-	#define unr 2
-	#define unroll(i,j,unr) for(long i = 0; i < unr; i++) for(long j = 0; j < unr; j++)
-	
+	size_t unr = 2;
 	double acc[unr*unr];
 	long ci, cj;
 	set(X,0);
@@ -84,11 +82,11 @@ void test(long size){
 	for (bi = 0; bi < size; bi += bstep){
 		for (j = 0; j < size; j += unr){
 			for (i = bi; i < (bi + bstep); i += unr){
-				unroll(ci,cj,unr) acc[ci*unr + cj] = 0;
+				unroll2(ci,cj,unr) acc[ci*unr + cj] = 0;
 				for (k = 0; k < size; k++){
-					unroll(ci,cj,unr) acc[ci*unr + cj] += LU.at(i+ci, k) * at(B, k, j+cj);
+					unroll2(ci,cj,unr) acc[ci*unr + cj] += LU.at(i+ci, k) * at(B, k, j+cj);
 				}
-				unroll(ci,cj,unr) at(X, i+ci, j+ci) = acc[ci*unr + cj];
+				unroll2(ci,cj,unr) at(X, i+ci, j+ci) = acc[ci*unr + cj];
 			}
 		}
 	}

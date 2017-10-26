@@ -404,30 +404,37 @@ int mainBAK(int argc, char **argv) {
 
 #include "t_vector.h"
 
-int maind()
+int main()
 {
 	//LIKWID_MARKER_INIT;
 	//cout.precision(4);
 	//cout << scientific;
 	srand(20172);
-	long size = 8;
-	/**
-	test2(size);
+	size_t size = 8192*2;
+	vector<size_t> vsz = {8192/4,8192/2,8192,8192*2};
+	//vector<size_t> vsz = {42}; // TODO fix segfault on small sizes
 	/**/
+	for (auto sz : vsz){
+		for(size = sz; size < sz+1; size++){
+			t_vector(size);
+			cout << endl;
+		}
+	}
+	/**
 	for(size = 128; size < 130; size++){
-		test(size);
+		t_matrix_mult(size);
 		cout << endl;
 	}
 	for(size = 256; size < 258; size++){
-		test(size);
+		t_matrix_mult(size);
 		cout << endl;
 	}
 	for(size = 512; size < 514; size++){
-		test(size);
+		t_matrix_mult(size);
 		cout << endl;
 	}
 	for(size = 1024; size < 1026; size++){
-		test(size);
+		t_matrix_mult(size);
 		cout << endl;
 	}
 	/**/
@@ -440,7 +447,7 @@ int maind()
 #include <time.h>
 
 #define REP 512
-int main() {
+int mainTiling() {
 	//LIKWID_MARKER_INIT;
 	int i,j,r;
 	size_t size = 1024*1024*32/sizeof(double);
@@ -469,14 +476,14 @@ int main() {
 	
 	size_t msize = sqrt(size);
 	size_t bi, bj;
-	#define BLS 16
+	size_t BL1S = 32;
 	// Tiled blocks
 	//LIKWID_MARKER_START("Tiled blocks");
-	for (bi = 0; bi < (msize - BLS); bi += BLS) {
-		for (bj = 0; bj < (msize - BLS); bj += BLS) {
+	for (bi = 0; bi < (msize - BL1S); bi += BL1S) {
+		for (bj = 0; bj < (msize - BL1S); bj += BL1S) {
 			for (r = 0; r < REP; r++) {
-				for (i = bi; i < (bi + BLS); i += 1) {
-					for (j = bj; j < (bj + BLS); j += L1_LINE_DN) {
+				for (i = bi; i < (bi + BL1S); i += 1) {
+					for (j = bj; j < (bj + BL1S); j += L1_LINE_DN) {
 						arr[i*msize + j] = r;
 					}
 				 }

@@ -42,6 +42,11 @@ set_debug:
 
 debug: set_debug all
 
+set_assembly:
+	$(eval FLAGS = -S $(FLAGS))
+
+assembly: set_assembly all
+
 rebuild: clean all
 
 buildclean: all clean
@@ -68,7 +73,7 @@ $(bin): $(OBJECTS)
 $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking Compiler'
-	$(compiler) $(FLAGS) $(LIBS) -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
+	$(compiler) $(FLAGS) $(LIBS) ${GCC_ARGS} -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo
 

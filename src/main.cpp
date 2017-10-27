@@ -411,31 +411,23 @@ int main()
 	//cout << scientific;
 	srand(20172);
 	size_t size = 8192*2;
+	/**
 	vector<size_t> vsz = {8192/4,8192/2,8192,8192*2};
-	//vector<size_t> vsz = {42}; // TODO fix segfault on small sizes
-	/**/
+	//vector<size_t> vsz = {80};
 	for (auto sz : vsz){
 		for(size = sz; size < sz+1; size++){
 			t_vector(size);
 			cout << endl;
 		}
 	}
-	/**
-	for(size = 128; size < 130; size++){
-		t_matrix_mult(size);
-		cout << endl;
-	}
-	for(size = 256; size < 258; size++){
-		t_matrix_mult(size);
-		cout << endl;
-	}
-	for(size = 512; size < 514; size++){
-		t_matrix_mult(size);
-		cout << endl;
-	}
-	for(size = 1024; size < 1026; size++){
-		t_matrix_mult(size);
-		cout << endl;
+	/**/
+	//vector<size_t> vsz = {128,256,512};
+	vector<size_t> vsz = {1024};
+	for (auto sz : vsz){
+		for(size = sz; size < sz+1; size++){
+			t_matrix_mult(size);
+			cout << endl;
+		}
 	}
 	/**/
 	//LIKWID_MARKER_CLOSE;

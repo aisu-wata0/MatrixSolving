@@ -10,18 +10,38 @@ long div_down(long n, long d) {
 }
 
 #define mod(X,Y) ((((X) % (Y)) + (Y)) % Y)
+#define Lower_Multiple(SZ,D) ((SZ) - ((SZ) % D))
 
 #define CACHE_LINE_SIZE (64) // likwid-topology: Cache line size:	64
 #define L1_LINE_DN (CACHE_LINE_SIZE/sizeof(double)) // how many doubles in a line
-
-#define CACHE_L1_SIZE (32*1024/2) // likwid-topology: Size:	 32 kB
+// likwid-topology: Size
+#define CACHE_L1_SIZE (32*1024/2)
+#define CACHE_L2_SIZE (256*1024/2)
+#define CACHE_L3_SIZE (3*1024*1024/2)
 // divided by 2 because we wont be able to fill L1 completely without throwing
 // useful values out
-#define L1_DN (CACHE_L1_SIZE/sizeof(double)) // how many doubles in L1 cache
+
 // 2048
-// size of the block that should fit into L1
-#define BL1 ((long)((sqrt(L1_DN)) - mod(((long)sqrt(L1_DN)), L1_LINE_DN)))
+#define L1_DN (CACHE_L1_SIZE/sizeof(double)) // how many doubles in L1 cache
+#define L2_DN (CACHE_L2_SIZE/sizeof(double)) // how many doubles in L1 cache
+#define L3_DN (CACHE_L3_SIZE/sizeof(double)) // how many doubles in L1 cache
+
+// size of the block to fit one matrix in L1
+#define MAX_BL1 ((long)sqrt(L1_DN))
+// align to cache line
+#define BL1 (Lower_Multiple(MAX_BL1, L1_LINE_DN))
 // 40 % 8 == 0, (40*40 < 2048)
+
+// to fit 3 matrixes
+#define MAX_B3L1 ((long)sqrt(L1_DN/3))
+#define B3L1 (Lower_Multiple(MAX_B3L1, L1_LINE_DN))
+
+#define MAX_B3L2 ((long)sqrt(L2_DN/3))
+#define B3L2 (Lower_Multiple(MAX_B3L2, B3L1))
+
+#define MAX_B3L3 ((long)sqrt(L3_DN/3))
+#define B3L3 (Lower_Multiple(MAX_B3L3, B3L2))
+
 
 #define REG_SZ (32) // how many bytes in a register
 #define dn (REG_SZ/sizeof(double)) // how many doubles is a register
@@ -62,6 +82,7 @@ class Matrix
 public:
 	vdoublep arr;
 	long size;
+	long b_size;
 	long m_size;
 	long m_sizev;
 	void* mem;
@@ -72,7 +93,7 @@ public:
 			cerr <<"failed to malloc "<< (size*size)*sizeof(double)/1024 <<" KiB"<< endl;
 			exit(0);
 		}
-		void *mem = arr.d;
+		mem = arr.d;
 		arr.d = (double*)(((uintptr_t)mem+CACHE_LINE_SIZE-1) & (uintptr_t)~0x3f);
 	}
 	/**
@@ -81,11 +102,13 @@ public:
 	Matrix(long size)
 	:	size(size){
 		m_size = size;
+		b_size = m_size;
 		if(PADDING){
-			m_size += mod(-size,(long)BL1);
-			
+			m_size += mod(-size,(long)L1_LINE_DN);
+			b_size = m_size;
+			// make sure m_size is odd multiple of cache line
 			if(((m_size/L1_LINE_DN) % 2) == 0){
-				m_size = m_size + BL1; // make sure m_size is odd multiple of cache line
+				m_size = m_size + L1_LINE_DN;
 			}
 		}
 		m_sizev = m_size/dn;
@@ -191,7 +214,7 @@ template<class Mat>
 void print(Mat& M){
 	for(long i = 0; i < M.size; i++){
 		for(long j = 0; j < M.size; j++){
-			cout << M.at(i, j) <<'\t';
+			cout << M.at(i, j) <<" ";
 		}
 		cout << endl;
 	}
@@ -232,12 +255,21 @@ void printm(Mat& M){
 	print(M);
 }
 /**
+ * @brief prints vector
+ */
+template <class T>
+void printv(vector<T>& v){
+	for(T& vx : v)
+		cout << vx <<'\t';
+}
+
+/**
  * @brief prints vector x
  */
 template <class T>
-void printv(vector<T>& x){
-	for(T& vx : x)
-		cout << vx <<'\t';
+void printv(vector<T>& v, size_t size){
+	for(size_t i = 0; i < size; i++)
+		cout << v.at(i) <<'\t';
 }
 
 

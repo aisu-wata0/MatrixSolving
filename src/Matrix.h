@@ -197,7 +197,7 @@ void printm(Mat& M){
 template <class T>
 void printv(T& V){
 	for(T& vx : V)
-		cout << vx <<' \t';
+		cout << vx <<" ";
 }
 /**
  * @brief prints vector x
@@ -205,7 +205,7 @@ void printv(T& V){
 template<class T>
 void printv(varray<T>& V){
 	for(size_t i = 0; i < V.size; i++)
-		cout << V.at(i) <<' ';
+		cout << V.at(i) <<" ";
 }
 
 /**
@@ -214,7 +214,7 @@ void printv(varray<T>& V){
 template <class T>
 void printv(vector<T>& v, size_t size){
 	for(size_t i = 0; i < size; i++)
-		cout << v.at(i) <<'\t';
+		cout << v.at(i) <<" ";
 }
 
 

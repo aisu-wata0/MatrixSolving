@@ -194,10 +194,18 @@ void printm(Mat& M){
 /**
  * @brief prints vector x
  */
-template <class T>
-void printv(vector<T>& x){
+template<class T>
+void printv(T& x){
 	for(T& vx : x)
 		cout << vx <<'\t';
+}
+/**
+ * @brief prints vector x
+ */
+template<class T>
+void printv(varray<T>& V){
+	for(size_t i = 0; i < V.size; i++)
+		cout << V.at(i) <<' ';
 }
 
 

@@ -73,7 +73,7 @@ $(bin): $(OBJECTS)
 $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking Compiler'
-	$(compiler) $(FLAGS) $(LIBS) -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
+	$(compiler) $(FLAGS) $(LIBS) ${GCC_ARGS} -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo
 

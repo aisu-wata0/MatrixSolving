@@ -404,30 +404,37 @@ int mainBAK(int argc, char **argv) {
 
 #include "t_vector.h"
 
-int maind()
+int main()
 {
 	//LIKWID_MARKER_INIT;
 	//cout.precision(4);
 	//cout << scientific;
 	srand(20172);
-	long size = 8;
-	/**
-	test2(size);
+	size_t size = 8192*2;
+	vector<size_t> vsz = {8192/4,8192/2};
+	//vector<size_t> vsz = {42};
 	/**/
+	for (auto sz : vsz){
+		for(size = sz; size < sz+1; size++){
+			t_vector(size);
+			cout << endl;
+		}
+	}
+	/**
 	for(size = 128; size < 130; size++){
-		test(size);
+		t_matrix_mult(size);
 		cout << endl;
 	}
 	for(size = 256; size < 258; size++){
-		test(size);
+		t_matrix_mult(size);
 		cout << endl;
 	}
 	for(size = 512; size < 514; size++){
-		test(size);
+		t_matrix_mult(size);
 		cout << endl;
 	}
 	for(size = 1024; size < 1026; size++){
-		test(size);
+		t_matrix_mult(size);
 		cout << endl;
 	}
 	/**/

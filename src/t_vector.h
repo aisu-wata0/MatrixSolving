@@ -1,143 +1,158 @@
 
-void t_vector(long size){
+void t_vector(size_t size){
 	Matrix LU(size);
-	vector<double> X(LU.b_size);
-	MatrixColMajor B(size);
+	varray<double> X(LU.m_size);
+	varray<double> B(LU.m_size);
 	
-	long bi, bk;
-	long i, j, k;
-	size_t b_size = LU.b_size;
+	size_t bi, bk;
+	size_t i, j, k;
+	size_t vj, vk;
 	
-	cout << size << " : " << b_size << ":" << LU.m_size << endl;
+	cout << size << ":" << LU.m_size << endl;
 	
 	asm("Setup");
-	for(i = 0; i < b_size; i++){
+	for(i = 0; i < size; i++){
 		X.at(i) = 0;
-		B.at(i,0) = 1;
-		for(j = 0; j != b_size/dn; j += 1){
-			vec(dj) LU.at(i,j*dn+dj) = (i);
+		B.at(i) = 1;
+		for(vj = 0; vj < size/dn; vj += 1){
+			vec(dj) LU.at(i, vj*dn+dj) = (i);
 		}
 	}
 	asm("END Setup");
 	bool PRINT_MATRIX = false;
 	if(PRINT_MATRIX) { print(LU); cout << endl; }
-	if(PRINT_MATRIX) { print(B); cout << endl; }
+	if(PRINT_MATRIX) { printv(B); cout << endl; }
 	
+	size_t repetionN = 100;
+	size_t reps;
+	
+	const size_t bstep = BL1;
 	size_t unr = 4;
 	int c = 0;
 	clock_t t[128];
 	t[c++] = clock();
 	
 	
-	asm("VECmult_Tilroll");
-	for(bi = 0; bi < b_size; bi += BL1){
-		unroll(ui,BL1) X.at(bi+ui) = 0;
-		for(bk = 0; bk < b_size/dn; bk += BL1/dn){
-			asm("VECmult_Tilroll inner");
-			for(i = bi; i < (bi + BL1); i += unr){
-				vdouble acc[unr];
-				//vdouble acc[unr];
-				//memset(acc, 0, sizeof(acc));
-				unroll(ui,unr) vec(d) acc[ui][d] = 0;
-				for(k = bk; k < (bk + BL1/dn); k++){
-					unroll(ui,unr) acc[ui] = acc[ui] + LU.atv(i+ui,k) * B.atv(k,0);
+	for(reps = 0; reps < repetionN; reps++){
+		asm("VECmult_Tilroll");
+		for(bi = 0; bi < size; bi += bstep){
+			unroll(ui,bstep) X.at(bi+ui) = 0;
+			for(bk = 0; bk < size; bk += bstep){
+				asm("VECmult_Tilroll_inner");
+				for(i = bi; i < (bi + bstep); i += unr){
+					vec<double> acc[unr];
+					//memset(acc, 0, sizeof(acc));
+					unroll(ui,unr) vec(d) acc[ui].v[d] = 0;
+					for(vk = bk/dn; vk < (bk + bstep)/dn; vk++){
+						unroll(ui,unr) acc[ui].v = acc[ui].v + LU.atv(i+ui,vk).v * B.atv(vk).v;
+					}
+					unroll(ui,unr)
+						vec(d) X.at(i+ui) += acc[ui].v[d];
 				}
-				unroll(ui,unr)
-					vec(d) X.at(i+ui) += acc[ui][d];
-			}
-			asm("END VECmult_Tilroll inner");
-		}
-	}
-	asm("END VECmult_Tilroll");
-	t[c++] = clock();
-	printf("VECmult_Tilroll: %f sec\n", (double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC);
-	if(PRINT_MATRIX) { printv(X, size); cout << endl; }
-	t[c++] = clock();
-	
-	
-	asm("VECmult_Tiling");
-	for(bi = 0; bi < b_size; bi += BL1){
-		unroll(ui,BL1) X.at(bi+ui) = 0;
-		for(bk = 0; bk < b_size; bk += BL1){
-			for(i = bi; i < (bi + BL1); i++){
-				vdouble acc = {0};
-				for(k = bk/dn; k < (bk + BL1)/dn; k++){
-					acc = acc + LU.atv(i,k) * B.atv(k,0);
-				}
-				vec(d) X.at(i) += acc[d];
+				//asm("END VECmult_Tilroll inner");
 			}
 		}
+		asm("END VECmult_Tilroll");
 	}
-	asm("END VECmult_Tiling");
 	t[c++] = clock();
-	printf("VECmult_Tiling:  %f sec\n", (double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC);
-	if(PRINT_MATRIX) { printv(X, size); cout << endl; }
+	printf("VECmult_Tilroll: %f sec\n", ((double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC) / repetionN);
+	if(PRINT_MATRIX) { printv(X); cout << endl; }
 	t[c++] = clock();
 	
 	
-	asm("VECmult_Unroll");
-	for(i = 0; i < b_size; i += unr){
-		vdouble acc[unr];
-		unroll(ui,unr)
-			vec(d) acc[ui][d] = 0;
-		for(k = 0; k < b_size/dn; k++){
-			unroll(ui,unr) acc[ui] = acc[ui] + LU.atv(i+ui,k) * B.atv(k,0);
+	for(reps = 0; reps < repetionN; reps++){
+		asm("VECmult_Tiling");
+		for(bi = 0; bi < size; bi += bstep){
+			unroll(ui,bstep) X.at(bi+ui) = 0;
+			for(bk = 0; bk < size; bk += bstep){
+				for(i = bi; i < (bi + bstep); i++){
+					vec<double> acc = {0};
+					for(vk = bk/dn; vk < (bk + bstep)/dn; vk++){
+						acc.v = acc.v + LU.atv(i,vk).v * B.atv(vk).v;
+					}
+					vec(d) X.at(i) += acc.v[d];
+				}
+			}
 		}
-		unroll(ui,unr) X.at(i+ui) = 0;
-		unroll(ui,unr)
-			vec(d) X.at(i+ui) += acc[ui][d];
+		asm("END VECmult_Tiling");
 	}
-	asm("END VECmult_Unroll");
 	t[c++] = clock();
-	printf("VECmult_Unroll:  %f sec\n", (double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC);
-	if(PRINT_MATRIX) { printv(X, size); cout << endl; }
+	printf("VECmult_Tiling:  %f sec\n", ((double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC) / repetionN);
+	if(PRINT_MATRIX) { printv(X); cout << endl; }
 	t[c++] = clock();
 	
 	
-	asm("VECmult");
-	for(i = 0; i < size; i++){
-		vdouble acc = {0};
-		for(k = 0; k < size/dn; k++){
-			acc = acc + LU.atv(i,k) * B.atv(k,0);
+	for(reps = 0; reps < repetionN; reps++){
+		asm("VECmult_Unroll");
+		for(i = 0; i < size; i += unr){
+			vec<double> acc[unr];
+			unroll(ui,unr) vec(d) acc[ui].v[d] = 0;
+			for(k = 0; k < size/dn; k++){
+				unroll(ui,unr) acc[ui].v = acc[ui].v + LU.atv(i+ui,k).v * B.atv(k).v;
+			}
+			unroll(ui,unr) X.at(i+ui) = 0;
+			
+			unroll(ui,unr)
+				vec(d) X.at(i+ui) += acc[ui].v[d];
 		}
-		X.at(i) = 0;
-		vec(d) X.at(i) += acc[d];
+		asm("END VECmult_Unroll");
 	}
-	asm("END VECmult");
 	t[c++] = clock();
-	printf("VECmult:         %f sec\n", (double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC);
-	if(PRINT_MATRIX) { printv(X, size); cout << endl; }
+	printf("VECmult_Unroll:  %f sec\n", ((double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC) / repetionN);
+	if(PRINT_MATRIX) { printv(X); cout << endl; }
 	t[c++] = clock();
 	
 	
-	asm("Acc");
-	for(i = 0; i < size; i++){
-		double acc[dn] = {0};
-		for(k = 0; k < size/dn; k++){
-			vec(d) acc[d] = acc[d] + LU.at(i, k*4+d) * B.at(k*4+d, 0);
+	for(reps = 0; reps < repetionN; reps++){
+		asm("VECmult");
+		for(i = 0; i < size; i++){
+			vec<double> acc = {0};
+			for(k = 0; k < size/dn; k++){
+				acc.v = acc.v + LU.atv(i,k).v * B.atv(k).v;
+			}
+			X.at(i) = 0;
+			vec(d) X.at(i) += acc.v[d];
 		}
-		X.at(i) = 0;
-		vec(d) X.at(i) += acc[d];
+		asm("END VECmult");
 	}
-	asm("END Acc");
 	t[c++] = clock();
-	printf("Acc:             %f sec\n", (double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC);
-	if(PRINT_MATRIX) { printv(X, size); cout << endl; }
+	printf("VECmult:         %f sec\n", ((double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC) / repetionN);
+	if(PRINT_MATRIX) { printv(X); cout << endl; }
 	t[c++] = clock();
 	
 	
-	asm("Naive");
-	for(i = 0; i < size; i++){
-		X.at(i) = 0;
-		for(k = 0; k < size; k++){
-			X.at(i) = X.at(i) + LU.at(i, k) * B.at(k, 0);
+	for(reps = 0; reps < repetionN; reps++){
+		asm("Acc");
+		for(i = 0; i < size; i++){
+			double acc[dn] = {0};
+			for(k = 0; k < size/dn; k++){
+				vec(d) acc[d] = acc[d] + LU.at(i, k*4+d) * B.at(k*4+d);
+			}
+			X.at(i) = 0;
+			vec(d) X.at(i) += acc[d];
 		}
+		asm("END Acc");
 	}
-	asm("END Naive");
 	t[c++] = clock();
-	printf("Naive:           %f sec\n", (double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC);
-	if(PRINT_MATRIX) { printv(X, size); cout << endl; }
+	printf("Acc:             %f sec\n", ((double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC) / repetionN);
+	if(PRINT_MATRIX) { printv(X); cout << endl; }
 	t[c++] = clock();
 	
-	cout << X.at(0) <<":"<< X.at(X.size()-1) <<"\tend size "<< size << endl;
+	
+	for(reps = 0; reps < repetionN; reps++){
+		asm("Naive");
+		for(i = 0; i < size; i++){
+			X.at(i) = 0;
+			for(k = 0; k < size; k++){
+				X.at(i) = X.at(i) + LU.at(i, k) * B.at(k);
+			}
+		}
+		asm("END Naive");
+	}
+	t[c++] = clock();
+	printf("Naive:           %f sec\n", ((double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC) / repetionN);
+	if(PRINT_MATRIX) { printv(X); cout << endl; }
+	t[c++] = clock();
+	
+	cout << X.at(0) <<":"<< X.at(X.size-1) <<"\tend size "<< size << endl;
 }

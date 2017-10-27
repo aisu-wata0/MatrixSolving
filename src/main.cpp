@@ -412,112 +412,27 @@ int main()
 	srand(20172);
 	size_t size = 8192*2;
 	/**
-	vector<size_t> vsz = {8192/4,8192/2,8192,8192*2};
-	//vector<size_t> vsz = {80};
-	for (auto sz : vsz){
+	vector<size_t> V_sz = {8192/4,8192/2};
+	//vector<size_t> V_sz = {BL1*2};
+	for (auto& sz : V_sz){
+		sz = Lower_Multiple(sz,BL1);
+	}
+	for (auto sz : V_sz){
 		for(size = sz; size < sz+1; size++){
 			t_vector(size);
 			cout << endl;
 		}
 	}
 	/**/
-	//vector<size_t> vsz = {128,256,512};
-	vector<size_t> vsz = {1024};
-	for (auto sz : vsz){
+	//vector<size_t> V_sz = {128,256,512};
+	vector<size_t> V_sz = {1024};
+	for (auto sz : V_sz){
 		for(size = sz; size < sz+1; size++){
 			t_matrix_mult(size);
 			cout << endl;
 		}
 	}
 	/**/
-	//LIKWID_MARKER_CLOSE;
-	return 0;
-}
-
-#include "stdlib.h"
-#include "stdio.h"
-#include <time.h>
-
-#define REP 512
-int mainTiling() {
-	//LIKWID_MARKER_INIT;
-	int i,j,r;
-	size_t size = 1024*1024*32/sizeof(double);
-	double* arr = (double*)malloc(size*sizeof(double));
-
-	for (i = 0; i < size; i++) {  // warmup to make things equal if array happens to fit in your L3
-		arr[i] = 0;
-	}
-	
-	int c = 0;
-	clock_t t[REP];
-	t[c++] = clock();
-	
-	// Tiled
-	//LIKWID_MARKER_START("Tiled");
-	for (i = 0; i < size; i += L1_DN) {
-		for (r = 0; r < REP; r++) {
-			 for (j = i; j < (i + L1_DN); j += L1_LINE_DN) {
-				arr[j] = r;
-			}
-		}
-	}
-	//LIKWID_MARKER_STOP("Tiled");
-	t[c++] = clock();
-	printf ("Tiled: %f sec\n", (double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC);
-	
-	size_t msize = sqrt(size);
-	size_t bi, bj;
-	size_t BL1S = 32;
-	// Tiled blocks
-	//LIKWID_MARKER_START("Tiled blocks");
-	for (bi = 0; bi < (msize - BL1S); bi += BL1S) {
-		for (bj = 0; bj < (msize - BL1S); bj += BL1S) {
-			for (r = 0; r < REP; r++) {
-				for (i = bi; i < (bi + BL1S); i += 1) {
-					for (j = bj; j < (bj + BL1S); j += L1_LINE_DN) {
-						arr[i*msize + j] = r;
-					}
-				 }
-			}
-		}
-	}
-	//LIKWID_MARKER_STOP("Tiled blocks");
-	t[c++] = clock();
-	printf ("Tiled blocks: %f sec\n", (double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC);
-	
-	// Tiled row
-	size_t BLi = (L1_DN/msize);
-	size_t BLl = min(L1_DN, msize);
-	cout << "CACHE_L1_SIZE=" << CACHE_L1_SIZE << " L1_DN=" << L1_DN << " sz=" << msize << endl;
-	//LIKWID_MARKER_START("Tiled row");
-	for (bi = 0; bi < (msize - BLi); bi += BLi) {
-		for (bj = 0; bj < msize; bj += BLl) {
-			for (r = 0; r < REP; r++) {
-				for (i = bi; i < (bi + BLi); i += 1) {
-					for (j = bj; j < msize; j += L1_LINE_DN) {
-						arr[i*msize + j] = r;
-					}
-				 }
-			}
-		}
-	}
-	//LIKWID_MARKER_STOP("Tiled row");
-	t[c++] = clock();
-	printf ("Tiled row: %f sec\n", (double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC);
-
-	// Naive
-	//LIKWID_MARKER_START("Naive");
-	for (r = 0; r < REP; r++) {
-		for (i = 0; i < size; i += L1_LINE_DN) {
-			arr[i] = r;
-		}
-	}
-	//LIKWID_MARKER_STOP("Naive");
-	t[c++] = clock();
-	printf ("Naive: %f sec\n", (double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC);
-	
-    printf ("arr[0] = %f\n", arr[0]);    // to prevent optimizing out all the writes
 	//LIKWID_MARKER_CLOSE;
 	return 0;
 }

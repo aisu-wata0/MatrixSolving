@@ -16,6 +16,7 @@
     <File Name="src/Subst.h"/>
     <File Name="src/t_matrix_mult.h"/>
     <File Name="src/t_vector.h"/>
+    <File Name="src/varray.h"/>
   </VirtualDirectory>
   <VirtualDirectory Name="MatrixSolving">
     <File Name="Makefile"/>

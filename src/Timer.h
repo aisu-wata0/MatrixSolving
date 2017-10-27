@@ -70,13 +70,13 @@ public:
 		elapsed_tv.tv_usec = clock[c].tv_usec - clock[c-1].tv_usec;
 		
 		n_clock[c] = std::clock();
-		*cl = (double)((n_clock[c] - n_clock[c-1]) / CLOCKS_PER_SEC);
+		*cl = ((double)(n_clock[c] - n_clock[c-1]) / CLOCKS_PER_SEC);
 		return tv_sec(&elapsed_tv);
 	}
 	
-	void tick(){
+	double tick(){
 		double dummy;
-		tick(&dummy);
+		return tick(&dummy);
 	}
 };
 

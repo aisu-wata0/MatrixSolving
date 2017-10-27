@@ -6,6 +6,7 @@
 
 #include <sys/time.h>
 #include <iostream>
+#include <cstddef>
 
 /**
  * @return returns current clock time in seconds 
@@ -39,6 +40,43 @@ public:
 		elapsed_tv.tv_sec -= start_tv.tv_sec;
 		elapsed_tv.tv_usec -= start_tv.tv_usec;
 		return tv_sec(&elapsed_tv);
+	}
+};
+
+
+template<size_t size>
+class Chronometer
+{
+public:
+	struct timeval clock[size];
+	clock_t n_clock[size];
+	size_t c;
+	
+	Chronometer(){
+		init();
+	}
+	
+	void init(){
+		gettimeofday(&clock[0], NULL);
+		n_clock[0] = std::clock();
+		c = 0;
+	}
+	
+	double tick(double* cl){
+		struct timeval elapsed_tv;
+		c = (c + 1) % (ptrdiff_t)size;
+		gettimeofday(&clock[c], NULL);
+		elapsed_tv.tv_sec = clock[c].tv_sec - clock[c-1].tv_sec;
+		elapsed_tv.tv_usec = clock[c].tv_usec - clock[c-1].tv_usec;
+		
+		n_clock[c] = std::clock();
+		*cl = (double)((n_clock[c] - n_clock[c-1]) / CLOCKS_PER_SEC);
+		return tv_sec(&elapsed_tv);
+	}
+	
+	void tick(){
+		double dummy;
+		tick(&dummy);
 	}
 };
 

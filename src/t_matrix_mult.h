@@ -186,7 +186,7 @@ void t_matrix_mult(size_t size){
 	asm("Tiled0");
 	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
 	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0]) {
-		bkmax[0] = bi[0] + bstep[0];
+		//bkmax[0] = bi[0] + bstep[0];
 		for (bk[0] = 0; bk[0] < (bi[0]); bk[0] += bstep[0]) {
 			size_t imax = bi[0] + bstep[0] > size ? size : bi[0] + bstep[0];
 			size_t jmax = bj[0] + bstep[0] > size ? size : bj[0] + bstep[0];
@@ -219,10 +219,10 @@ void t_matrix_mult(size_t size){
 	block(bi[1],0,size, bj[1],0,size, bk[1],0,(bi[1]+bstep[1]), bstep[1]){
 		bimax[0] = bi[1] + bstep[1] > size ? size : bi[1] + bstep[1];
 		bjmax[0] = bj[1] + bstep[1] > size ? size : bj[1] + bstep[1];
-		for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
-		for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0]) {
-			bkmax[0] = bi[0] + bstep[0];
-			for (bk[0] = 0; bk[0] < (bkmax[0] - bstep[0]); bk[0] += bstep[0]) {
+		for (bi[0] = bi[1]; bi[0] < bimax[0]; bi[0] += bstep[0])
+		for (bj[0] = bi[1]; bj[0] < bjmax[0]; bj[0] += bstep[0]) {
+			//bkmax[0] = bi[0] + bstep[0];
+			for (bk[0] = bk[1]; bk[0] < (bi[0]); bk[0] += bstep[0]) {
 				size_t imax = bi[0] + bstep[0] > size ? size : bi[0] + bstep[0];
 				size_t jmax = bj[0] + bstep[0] > size ? size : bj[0] + bstep[0];
 				size_t kmax = bk[0] + bstep[0];
@@ -234,9 +234,6 @@ void t_matrix_mult(size_t size){
 			for (bk[0] = (bi[0]); bk[0] < (bi[0] + bstep[0]); bk[0] += bstep[0]) {
 				size_t imax = bi[0] + bstep[0] > size ? size : bi[0] + bstep[0];
 				size_t jmax = bj[0] + bstep[0] > size ? size : bj[0] + bstep[0];
-				block(i,bi[0],imax, j,bj[0],jmax, k,bk[0],i, 1){
-					X.at(i, j) = X.at(i, j) - LU.at(i, k) * B.at(k, j);
-				}
 				for (size_t j = bj[0]; j < jmax; ++j)
 				for (size_t i = bi[0]; i < imax; ++i) {
 					for (size_t k = bk[0]; k < i; ++k) {

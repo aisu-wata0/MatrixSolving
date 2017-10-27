@@ -15,8 +15,7 @@ void t_matrix_mult(size_t size){
 	size_t step;
 	
 	size = LU.size;
-	const size_t b_size = LU.b_size;
-	cout << size << ":" << b_size << ":" << LU.m_size << endl;
+	cout << size << ":" << LU.m_size << endl;
 	cout <<"L1_LINE_DN = "<< L1_LINE_DN <<";  L1_DN = "<< L1_DN <<";  BL1 = "<< BL1 <<";  B3L1 = "<< B3L1 <<";  "<< endl;
 	
 	asm("SETUP");
@@ -78,7 +77,7 @@ void t_matrix_mult(size_t size){
 	
 	set(X,0);
 	timer.tick();
-	asm("Tiled0");
+	asm("Tiled_0");
 	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0]) {
 		for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0]) {
 			for (bk[0] = 0; bk[0] < size; bk[0] += bstep[0]) {
@@ -95,14 +94,14 @@ void t_matrix_mult(size_t size){
 			}
 		}
 	}
-	asm("END Tiled0");
-	printf("Tiled0: %f sec\n", timer.tick(&cl));
+	asm("END Tiled_0");
+	printf("Tiled_0: %f sec\n", timer.tick(&cl));
 	if(PRINT_MATRIX) { printm(X); cout << endl; }
 	
 	
 	set(X,0);
 	timer.tick();
-	asm("Tiled1");
+	asm("Tiled_1.0");
 	block(bi[1],0,size, bj[1],0,size, bk[1],0,size, bstep[1]){
 		size_t i1max = bi[1] + bstep[1] > size ? size : bi[1] + bstep[1];
 		size_t j1max = bj[1] + bstep[1] > size ? size : bj[1] + bstep[1];
@@ -116,14 +115,14 @@ void t_matrix_mult(size_t size){
 			}
 		}
 	}
-	asm("END Tiled1");
-	printf("Tiled1: %f sec\n", timer.tick(&cl));
+	asm("END Tiled_1.0");
+	printf("Tiled_1.0: %f sec\n", timer.tick(&cl));
 	if(PRINT_MATRIX) { printm(X); cout << endl; }
 	
 	
 	set(X,0);
 	timer.tick();
-	asm("Tiled2");
+	asm("Tiled_2.1.0");
 	block(bi[2],0,size, bj[2],0,size, bk[2],0,size, bstep[2]){
 		size_t i2max = bi[2] + bstep[2] > size ? size : bi[2] + bstep[2];
 		size_t j2max = bj[2] + bstep[2] > size ? size : bj[2] + bstep[2];
@@ -142,15 +141,15 @@ void t_matrix_mult(size_t size){
 			}
 		}
 	}
-	asm("END Tiled2");
-	printf("Tiled2: %f sec\n", timer.tick(&cl));
+	asm("END Tiled_2.1.0");
+	printf("Tiled_2.1.0: %f sec\n", timer.tick(&cl));
 	if(PRINT_MATRIX) { printm(X); cout << endl; }
 	
 	
 	
 	set(X,0);
 	timer.tick();
-	asm("Tiled3");
+	asm("Tiled_3.2.1.0");
 	block(bi[3],0,size, bj[3],0,size, bk[3],0,size, bstep[3]){
 		size_t i3max = bi[3] + bstep[3] > size ? size : bi[3] + bstep[3];
 		size_t j3max = bj[3] + bstep[3] > size ? size : bj[3] + bstep[3];
@@ -174,8 +173,8 @@ void t_matrix_mult(size_t size){
 			}
 		}
 	}
-	asm("END Tiled3");
-	printf("Tiled3: %f sec\n", timer.tick(&cl));
+	asm("END Tiled_3.2.1.0");
+	printf("Tiled_3.2.1.0: %f sec\n", timer.tick(&cl));
 	if(PRINT_MATRIX) { printm(X); cout << endl; }
 	
 	////
@@ -183,7 +182,7 @@ void t_matrix_mult(size_t size){
 	////
 	set(X,B);
 	timer.tick();
-	asm("Tiled0");
+	asm("LU_Tiled_0");
 	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
 	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0]) {
 		//bkmax[0] = bi[0] + bstep[0];
@@ -208,14 +207,14 @@ void t_matrix_mult(size_t size){
 			}
 		}
 	}
-	asm("END Tiled0");
-	printf("Tiled0: %f sec\n", timer.tick(&cl));
+	asm("END LU_Tiled_0");
+	printf("LU_Tiled_0: %f sec\n", timer.tick(&cl));
 	if(PRINT_MATRIX) { printm(X); cout << endl; }
 	
 	
 	set(X,0);
 	timer.tick();
-	asm("Tiled1");
+	asm("LU_Tiled_1.0");
 	block(bi[1],0,size, bj[1],0,size, bk[1],0,(bi[1]+bstep[1]), bstep[1]){
 		bimax[0] = bi[1] + bstep[1] > size ? size : bi[1] + bstep[1];
 		bjmax[0] = bj[1] + bstep[1] > size ? size : bj[1] + bstep[1];
@@ -244,8 +243,8 @@ void t_matrix_mult(size_t size){
 			}
 		}
 	}
-	asm("END Tiled1");
-	printf("Tiled1: %f sec\n", timer.tick(&cl));
+	asm("END LU_Tiled_1.0");
+	printf("LU_Tiled_1.0: %f sec\n", timer.tick(&cl));
 	if(PRINT_MATRIX) { printm(X); cout << endl; }
 	
 	

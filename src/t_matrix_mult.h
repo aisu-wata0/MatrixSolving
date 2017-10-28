@@ -39,13 +39,13 @@ void t_matrix_mult(size_t size){
 	size_t bi[5], bj[5], bk[5];
 	size_t bimax[5], bjmax[5], bkmax[5];
 	size_t bstep[5];
-	bstep[0] = 8;
-	bstep[1] = bstep[0]*3;
-	bstep[2] = bstep[1]*3;
-	bstep[3] = bstep[2]*4;
+//	bstep[0] = 8;
+//	bstep[1] = bstep[0]*3;
+//	bstep[2] = bstep[1]*3;
+//	bstep[3] = bstep[2]*4;
 
-//	bstep[0] = 2;
-//	bstep[1] = bstep[0]*2;
+	bstep[0] = 2;
+	bstep[1] = bstep[0]*2;
 	
 	// export GCC_ARGS=" -D L1M=${3} -D L2M=${3} L3M=${4} "
 	//bstep[1] = bstep[0]*L1M;
@@ -289,7 +289,7 @@ void t_matrix_mult(size_t size){
 						}
 					}
 					// Last block in K, diagonal
-					for (bk[0] = (bi[0]); bk[0] < (bi[0] + bstep[0]); bk[0] += bstep[0]) {
+					for (; bk[0] < (bi[0] + bstep[0]); bk[0] += bstep[0]) {
 						block_n[0]++;
 						size_t imax = bi[0] + bstep[0] > size ? size : bi[0] + bstep[0];
 						size_t jmax = bj[0] + bstep[0] > size ? size : bj[0] + bstep[0];

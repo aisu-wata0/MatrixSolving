@@ -425,7 +425,7 @@ int main()
 	}
 	/**/
 	//vector<size_t> V_sz = {144,288,288*2,288*3,288*4};
-	vector<size_t> V_sz = {288*3};
+	vector<size_t> V_sz = {8};
 	for (auto sz : V_sz){
 		for(size = sz; size < sz+1; size++){
 			t_matrix_mult(size);

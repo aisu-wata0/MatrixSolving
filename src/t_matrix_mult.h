@@ -31,7 +31,7 @@ void t_matrix_mult(size_t size){
 		}
 	}
 	
-	size_t repetitionN = 1;
+	size_t repetitionN = 3;
 	size_t reps;
 	
 	step = +1;
@@ -39,27 +39,29 @@ void t_matrix_mult(size_t size){
 	size_t bi[5], bj[5], bk[5];
 	size_t bimax[5], bjmax[5], bkmax[5];
 	size_t bstep[5];
-//	bstep[0] = 8;
-//	bstep[1] = bstep[0]*3;
-//	bstep[2] = bstep[1]*3;
-//	bstep[3] = bstep[2]*4;
-
+	/**/
+	bstep[0] = 8;
+	bstep[1] = bstep[0]*3;
+	bstep[2] = bstep[1]*3;
+	bstep[3] = bstep[2]*4;
+	/**
 	bstep[0] = 2;
 	bstep[1] = bstep[0]*2;
-	
+	bstep[2] = bstep[1]*2;
+	bstep[3] = bstep[2]*2;
+	/**/
 	// export GCC_ARGS=" -D L1M=${3} -D L2M=${3} L3M=${4} "
 	//bstep[1] = bstep[0]*L1M;
 	//bstep[2] = bstep[1]*L2M;
 	//bstep[2] = bstep[1]*L3M;
-	size_t block_n[5];
+	size_t block_n[16];
 	
 	const size_t unr = 2;
 	const bool PRINT_MATRIX = false;
-	double acc00, acc01, acc10, acc11;
 	double acc[unr*unr];
 	
 	Chronometer<128> timer;
-	/**
+	/**/
 	// warmup
 	set(X,0);
 	timer.tick();
@@ -224,19 +226,19 @@ void t_matrix_mult(size_t size){
 				size_t jmax = bj[0] + bstep[0] > size ? size : bj[0] + bstep[0];
 				size_t kmax = bk[0] + bstep[0];
 				block(i,bi[0],imax, j,bj[0],jmax, k,bk[0],kmax, 1){
-					block_n[4]++;
+					block_n[6]++;
 					X.at(i, j) = X.at(i, j) - LU.at(i, k) * X.at(k, j);
 				}
 			}
 			// Last block in K, diagonal
 			for (bk[0] = (bi[0]); bk[0] < (bi[0] + bstep[0]); bk[0] += bstep[0]) {
-				block_n[0]++;
+				block_n[2]++;
 				size_t imax = bi[0] + bstep[0] > size ? size : bi[0] + bstep[0];
 				size_t jmax = bj[0] + bstep[0] > size ? size : bj[0] + bstep[0];
 				for (size_t i = bi[0]; i < imax; ++i)
 				for (size_t j = bj[0]; j < jmax; ++j) {
 					for (size_t k = bk[0]; k < i; ++k) {
-						block_n[4]++;
+						block_n[8]++;
 						X.at(i, j) = X.at(i, j) - LU.at(i, k) * X.at(k, j);
 					}
 					X.at(i, j) /= LU.at(i, i);
@@ -257,46 +259,33 @@ void t_matrix_mult(size_t size){
 		asm("LU_Tiled_1.0");
 		block (bi[1],0,size, bj[1],0,size, bk[1],0,(bi[1]+bstep[1]), bstep[1]) {
 			test[0] = 0;
-			block_n[1]++;
+			block_n[15]++;
 			bimax[0] = bi[1] + bstep[1] > size ? size : bi[1] + bstep[1];
 			bjmax[0] = bj[1] + bstep[1] > size ? size : bj[1] + bstep[1];
 			for (bi[0] = bi[1]; bi[0] < bimax[0]; bi[0] += bstep[0])
 			for (bj[0] = bj[1]; bj[0] < bjmax[0]; bj[0] += bstep[0]) {
 				test[0]++;
-				if(bk[1] + bstep[1] < bi[0]){
-					bkmax[0] = bk[1] + bstep[1];
-					for (bk[0] = bk[1]; bk[0] < bkmax[0]; bk[0] += bstep[0]) {
-						block_n[0]++;
-						size_t imax = bi[0] + bstep[0] > size ? size : bi[0] + bstep[0];
-						size_t jmax = bj[0] + bstep[0] > size ? size : bj[0] + bstep[0];
-						size_t kmax = bk[0] + bstep[0];
-						block(i,bi[0],imax, j,bj[0],jmax, k,bk[0],kmax, 1){
-							block_n[4]++;
-							X.at(i, j) = X.at(i, j) - LU.at(i, k) * X.at(k, j);
-						}
+				bkmax[0] = min(bk[1] + bstep[1], bi[0]);
+				for (bk[0] = bk[1]; bk[0] < bkmax[0]; bk[0] += bstep[0]) {
+					block_n[0]++;
+					size_t imax = bi[0] + bstep[0] > size ? size : bi[0] + bstep[0];
+					size_t jmax = bj[0] + bstep[0] > size ? size : bj[0] + bstep[0];
+					size_t kmax = bk[0] + bstep[0];
+					block(i,bi[0],imax, j,bj[0],jmax, k,bk[0],kmax, 1){
+						block_n[6]++;
+						X.at(i, j) = X.at(i, j) - LU.at(i, k) * X.at(k, j);
 					}
-				} else {
-					bkmax[0] = (bi[0]);
-					bkmax[0] = min(bk[1] + bstep[1], bi[0]);
-					for (bk[0] = bk[1]; bk[0] < bkmax[0]; bk[0] += bstep[0]) {
-						block_n[0]++;
-						size_t imax = bi[0] + bstep[0] > size ? size : bi[0] + bstep[0];
-						size_t jmax = bj[0] + bstep[0] > size ? size : bj[0] + bstep[0];
-						size_t kmax = bk[0] + bstep[0];
-						block(i,bi[0],imax, j,bj[0],jmax, k,bk[0],kmax, 1){
-							block_n[4]++;
-							X.at(i, j) = X.at(i, j) - LU.at(i, k) * X.at(k, j);
-						}
-					}
-					// Last block in K, diagonal
+				}
+				// Last block in K, diagonal
+				if(bk[0] == bi[0] && bk[1] == bi[1]){
 					for (; bk[0] < (bi[0] + bstep[0]); bk[0] += bstep[0]) {
-						block_n[0]++;
+						block_n[2]++;
 						size_t imax = bi[0] + bstep[0] > size ? size : bi[0] + bstep[0];
 						size_t jmax = bj[0] + bstep[0] > size ? size : bj[0] + bstep[0];
 						for (size_t i = bi[0]; i < imax; ++i)
 						for (size_t j = bj[0]; j < jmax; ++j) {
 							for (size_t k = bk[0]; k < i; ++k) {
-								block_n[4]++;
+								block_n[8]++;
 								X.at(i, j) = X.at(i, j) - LU.at(i, k) * X.at(k, j);
 							}
 							X.at(i, j) /= LU.at(i, i);
@@ -310,6 +299,76 @@ void t_matrix_mult(size_t size){
 	printf("LU_Tiled_1.0: %f sec\n", timer.tick()/repetitionN);
 	if(PRINT_MATRIX) { printm(X); cout << endl; }
 	
+	
+	
+	set(X,B);
+	timer.tick();
+	for(reps = 0; reps < repetitionN; reps++){
+		asm("LU_Naive");
+		for(i=0; i < size; i += step){
+			for(j=0; j < size; j += step){
+				for(k=0; k < i; k += 1){
+					X.at(i,j) = X.at(i,j) - LU.at(i,k) * X.at(k,j);
+				}
+				X.at(i,j) /= LU.at(i,i);
+			}
+		}
+		asm("END LU_Naive");
+	}
+	printf("LU_Naive: %f sec\n", timer.tick()/repetitionN);
+	if(PRINT_MATRIX) { printm(X); cout << endl; }
+	
+	
+	
+//	memset(test, 0, sizeof(test));
+//	memset(block_n, 0, sizeof(block_n));
+//	set(X,B);
+//	timer.tick();
+//	for(reps = 0; reps < repetitionN; reps++){
+//		asm("LU_Tiled_2.1.0");
+//		//block (bi[2],0,size, bj[2],0,size, bk[2],0,(bi[2]+bstep[2]), bstep[2]) {
+//			block (bi[1],0,size, bj[1],0,size, bk[1],0,(bi[1]+bstep[1]), bstep[1]) {
+//				test[0] = 0;
+//				block_n[15]++;
+//				bimax[0] = bi[1] + bstep[1] > size ? size : bi[1] + bstep[1];
+//				bjmax[0] = bj[1] + bstep[1] > size ? size : bj[1] + bstep[1];
+//				for (bi[0] = bi[1]; bi[0] < bimax[0]; bi[0] += bstep[0])
+//				for (bj[0] = bj[1]; bj[0] < bjmax[0]; bj[0] += bstep[0]) {
+//					test[0]++;
+//					bkmax[0] = min(bk[1] + bstep[1], bi[0]);
+//					for (bk[0] = bk[1]; bk[0] < bkmax[0]; bk[0] += bstep[0]) {
+//						block_n[0]++;
+//						size_t imax = bi[0] + bstep[0] > size ? size : bi[0] + bstep[0];
+//						size_t jmax = bj[0] + bstep[0] > size ? size : bj[0] + bstep[0];
+//						size_t kmax = bk[0] + bstep[0];
+//						block(i,bi[0],imax, j,bj[0],jmax, k,bk[0],kmax, 1){
+//							block_n[6]++;
+//							X.at(i, j) = X.at(i, j) - LU.at(i, k) * X.at(k, j);
+//						}
+//					}
+//					// Last block in K, diagonal
+//					if(bk[0] == bi[0] && bk[1] == bi[1]){
+//						for (; bk[0] < (bi[0] + bstep[0]); bk[0] += bstep[0]) {
+//							block_n[2]++;
+//							size_t imax = bi[0] + bstep[0] > size ? size : bi[0] + bstep[0];
+//							size_t jmax = bj[0] + bstep[0] > size ? size : bj[0] + bstep[0];
+//							for (size_t i = bi[0]; i < imax; ++i)
+//							for (size_t j = bj[0]; j < jmax; ++j) {
+//								for (size_t k = bk[0]; k < i; ++k) {
+//									block_n[8]++;
+//									X.at(i, j) = X.at(i, j) - LU.at(i, k) * X.at(k, j);
+//								}
+//								X.at(i, j) /= LU.at(i, i);
+//							}
+//						}
+//					}
+//				}
+//			}
+//		//}
+//		asm("END LU_Tiled_2.1.0");
+//	}
+//	printf("LU_Tiled_2.1.0: %f sec\n", timer.tick()/repetitionN);
+//	if(PRINT_MATRIX) { printm(X); cout << endl; }
 	
 	
 	set(X,0);

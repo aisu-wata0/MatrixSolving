@@ -1,13 +1,12 @@
 #ifndef GAUSSEL_H
 #define GAUSSEL_H
-/**
-@file GaussEl.h
-*/
+/** @file */
 
 #include "Double.h"
-#include "Matrix.h"
+#include "Matrix.hpp"
 
-namespace std {
+namespace gm {
+using namespace std;
 
 /**
  @brief For the matrix LU finds its LU decomposition overwriting it
@@ -15,19 +14,19 @@ namespace std {
  @param LU Matrix to be decomposed Output: lower triangle of this matrix will store L 1 diagonal implicit, upper triangle stores U
  @param P Permutation vector resulting of the pivoting
  */
-void GaussEl(const Matrix& A, Matrix& LU, vector<long>& P) {
+void GaussEl(const Matrix<double>& A, Matrix<double>& LU, vector<long>& P) {
 	// copy A to LU
 	set(LU, A);
 	// initializing permutation vector
-	for(long i = 0; i < A.size; i++){
+	for(long i = 0; i < A.size(); i++){
 		P.at(i) = i;
 	}
 
 	// for each pivot
-	for(long p = 0; p < A.size; p++){
+	for(long p = 0; p < A.size(); p++){
 		/* partial pivoting */
 		long maxRow = p;
-		for(long i = p+1; i < A.size; i++){
+		for(long i = p+1; i < A.size(); i++){
 			// for each value below the p pivot
 			if(abs(LU.at(i,p)) > abs(LU.at(maxRow,p))) maxRow = i;
 		} // finds max value
@@ -41,13 +40,13 @@ void GaussEl(const Matrix& A, Matrix& LU, vector<long>& P) {
 		}
 		// LU.at(p,p) = 1; implicit
 		//for(long i = p+1; i < A.size; i++){	// going from pivot+1 to end
-		for(long i = A.size-1; i >= p+1; i--){	// going from end to pivot+1 Optm: If no pivoting ocurred: 1 less cache miss
+		for(long i = A.size()-1; i >= p+1; i--){	// going from end to pivot+1 Optm: If no pivoting ocurred: 1 less cache miss
 			if(not close_zero(LU.at(i,p))){
 				// only subtract pivot line if coeficient is not null
 				// find pivot multiplier, store in L
 				LU.at(i, p) = LU.at(i, p)/LU.at(p, p);
 				// subtract pivot row U.at(p, _) from current row LU.at(i, _)
-				for(long k = p+1; k < A.size; k++){
+				for(long k = p+1; k < A.size(); k++){
 					LU.at(i, k) -= LU.at(p, k) * LU.at(i, p);
 					// mulitply pivot line value to multiplier
 				}

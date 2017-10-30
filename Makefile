@@ -1,58 +1,53 @@
 
-SRCDIR = src
-BUILDDIR = obj
+#compiler
+CC = g++ -std=c++11
+EXT := cpp
+HEXT := hpp
+# Executable filename
+bin = invmat
+# warnings and flags
+RELEASEFLAGS = -O3 -mavx -march=native -DNDEBUG
+DEBUGFLAGS = -O0 -g
+WARN = -Wall
+WNO = -Wno-comment  -Wno-sign-compare
+CFLAGS = $(RELEASEFLAGS) $(WARN) $(WNO)
 
-SRCNAMES := $(shell find $(SOURCEDIR) -name '*.cpp' -type f -exec basename {} \;)
-
-HNAMES := $(shell find $(SOURCEDIR) -name '*.h' -type f -exec basename {} \;)
-
-OBJECTS := $(addprefix $(BUILDDIR)/, $(SRCNAMES:%.cpp=%.o))
-SRCS := $(addprefix $(SRCDIR)/, $(SRCNAMES))
-
-LIKDIR1=/usr/local/likwid
+LIKDIR=/usr/local/likwid
 LIKDIR2=/home/soft/likwid
 LIKDIR3=/usr/include/likwid
 LIKDIR4=/usr/include
-LIBS = -DLIKWID_PERFMON -llikwid -lm -pthread -I$(LIKDIR1)/include -L$(LIKDIR1)/lib -I$(LIKDIR2)/include -L$(LIKDIR2)/lib -I$(LIKDIR3)/include -L$(LIKDIR3)/lib -I$(LIKDIR4)/include -L$(LIKDIR4)/lib
+INC := -I./include -I$(LIKDIR)/include  -I$(LIKDIR)/include -L$(LIKDIR1)/lib -I$(LIKDIR2)/include -L$(LIKDIR2)/lib -I$(LIKDIR3)/include -L$(LIKDIR3)/lib -I$(LIKDIR4)/include -L$(LIKDIR4)/lib
 
-# warnings and flags
-WARN = -Wall
-WNO = -Wno-comment  -Wno-sign-compare
-FLAGS = -O3 -mavx -march=native $(WARN) $(WNO)
+LIB := -pthread -L lib -DLIKWID_PERFMON -lm -pthread -llikwid
 
-# Executable filename
-bin = invmat
+SRCDIR = src
+INCDIR = include
+BUILDDIR = obj
 
-#compiler
-compiler = g++ -std=c++11
+SRCNAMES := $(shell find $(SRCDIR) -name '*.$(EXT)' -type f -exec basename {} \;)
+HNAMES := $(shell find $(INCDIR) -name '*.$(HEXT)' -type f -exec basename {} \;)
 
-all: pre obj_dir list_srcnames $(bin)
+SRCS=$(wildcard $(SRCDIR)/*.$(EXT))
+HEADERS=$(wildcard $(INCDIR)/*.$(HEXT))
+
+OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SRCS:.$(EXT)=.o))
+
+.PHONY: all pre dirs list_srcnames doc debug set_debug assembly set_assembly rebuild clean cleanBin cleanDoc cleanAll
+
+all: pre dirs list_srcnames $(bin)
 
 pre:
-	
 
-rm_doc:
-	rm -rf doc/
-	
-doc: rm_doc
-	doxygen doxyconfig
-
-set_debug:
-	$(eval FLAGS = -O0 -g $(WARN))
-
-debug: set_debug all
-
-set_assembly:
-	$(eval FLAGS = -S $(FLAGS))
-
-assembly: set_assembly all
-
-rebuild: clean all
-
-buildclean: all clean
-
-obj_dir:
-	mkdir -p $(BUILDDIR)
+dirs:
+	@mkdir -p $(BUILDDIR)
+	@mkdir -p $(INCDIR)
+	@mkdir -p $(SRCDIR)
+	@echo SRCS
+	@echo $(SRCS)
+	@echo HEADERS
+	@echo $(HEADERS)
+	@echo OBJECTS
+	@echo $(OBJECTS)
 
 list_srcnames:
 	@echo
@@ -62,23 +57,40 @@ list_srcnames:
 	@echo $(HNAMES)
 	@echo
 
-# Tool invocations
+doc:
+	doxygen doxyconfig
+
+debug: set_debug all
+set_debug:
+	$(eval CFLAGS = $(DEBUGFLAGS) $(WARN) $(WNO))
+
+assembly: set_assembly all
+set_assembly:
+	$(eval CFLAGS = -S $(CFLAGS))
+
+rebuild: clean all
+
+clean:
+	rm -rf  ./$(BUILDDIR)/*.o  ./$(BUILDDIR)/*.d
+cleanBin:
+	rm -rf  $(bin)
+cleanDoc:
+	rm -rf doc/
+cleanAll: clean cleanBin cleanDoc
+
+
 $(bin): $(OBJECTS)
 	@echo 'Building target: $@'
 	@echo 'Invoking Linker'
-	$(compiler) -o "$(bin)" $(OBJECTS) $(LIBS)
+	$(CC) $^ -o "$(bin)" $(LIB)
 	@echo 'Finished building target: $@'
 	@echo
 
-$(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
+$(BUILDDIR)/%.o: $(SRCDIR)/%.cpp $(INCDIR)/%.hpp
 	@echo 'Building file: $<'
 	@echo 'Invoking Compiler'
-	$(compiler) $(FLAGS) $(LIBS) ${GCC_ARGS} -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
+	@mkdir -p $(BUILDDIR)
+	$(CC) $(CFLAGS) $(INC) ${CCARGS} -c -fmessage-length=80 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo
 
-clean:
-	rm -rf  ./$(BUILDDIR)/*.o  ./$(BUILDDIR)/*.d $(bin)
-
-cleanAll: clean
-	rm -rf  $(bin)

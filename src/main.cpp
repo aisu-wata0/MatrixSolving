@@ -7,30 +7,8 @@ Usage: %s [-e inputFile] [-o outputFile] [-r randSize] -i Iterations
 @authors Bruno Freitas Serbena
 @authors Luiz Gustavo Jhon Rodrigues
 */
-/**
-@file main.cpp
-*/
 
-#include <iostream>
-#include <fstream>
-#include <iomanip>
-#include <vector>
-#include <cmath>
-#include <ctgmath>
-//#include <likwid.h>
-#include <unistd.h>
-
-#include "Timer.h"
-#include "Matrix.h"
-#include "GaussEl.h"
-#include "Subst.h"
-
-using namespace std;
-
-Timer timer;
-double total_time_iter = 0.0;
-double total_time_residue = 0.0;
-double lu_time = 0.0;
+#include "main.hpp"
 
 /**
  * @brief Solves LU system using subst functions.
@@ -43,7 +21,7 @@ double lu_time = 0.0;
  */
 template<class LUMatrix, class XMatrix, class BMatrix>
 void solve_lu(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P, long col){
-	static vector<double> Z(LU.m_size);
+	static varray<double> Z(LU.sizeMem());
 	// find Z; LZ=B
 	substR<SubstForwards, DiagonalUnit, SubstPermute>(LU, Z, B, P, col);
 	// find X; Ux=Z
@@ -60,7 +38,7 @@ void solve_lu(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P, long col){
  */
 template<class LUMatrix, class IAMatrix, class IMatrix>
 void inverse(LUMatrix& LU, IAMatrix& IA, IMatrix& I, vector<long>& P){
-	for(long j = 0; j < IA.size; j++){
+	for(long j = 0; j < IA.size(); j++){
 		// for each IA col solve SL to find the IA col values
 		solve_lu(LU, IA, I, P, j);
 	}
@@ -201,14 +179,15 @@ void inverse(LUMatrix& LU, IAMatrix& IA, IMatrix& I, vector<long>& P){
 template<class AMatrix, class IAMatrix, class IMatrix>
 double residue(AMatrix& A, IAMatrix& IA, IMatrix& I){
 	double err_norm = 0.0;
+	size_t size = A.size();
 
-	for(long icol=0; icol < A.size; icol++){
+	for(long icol=0; icol < size; icol++){
 		// for each column of the inverse
-		for(long i=0; i < A.size; i++){
+		for(long i=0; i < size; i++){
 			// for each line of A
 			I.at(i,icol) = 0;
 			// multiply A line to the current inverse col
-			for(long j=0; j < A.size; j++){
+			for(long j=0; j < size; j++){
 				I.at(i,icol) -= A.at(i,j)*IA.at(j,icol);
 			}
 			if(i == icol){
@@ -236,7 +215,7 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, vector<long>& P, l
 	//double l_residue;
 	
 	// Optm: iterating line by line
-	MatrixColMajor W(A.size), R(A.size);
+	MatrixColMajor<double> W(A.size()), R(A.size());
 	identity(R);
 
 	//LIKWID_MARKER_START("INV");
@@ -270,8 +249,8 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, vector<long>& P, l
 		add(IA, W);	//TOptm: add at the same time its calculating W
 		
 		//LIKWID_MARKER_STOP("SUM");
-		total_time_iter += timer.elapsed();
-
+		total_time_iter += timer.tickAverage();
+		
 		//l_residue = c_residue;
 		timer.start();
 		//LIKWID_MARKER_START("RES");
@@ -279,7 +258,7 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, vector<long>& P, l
 		c_residue = residue(A, IA, R);
 		
 		//LIKWID_MARKER_STOP("RES");
-		total_time_residue += timer.elapsed();
+		total_time_residue += timer.tick();
 		
 		cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";
 	}
@@ -290,8 +269,8 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, vector<long>& P, l
  */
 template <class Mat>
 void readMatrix(Mat& A){
-	for(long i=0; i < A.size; i++){
-		for(long j=0; j < A.size; j++){
+	for(long i=0; i < A.size(); i++){
+		for(long j=0; j < A.size(); j++){
 			cin>> A.at(i,j);
 		}
 	}
@@ -353,7 +332,7 @@ int mainBAK(int argc, char **argv) {
 		cin>> size;
 	}
 	
-	Matrix A(size);
+	Matrix<double> A(size);
 	
 	if(input){
 		readMatrix(A);
@@ -362,8 +341,8 @@ int mainBAK(int argc, char **argv) {
 		randomMatrix(A);
 	}
 	
-	Matrix LU(size);
-	vector<long> P(A.m_size);
+	Matrix<double> LU(size);
+	vector<long> P(A.sizeMem());
 	
 	timer.start();
 	//LIKWID_MARKER_START("LU");
@@ -371,10 +350,10 @@ int mainBAK(int argc, char **argv) {
 	GaussEl(A, LU, P);
 	
 	//LIKWID_MARKER_STOP("LU");
-	lu_time = timer.elapsed();
+	lu_time = timer.tick();
 
 	// Optm: iterating line by line
-	MatrixColMajor IA(size);
+	MatrixColMajor<double> IA(size);
 	
 	cout<<"#\n";
 	inverse_refining(A, LU, IA, P, iter_n);
@@ -400,9 +379,8 @@ int mainBAK(int argc, char **argv) {
 
 #define asm(x) ;
 
-#include "t_matrix_mult.h"
-
-#include "t_vector.h"
+#include "t_matrix_mult.hpp"
+#include "t_vector.hpp"
 
 int main()
 {

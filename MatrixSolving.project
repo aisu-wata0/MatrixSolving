@@ -8,25 +8,32 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
-    <File Name="src/Matrix.h"/>
-    <File Name="src/Timer.h"/>
     <File Name="src/main.cpp"/>
-    <File Name="src/Double.h"/>
-    <File Name="src/GaussEl.h"/>
-    <File Name="src/Subst.h"/>
-    <File Name="src/t_matrix_mult.h"/>
-    <File Name="src/t_vector.h"/>
-    <File Name="src/varray.h"/>
   </VirtualDirectory>
   <VirtualDirectory Name="MatrixSolving">
     <File Name="Makefile"/>
     <File Name="LICENSE"/>
     <File Name="doxyconfig"/>
   </VirtualDirectory>
+  <Dependencies Name="Debug"/>
+  <Dependencies Name="Release"/>
+  <VirtualDirectory Name="include">
+    <File Name="include/Chronometer.hpp"/>
+    <File Name="include/Double.h"/>
+    <File Name="include/main.hpp"/>
+    <File Name="include/varray.hpp"/>
+    <File Name="include/bytes.h"/>
+    <File Name="include/Matrix.hpp"/>
+    <File Name="include/Subst.hpp"/>
+    <File Name="include/GaussEl.hpp"/>
+    <File Name="include/t_matrix_mult.hpp"/>
+    <File Name="include/t_vector.hpp"/>
+  </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>
       <Compiler Options="-std=c++11 -Wno-comment  -Wno-sign-compare" C_Options="-Wno-comment -Wno-sign-compare" Assembler="">
         <IncludePath Value="."/>
+        <IncludePath Value="./include"/>
       </Compiler>
       <Linker Options="">
         <LibraryPath Value="."/>

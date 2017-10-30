@@ -1,12 +1,10 @@
 #ifndef SUBST_H
 #define SUBST_H
-/**
-@file Subst.h
-*/
+/** @file */
 
-#include "Matrix.h"
+#include "Matrix.hpp"
 
-namespace std {
+namespace gm {
 
 #define max(x,y) ((x) > (y) ? x : y)
 
@@ -25,13 +23,13 @@ enum SubstPermutation {
 	SubstNoPermute,
 };
 
-template<typename T, typename A>
-inline double& at(std::vector<T,A>& vec, long i, long j) {
-	return vec.at(i);
+template<class Elem>
+Elem& at(varray<Elem>& arr, size_t i, size_t j){
+	return arr.at(i);
 }
-template<typename T, typename A>
-inline const double& at(std::vector<T,A> const& vec, long i, long j) {
-	return vec.at(i);
+template<class Elem>
+const Elem& at(varray<Elem> const& arr, size_t i, size_t j){
+	return arr.at(i);
 }
 
 /**
@@ -45,10 +43,10 @@ inline const double& at(std::vector<T,A> const& vec, long i, long j) {
  * @param col Column of the matrix I to be used as B
  */
 template<SubstDirection direction, SubstDiagonal diagonal, SubstPermutation Permutation, class TMatrix, class XMatrix, class IMatrix>
-void subst(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
-	long i, j;
+void subst(TMatrix& T, XMatrix& X, IMatrix& I, vector<size_t>& P, size_t col){
+	size_t i, j;
 	int step;
-	long size = T.size;
+	size_t size = T.size;
 	
 	if(direction == SubstForwards){
 		i = 0;
@@ -90,7 +88,7 @@ void substR(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
 	long bi, bj;
 	int step;
 	int bstep;
-	long size = T.size;
+	long size = T.size();
 	long endi, endj;
 	
 	if(direction == SubstForwards){
@@ -188,7 +186,7 @@ void substUnroll(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
  * @param col Column of the matrix to be used as B
  */
 template<SubstDirection direction, class TMatrix>
-void subst(TMatrix& T, MatrixColMajor& X, vector<double>& B, long col) {
+void subst(TMatrix& T, MatrixColMajor<double>& X, vector<double>& B, long col) {
 	long size = T.size;
 	long bi; long bj;
 	long i; long j;

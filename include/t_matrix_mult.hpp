@@ -8,15 +8,15 @@ for (i = i0; i < imax; i += bstep) \
 
 //inline void test(Matrix& LU, MatrixColMajor& B, Matrix& X){
 void t_matrix_mult(size_t size){
-	Matrix LU(size);
-	MatrixColMajor X(size);
-	MatrixColMajor B(size);
+	Matrix<double> LU(size);
+	MatrixColMajor<double> X(size);
+	MatrixColMajor<double> B(size);
 	
 	size_t i, j, k;
 	size_t step;
 	
-	size = LU.size;
-	cout << size << ":" << LU.m_size << endl;
+	size = LU.size();
+	cout << size << ":" << LU.sizeMem() << endl;
 	
 	asm("SETUP");
 	for(i = 0; i < size; i++){

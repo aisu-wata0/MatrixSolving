@@ -1,20 +1,26 @@
 
+namespace gm
+{
+using namespace std;
+
+
 void t_vector(size_t size) {
-	Matrix LU(size);
-	varray<double> X(LU.m_size);
-	varray<double> B(LU.m_size);
+	Matrix<double> LU(size);
+	varray<double> X(LU.sizeMem());
+	varray<double> B(LU.sizeMem());
 	
 	size_t bi, bk;
-	size_t i, j, k;
+	size_t i, k;
 	size_t vj, vk;
+	size_t dn = LU.regEN();
 	
-	cout << size << ":" << LU.m_size << endl;
+	cout << size << ":" << LU.sizeMem() << endl;
 	
 	asm("Setup");
 	for(i = 0; i < size; i++){
 		X.at(i) = 0;
 		B.at(i) = 1;
-		for(vj = 0; vj < size/dn; vj += 1){
+		for(vj = 0; vj < LU.sizeVec(); vj += 1){
 			vec(dj) LU.at(i, vj*dn+dj) = (i);
 		}
 	}
@@ -154,5 +160,7 @@ void t_vector(size_t size) {
 	if(PRINT_MATRIX) { printv(X); cout << endl; }
 	t[c++] = clock();
 	
-	cout << X.at(0) <<":"<< X.at(X.size-1) <<"\tend size "<< size << endl;
+	cout << X.at(0) <<":"<< X.at(X.size()-1) <<"\tend size "<< size << endl;
+}
+
 }

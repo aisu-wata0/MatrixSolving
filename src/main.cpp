@@ -26,7 +26,7 @@ void readMatrix(Mat& A){
 int main(int argc, char **argv) {
 	//LIKWID_MARKER_INIT;
 	
-	cout.precision(17);
+	cout.precision(8);
 	cout << scientific;
 	srand(20172);
 	
@@ -101,6 +101,7 @@ int main(int argc, char **argv) {
 	
 	
 	MatrixColMajor<double> IA(size);
+	MatrixColMajor<double> Z(size);
 	/**
 	cout<<"#\n";
 	inverse_refining(A, LU, IA, P, iter_n);
@@ -111,13 +112,28 @@ int main(int argc, char **argv) {
 	cout<<"# Tempo residuo: "<< total_time_residue/(double)iter_n <<"\n#\n";
 	printm(IA);
 	/**/
-	
+	const bool PrintMatrix = true;
 	MatrixColMajor<double> I(size);
 	identity(I);
+	/**
+	substMLU<Direction::Backwards, Diagonal::Unit, Permute::True>(LU, Z, I, P);
+	if(PrintMatrix) printm(Z);
 	
-	//inverseLUT(LU, IA, I, P);
-	inverseLU(LU, IA, I, P);
-	printm(IA);
+	substMLU0<Direction::Backwards, Diagonal::Unit, Permute::True>(LU, Z, I, P);
+	if(PrintMatrix) printm(Z);
+	
+	substMLU10<Direction::Backwards, Diagonal::Unit, Permute::True>(LU, Z, I, P);
+	if(PrintMatrix) printm(Z);
+	
+	substMLUZ(LU, Z, I, P);
+	if(PrintMatrix) printm(Z);
+	/**/
+	
+	solveMLU(LU, IA, I, P);
+	if(PrintMatrix) printm(IA);
+	
+	solveMLUNew(LU, IA, I, P);
+	if(PrintMatrix) printm(IA);
 	
 	
 	//LIKWID_MARKER_CLOSE;

@@ -83,11 +83,12 @@ public:
 	/** @brief elem number in a register */
 	inline size_t regEN(){ return regN<elem>(); }
 	
-	void mem_alloc(size_t mSizeMem){
+	void memAlloc(size_t mSizeMem){
+		if(mpMem != NULL) { free(mpMem); }
 		mpMem = al_allloc(&arr.p, mSizeMem, CACHE_LINE_SIZE);
 	}
 	
-	void alloc_size(size_t size){
+	void alloc(size_t size){
 		mSize = size;
 		mSizeVec = mSize/regEN();
 		
@@ -105,7 +106,7 @@ public:
 		
 		mEndVec = Lower_Multiple(mSize, regEN());
 		
-		mem_alloc(mSizeMem);
+		memAlloc(mSizeMem);
 	}
 	
 	varray() {
@@ -113,11 +114,10 @@ public:
 	}
 	varray(size_t size) {
 		mpMem = NULL;
-		alloc_size(size);
+		alloc(size);
 	}
 	~varray(){
-		if(mpMem != NULL)
-			{ free(mpMem); }
+		if(mpMem != NULL) { free(mpMem); }
 	}
 	
 	/** @brief size of the varray */

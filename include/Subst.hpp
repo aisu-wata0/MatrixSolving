@@ -8,19 +8,19 @@ namespace gm {
 
 #define max(x,y) ((x) > (y) ? x : y)
 
-enum SubstDirection {
-	SubstForwards,
-	SubstBackwards,
+enum class Direction {
+	Forwards,
+	Backwards,
 };
 
-enum SubstDiagonal {
-	DiagonalUnit,
-	DiagonalValue,
+enum class Diagonal {
+	Unit,
+	Value,
 };
 
-enum SubstPermutation {
-	SubstPermute,
-	SubstNoPermute,
+enum class Permute {
+	True,
+	False,
 };
 
 template<class Elem>
@@ -32,6 +32,34 @@ const Elem& at(varray<Elem> const& arr, size_t i, size_t j){
 	return arr.at(i);
 }
 
+#define ind(M,i,j) (direction == Direction::Forwards ? \
+	M.at(i, j) : \
+	M.at((size-1)-i, (size-1)-j))
+
+template<Direction direction, class Mat>
+void set(Mat& M, const Mat& A, vector<long> P){
+	size_t size = M.size();
+	for(size_t i=0; i < size; i++){
+		for(size_t j=0; j < size; j++){
+			ind(M, i, j) = ind(A, P.at(i), j);
+		}
+	}
+}
+/**
+ * @brief copy matrix A to yourself
+ */
+template<Direction direction, class Mat>
+void set(Mat& M, const Mat& A){
+	size_t size = M.size();
+	for(size_t i=0; i < size; i++){
+		for(size_t j=0; j < size; j++){
+			ind(M, i, j) = ind(A, i, j);
+		}
+	}
+}
+
+#undef ind
+
 /**
  * @brief Subtitution method for linear sistems, forward or backward, uses P from pivoting on the LU decomposition
  * @param T Triangular coeficient Matrix
@@ -42,13 +70,13 @@ const Elem& at(varray<Elem> const& arr, size_t i, size_t j){
  * @param unit_diagonal true if diagonal is equal to 1
  * @param col Column of the matrix I to be used as B
  */
-template<SubstDirection direction, SubstDiagonal diagonal, SubstPermutation Permutation, class TMatrix, class XMatrix, class IMatrix>
-void subst(TMatrix& T, XMatrix& X, IMatrix& I, vector<size_t>& P, size_t col){
+template<Direction direction, Diagonal diagonal, Permute permute, class TMatrix, class XMatrix, class IMatrix>
+void subst(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
 	size_t i, j;
 	int step;
-	size_t size = T.size;
+	size_t size = T.size();
 	
-	if(direction == SubstForwards){
+	if(direction == Direction::Forwards){
 		i = 0;
 		step = +1;
 	} else {
@@ -57,10 +85,10 @@ void subst(TMatrix& T, XMatrix& X, IMatrix& I, vector<size_t>& P, size_t col){
 	}
 
 	for (; i >= 0 && i < size; i += step) {
-		if(Permutation == SubstPermute)
+		if(permute == Permute::True)
 			{ at(X, i,col) = at(I, P.at(i),col); }
 		else{ at(X, i,col) = at(I, i,col); }
-		if(direction == SubstForwards)
+		if(direction == Direction::Forwards)
 			{ j = 0; }
 		else{ j = size-1; }
 		
@@ -68,7 +96,7 @@ void subst(TMatrix& T, XMatrix& X, IMatrix& I, vector<size_t>& P, size_t col){
 			at(X, i,col) -= at(X, j,col) * T.at(i,j);
 		}
 		
-		if(diagonal != DiagonalUnit)
+		if(diagonal != Diagonal::Unit)
 			{ at(X, i,col) /= T.at(i,i); }
 	}
 }
@@ -82,7 +110,7 @@ void subst(TMatrix& T, XMatrix& X, IMatrix& I, vector<size_t>& P, size_t col){
  * @param unit_diagonal true if diagonal is equal to 1
  * @param col Column of the matrix I to be used as B
  */
-template<SubstDirection direction, SubstDiagonal diagonal, SubstPermutation Permutation, class TMatrix, class XMatrix, class IMatrix>
+template<Direction direction, Diagonal diagonal, Permute permute, class TMatrix, class XMatrix, class IMatrix>
 void substR(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
 	long i, j;
 	long bi, bj;
@@ -91,7 +119,7 @@ void substR(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
 	long size = T.size();
 	long endi, endj;
 	
-	if(direction == SubstForwards){
+	if(direction == Direction::Forwards){
 		bi = 0;
 		step = +1;
 		bstep = step * BL1;
@@ -102,12 +130,12 @@ void substR(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
 	}
 	
 	for (; bi >= 0 && bi < size ; bi += bstep) {
-		if(direction == SubstForwards)
+		if(direction == Direction::Forwards)
 			{ bj = 0;		endi = min(bi + bstep, size); }
 		else{ bj = size-1;	endi = max(bi + bstep, -1); }
 		
 		for(int i = bi; i != endi; i += step)
-			if(Permutation == SubstPermute)
+			if(permute == Permute::True)
 				{ at(X, i,col) = at(I, P.at(i),col); }
 			else{ at(X, i,col) = at(I, i,col); }
 		
@@ -124,14 +152,14 @@ void substR(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
 		}
 		// Remainder diagonal
 		for (i = bi; i != endi; i += step) {
-			if(direction == SubstForwards)
+			if(direction == Direction::Forwards)
 				{ endj = min(bj + bstep, i); }
 			else{ endj = max(bj + bstep, i); }
 			
 			for (j = bj; j != endj; j += step) {
 				at(X, i,col) = at(X, i,col) - T.at(i,j) * at(X, j,col);
 			}
-			if(diagonal != DiagonalUnit)
+			if(diagonal != Diagonal::Unit)
 				{ at(X, i,col) /= T.at(i,i); }
 		}
 	}
@@ -146,14 +174,14 @@ void substR(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
  * @param unit_diagonal true if diagonal is equal to 1
  * @param col Column of the matrix I to be used as B
  */
-template<SubstDirection direction, SubstDiagonal diagonal, SubstPermutation Permutation, class TMatrix, class XMatrix, class IMatrix>
+template<Direction direction, Diagonal diagonal, Permute permute, class TMatrix, class XMatrix, class IMatrix>
 void substUnroll(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
 	long i, j;
 	int step;
 	int bstep;
 	long size = T.size;
 	
-	if(direction == SubstForwards){
+	if(direction == Direction::Forwards){
 		i = 0;
 		step = +1;
 		bstep = step * BL1;
@@ -173,7 +201,7 @@ void substUnroll(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
 		for(; j < i; ++j)
 			{ at(X, i,col) -= at(X, j,col) * T.at(i,j); }
 		
-		if(diagonal != DiagonalUnit)
+		if(diagonal != Diagonal::Unit)
 			{ at(X, i,col) /= T.at(i,i); }
 	}
 }
@@ -185,7 +213,7 @@ void substUnroll(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
  * @param forward true is forward subst, false is backward.
  * @param col Column of the matrix to be used as B
  */
-template<SubstDirection direction, class TMatrix>
+template<Direction direction, class TMatrix>
 void subst(TMatrix& T, MatrixColMajor<double>& X, vector<double>& B, long col) {
 	long size = T.size;
 	long bi; long bj;
@@ -194,7 +222,7 @@ void subst(TMatrix& T, MatrixColMajor<double>& X, vector<double>& B, long col) {
 	long step;
 
 	// TODO test iterate blocks by col (bj) instead of as currently by row (bi)
-	if(direction == SubstForwards){
+	if(direction == Direction::Forwards){
 		bj = 0;
 		step = +1;
 	} else {
@@ -204,14 +232,14 @@ void subst(TMatrix& T, MatrixColMajor<double>& X, vector<double>& B, long col) {
 	long bstep = step * BL1;
 	
 	for(; bj >= 0 && bj < size; bj += bstep){
-		if(direction == SubstForwards) {
+		if(direction == Direction::Forwards) {
 			jend = bj + bstep > size ? size : bj + bstep;
 		} else {
 			jend = bj + bstep < 0 ? -1 : bj + bstep;
 		}
 		// go though diagonal block
 		for(i = bj; i != jend; i += step){
-			if((bj == 0 && direction == SubstForwards) || (bj == size-1 && direction == SubstBackwards)){
+			if((bj == 0 && direction == Direction::Forwards) || (bj == size-1 && direction == Direction::Backwards)){
 				X.at(i,col) = B.at(i);
 			}
 			for(j = bj; j != jend && j != i; j += step){
@@ -220,12 +248,12 @@ void subst(TMatrix& T, MatrixColMajor<double>& X, vector<double>& B, long col) {
 			X.at(i,col) = X.at(i,col) / T.at(i, i);
 		}
 		for(bi = bj+bstep; bi >= 0 && bi < size; bi += bstep){
-			if(direction == SubstForwards) {
+			if(direction == Direction::Forwards) {
 				iend = bi + bstep > size ? size : bi + bstep;
 			} else {
 				iend = bi + bstep < 0 ? -1 : bi + bstep;
 			}
-			if((bj == 0 && direction == SubstForwards) || (bj == size-1 && direction == SubstBackwards))
+			if((bj == 0 && direction == Direction::Forwards) || (bj == size-1 && direction == Direction::Backwards))
 				for(i = bi; i != iend; i += step){
 					X.at(i,col) = B.at(i);
 				}

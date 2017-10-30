@@ -83,6 +83,9 @@ public:
 	}
 };
 
+#define ChronometerHistoryMax 16
+Chronometer<ChronometerHistoryMax> timer;
+
 
 }
 #endif // CHRONOMETER_H

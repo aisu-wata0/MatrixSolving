@@ -32,11 +32,13 @@ double lu_time = 0.0;
  */
 template<class LUMatrix, class XMatrix, class BMatrix>
 void solve_lu(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P, long col){
-	static varray<double> Z(LU.sizeMem());
+	static
+	varray<double> Z(LU.sizeMem());
+	if(Z.size() != X.size()){ Z.alloc(X.size()); }
 	// find Z; LZ=B
-	substR<SubstForwards, DiagonalUnit, SubstPermute>(LU, Z, B, P, col);
+	substR<Direction::Forwards, Diagonal::Unit, Permute::True>(LU, Z, B, P, col);
 	// find X; Ux=Z
-	substR<SubstBackwards, DiagonalValue, SubstNoPermute>(LU, X, Z, P, col);
+	substR<Direction::Backwards, Diagonal::Value, Permute::False>(LU, X, Z, P, col);
 }
 /**
  * @brief Finds inverse matrix,
@@ -48,26 +50,26 @@ void solve_lu(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P, long col){
  * @param P Permutation vector resulting of the pivoting
  */
 template<class LUMatrix, class IAMatrix, class IMatrix>
-void inverse(LUMatrix& LU, IAMatrix& IA, IMatrix& I, vector<long>& P){
-	for(long j = 0; j < IA.size(); j++){
-		// for each IA col solve SL to find the IA col values
-		solve_lu(LU, IA, I, P, j);
+void solveMLU(LUMatrix& LU, IAMatrix& X, IMatrix& B, vector<long>& P){
+	for(long j = 0; j < X.size(); j++){
+		// for each X col solve SL to find the X col values
+		static
+		varray<double> Z(LU.sizeMem());
+		if(Z.size() != X.size()){ Z.alloc(X.size()); }
+		// find Z; LZ=B
+		subst<Direction::Forwards, Diagonal::Unit, Permute::True>(LU, Z, B, P, j);
+		// find X; Ux=Z
+		subst<Direction::Backwards, Diagonal::Value, Permute::False>(LU, X, Z, P, j);
 	}
 }
 
 template<class LUMatrix, class IAMatrix, class IMatrix>
-void inverseLU(LUMatrix& LU, IAMatrix& Z, IMatrix& B, vector<long>& P){
+void substMLUZ(LUMatrix& LU, IAMatrix& Z, IMatrix& B, vector<long>& P){
 	for(size_t j = 0; j < B.size(); j++){
-		substR<SubstForwards, DiagonalValue, SubstNoPermute>(LU, Z, B, P, j);
+		subst<Direction::Backwards, Diagonal::Unit, Permute::True>(LU, Z, B, P, j);
 	}
 }
 
-template<class LUMatrix, class IAMatrix, class IMatrix>
-void inverseLUR(LUMatrix& LU, IAMatrix& Z, IMatrix& B, vector<long>& P){
-	for(size_t j = 0; j < B.size(); j++){
-		substR<SubstForwards, DiagonalValue, SubstNoPermute>(LU, Z, B, P, j);
-	}
-}
 /**
  * @brief  Calculates residue into I, A*IA shuold be close to Identity
  * @param A original coef matrix

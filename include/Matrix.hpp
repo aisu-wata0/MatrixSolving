@@ -11,7 +11,7 @@ using namespace std;
 // Optm: test switching, the below doesnt work probably
 //#define PAD(X) ((long)floor((X)/(double)L1_LINE_DN)*(L1_LINE_DN*(L1_LINE_DN-1))/2)
 
-#define PADDING false
+#define PADDING true
 
 // Non member access functions
 

@@ -23,13 +23,13 @@ double tv_sec(timeval* tp){
  * use tick() before and tickAverage() after the code you want to measure to
  * get the averageTotal() in the end
  */
-template<size_t size>
+template<ptrdiff_t size>
 class Chronometer
 {
 public:
 	timeval clock[size];
 	//clock_t n_clock[size];
-	size_t c;
+	ptrdiff_t c;
 	double mTotalTime;
 	size_t mAveragedNum;
 	
@@ -45,20 +45,20 @@ public:
 	}
 	/** @return the time since last tick() (or construction)  */
 	double tick(){
-		c = (c + 1) % (ptrdiff_t)size;
+		c = (c + 1) % size;
 		gettimeofday(&clock[c], NULL);
 		//n_clock[c] = std::clock();
 		
 		timeval elapsed_tv;
-		elapsed_tv.tv_sec = clock[c].tv_sec - clock[c-1].tv_sec;
-		elapsed_tv.tv_usec = clock[c].tv_usec - clock[c-1].tv_usec;
+		elapsed_tv.tv_sec = clock[c].tv_sec - clock[mod(c-1, size)].tv_sec;
+		elapsed_tv.tv_usec = clock[c].tv_usec - clock[mod(c-1, size)].tv_usec;
 		
 		//*cl = ((double)(n_clock[c] - n_clock[c-1]) / CLOCKS_PER_SEC);
 		return tv_sec(&elapsed_tv);
 	}
 	/** @return starts counting towards tick() */
 	void start(){
-		c = (c + 1) % (ptrdiff_t)size;
+		c = (c + 1) % size;
 		gettimeofday(&clock[c], NULL);
 		//n_clock[c] = std::clock();
 	}
@@ -83,8 +83,8 @@ public:
 	}
 };
 
-#define ChronometerHistoryMax 16
-Chronometer<ChronometerHistoryMax> timer;
+#define TimerHistoryMax 16
+Chronometer<TimerHistoryMax> timer;
 
 
 }

@@ -82,7 +82,7 @@ cleanAll: clean cleanBin cleanDoc
 $(bin): $(OBJECTS)
 	@echo 'Building target: $@'
 	@echo 'Invoking Linker'
-	$(CC) $^ -o "$(bin)" $(LIB)
+	$(CC) $^ -o "$(bin)" $(LIB) $(INC)
 	@echo 'Finished building target: $@'
 	@echo
 
@@ -90,7 +90,7 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp $(INCDIR)/%.hpp
 	@echo 'Building file: $<'
 	@echo 'Invoking Compiler'
 	@mkdir -p $(BUILDDIR)
-	$(CC) $(CFLAGS) $(INC) ${CCARGS} -c -fmessage-length=80 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
+	$(CC) $(CFLAGS) $(LIB) $(INC) ${CCARGS} -c -fmessage-length=80 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo
 

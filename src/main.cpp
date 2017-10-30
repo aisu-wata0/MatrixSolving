@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
 	cout<<"# Tempo residuo: "<< total_time_residue/(double)iter_n <<"\n#\n";
 	printm(IA);
 	/**/
-	const bool PrintMatrix = true;
+	const bool PrintMatrix = false;
 	MatrixColMajor<double> I(size);
 	identity(I);
 	/**
@@ -131,11 +131,16 @@ int main(int argc, char **argv) {
 	
 	solveMLU(LU, IA, I, P);
 	if(PrintMatrix) printm(IA);
-	
-	solveMLUNew(LU, IA, I, P);
+	/**/
+	timer.initAverage();
+	for(size_t i=0; i < 5; i++){
+		timer.start();
+		solveMLUNew(LU, IA, I, P);
+		cout << timer.tickAverage() << "\n";
+	}
 	if(PrintMatrix) printm(IA);
-	
-	
+	cout << timer.averageTotal() << "\n";
+	/**/
 	//LIKWID_MARKER_CLOSE;
 	in_f.close();
 	cout.rdbuf(coutbuf); //redirect

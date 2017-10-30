@@ -16,7 +16,6 @@
 namespace gm {
 using namespace std;
 
-#define ChronometerHistoryMax 16
 double total_time_iter = 0.0;
 double total_time_residue = 0.0;
 double lu_time = 0.0;

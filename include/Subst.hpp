@@ -32,34 +32,6 @@ const Elem& at(varray<Elem> const& arr, size_t i, size_t j){
 	return arr.at(i);
 }
 
-#define ind(M,i,j) (direction == Direction::Forwards ? \
-	M.at(i, j) : \
-	M.at((size-1)-i, (size-1)-j))
-
-template<Direction direction, class Mat>
-void set(Mat& M, const Mat& A, vector<long> P){
-	size_t size = M.size();
-	for(size_t i=0; i < size; i++){
-		for(size_t j=0; j < size; j++){
-			ind(M, i, j) = ind(A, P.at(i), j);
-		}
-	}
-}
-/**
- * @brief copy matrix A to yourself
- */
-template<Direction direction, class Mat>
-void set(Mat& M, const Mat& A){
-	size_t size = M.size();
-	for(size_t i=0; i < size; i++){
-		for(size_t j=0; j < size; j++){
-			ind(M, i, j) = ind(A, i, j);
-		}
-	}
-}
-
-#undef ind
-
 /**
  * @brief Subtitution method for linear sistems, forward or backward, uses P from pivoting on the LU decomposition
  * @param T Triangular coeficient Matrix

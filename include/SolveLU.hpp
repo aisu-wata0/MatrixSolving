@@ -30,7 +30,7 @@ double lu_time = 0.0;
  * @param col Column of the matrix to be used as B
  */
 template<class LUMatrix, class XMatrix, class BMatrix>
-inline void solve_lu(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P, long col){
+inline void solveLU(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P, long col){
 	static
 	varray<double> Z(LU.sizeMem());
 	if(Z.size() != X.size()){ Z.alloc(X.size()); }
@@ -62,6 +62,72 @@ inline void solveMLU(LUMatrix& LU, IAMatrix& X, IMatrix& B, vector<long>& P){
 	}
 }
 
+template<Direction direction, Diagonal diagonal, Permute permute,
+	class LUMatrix, class XMatrix, class BMatrix>
+inline void substMLU0(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P){
+	size_t size = X.size();
+	size_t i, j, k;
+	size_t bi[5], bj[5], bk[5];
+	//size_t bimax[5], bjmax[5], bkmax[5];
+	size_t imax, jmax, kmax;
+	size_t bstep[5];
+	//const size_t unr = 2;
+	//double acc[unr*unr];
+	/**/
+	bstep[0] = 8;
+	bstep[1] = bstep[0]*3;
+	bstep[2] = bstep[1]*3;
+	bstep[3] = bstep[2]*4;
+	/* export GCC_ARGS=" -D L1M=${3} -D L2M=${3} L3M=${4} *
+	bstep[1] = bstep[0]*L1M;
+	bstep[2] = bstep[1]*L2M;
+	bstep[2] = bstep[1]*L3M;/**/
+	#define ind(M,i,j) (direction == Direction::Forwards ? \
+		M.at(i, j) : \
+		M.at((size-1)-i, (size-1)-j))
+	
+	for(j = 0; j < size; ++j)
+		for(i = 0; i < size; ++i)
+			if(permute == Permute::True)
+				ind(X, i, j) = ind(B, P.at(i), j);
+			else
+				ind(X, i, j) = ind(B, i, j);
+	
+	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
+	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0]) {
+		imax = min(bi[0]+bstep[0] , size);
+		jmax = min(bj[0]+bstep[0] , size);
+		for (bk[0] = 0; bk[0] < (bi[0]); bk[0] += bstep[0]) {
+			for (i = bi[0]; i < imax; i += 1)
+			for (j = bj[0]; j < jmax; j += 1) {
+				for (k = bk[0]; k < (bk[0]+bstep[0]); k += 1)
+					ind(X, i, j) = ind(X, i, j) - ind(LU, i, k) * ind(X, k, j);
+			}
+		} // Last block in K, diagonal, divide by pivot
+		for (bk[0] = (bi[0]); bk[0] < (bi[0]+bstep[0]); bk[0] += bstep[0]) {
+			for (i = bi[0]; i < imax; i += 1)
+			for (j = bj[0]; j < jmax; j += 1) {
+				for (k = bk[0]; k < i; k += 1)
+					ind(X, i, j) = ind(X, i, j) - ind(LU, i, k) * ind(X, k, j);
+				if(diagonal == Diagonal::Value)
+					ind(X, i, j) /= ind(LU, i, i);
+			}
+		}
+	}
+	#undef ind
+}
+
+template<class LUMatrix, class IAMatrix, class IMatrix>
+inline void solveMLUNew(LUMatrix& LU, IAMatrix& X, IMatrix& B, vector<long>& P){
+	static
+	MatrixColMajor<double> Z(X.size());
+	if(Z.size() != X.size()){ Z.alloc(X.size()); }
+	// find Z; LZ=B
+	substMLU0<Direction::Forwards, Diagonal::Unit, Permute::True>(LU, Z, B, P);
+	// find X; Ux=Z
+	substMLU0<Direction::Backwards, Diagonal::Value, Permute::False>(LU, X, Z, P);
+}
+
 template<class LUMatrix, class IAMatrix, class IMatrix>
 inline void substMLUZ(LUMatrix& LU, IAMatrix& Z, IMatrix& B, vector<long>& P){
 	for(size_t j = 0; j < B.size(); j++){
@@ -81,24 +147,91 @@ inline double residue(AMatrix& A, IAMatrix& IA, IMatrix& I){
 	double err_norm = 0.0;
 	size_t size = A.size();
 
-	for(long icol=0; icol < size; icol++){
+	for(size_t j = 0; j < size; ++j){
 		// for each column of the inverse
-		for(long i=0; i < size; i++){
+		for(size_t i = 0; i < size; i++){
 			// for each line of A
-			I.at(i,icol) = 0;
+			I.at(i,j) = 0;
 			// multiply A line to the current inverse col
-			for(long j=0; j < size; j++){
-				I.at(i,icol) -= A.at(i,j)*IA.at(j,icol);
+			for(size_t k = 0; k < size; ++k){
+				I.at(i,j) = I.at(i,j) - A.at(i,k) * IA.at(k,j);
 			}
-			if(i == icol){
-				I.at(i,icol) += 1;
+			if(i == j){
+				I.at(i,j) += 1;
 			}
-
-			err_norm += I.at(i,icol)*I.at(i,icol);
+			
+			err_norm += I.at(i,j)*I.at(i,j);
 		}
 	}
 	return sqrt(err_norm);
 }
+
+template<class AMatrix, class IAMatrix, class IMatrix>
+inline double residue0(AMatrix& A, IAMatrix& IA, IMatrix& I){
+	size_t size = A.size();
+	size_t bi[5], bj[5], bk[5];
+	size_t bimax[5], bjmax[5], bkmax[5];
+	size_t bstep[5];
+	bstep[0] = B3L1;
+	bstep[1] = bstep[0]*4;
+	bstep[2] = bstep[1]*4;
+	bstep[3] = bstep[2]*5;
+	
+	for(size_t j = 0; j < size; ++j){
+		for(size_t i = 0; i < j; ++i)
+			I.at(i,j) = 0;
+		I.at(j,j) = 1;
+		for(size_t i = j+1; i < size; ++i)
+			I.at(i,j) = 0;
+	}
+	
+	for (bi[3] = 0; bi[3] < size; bi[3] += bstep[3])
+	for (bj[3] = 0; bj[3] < size; bj[3] += bstep[3])
+	for (bk[3] = 0; bk[3] < size; bk[3] += bstep[3]){
+		bimax[3] = min(bi[3]+bstep[3], size);
+		bjmax[3] = min(bj[3]+bstep[3], size);
+		bkmax[3] = min(bk[3]+bstep[3], size);
+		for (bi[2] = bi[3]; bi[2] < bimax[3]; bi[2] += bstep[2])
+		for (bj[2] = bj[3]; bj[2] < bjmax[3]; bj[2] += bstep[2])
+		for (bk[2] = bk[3]; bk[2] < bkmax[3]; bk[2] += bstep[2]){
+			bimax[2] = min(bi[2]+bstep[2], size);
+			bjmax[2] = min(bj[2]+bstep[2], size);
+			bkmax[2] = min(bk[2]+bstep[2], size);
+			for (bi[1] = bi[2]; bi[1] < bimax[2]; bi[1] += bstep[1])
+			for (bj[1] = bj[2]; bj[1] < bjmax[2]; bj[1] += bstep[1])
+			for (bk[1] = bk[2]; bk[1] < bkmax[2]; bk[1] += bstep[1]){
+				bimax[1] = min(bi[1]+bstep[1], size);
+				bjmax[1] = min(bj[1]+bstep[1], size);
+				bkmax[1] = min(bk[1]+bstep[1], size);
+				for (bi[0] = bi[1]; bi[0] < bimax[1]; bi[0] += bstep[0])
+				for (bj[0] = bj[1]; bj[0] < bjmax[1]; bj[0] += bstep[0])
+				for (bk[0] = bk[1]; bk[0] < bkmax[1]; bk[0] += bstep[0]){
+					size_t imax = min(bi[0]+bstep[0], size);
+					size_t jmax = min(bj[0]+bstep[0], size);
+					size_t kmax = min(bk[0]+bstep[0], size);
+					for (size_t i = bi[0]; i < imax; ++i)
+					for (size_t j = bj[0]; j < jmax; ++j) {
+						for (size_t k = bk[0]; k < kmax; ++k) {
+							I.at(i, j) = I.at(i, j) - A.at(i, k) * IA.at(k, j);
+						}
+					}
+				}
+			}
+		}
+	}
+	double errNorm = 0;
+	vec<double> errNormV{0};
+	for(size_t j = 0; j < size; ++j){
+		for(size_t iv = 0; iv < I.sizeVec(); ++iv)
+			errNormV.v += I.atv(iv,j).v*I.atv(iv,j).v;
+		for(size_t i = I.vecEnd(); i < I.size(); ++i)
+			errNormV[I.regEN()-1] += I.at(i,j)*I.at(i,j);
+	}
+	for(size_t v=0; v < I.regEN(); ++v) errNorm += errNormV[v];
+	
+	return sqrt(errNorm);
+}
+
 /**
  * @brief Calculates inverse of A into IA
  * @param LU decomposition of A
@@ -113,19 +246,27 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, vector<long>& P, l
 	long digits = (long)log10((double) iter_n) + 1;
 	double c_residue;
 	//double l_residue;
-	
+	size_t size = A.size();
 	// Optm: iterating line by line
 	MatrixColMajor<double> W(A.size()), R(A.size());
-	identity(R);
+	
+	for(size_t j = 0; j < size; ++j){
+		for(size_t i = 0; i < j; ++i)
+			R.at(i,j) = 0;
+		R.at(j,j) = 1;
+		for(size_t i = j+1; i < size; ++i)
+			R.at(i,j) = 0;
+	}
 
 	//LIKWID_MARKER_START("INV");
 	
-	inverse(LU, IA, R, P);
+	//solveMLU(LU, IA, R, P);
+	solveMLUNew(LU, IA, R, P);
 	
 	//LIKWID_MARKER_STOP("INV");
 	//LIKWID_MARKER_START("RES");
 	
-	c_residue = residue(A, IA, R);
+	c_residue = residue0(A, IA, R);
 	
 	//LIKWID_MARKER_STOP("RES");
 	
@@ -139,14 +280,18 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, vector<long>& P, l
 		timer.start();
 		//LIKWID_MARKER_START("INV");
 		
-		inverse(LU, W, R, P);
+		//solveMLU(LU, W, R, P);
+		solveMLUNew(LU, W, R, P);
 		
 		//LIKWID_MARKER_STOP("INV");
 		// W: residues of each variable of IA
 		// adjust IA with found errors
 		//LIKWID_MARKER_START("SUM");
 		
-		add(IA, W);	//TOptm: add at the same time its calculating W
+		for(size_t j=0; j < IA.size(); ++j)
+			for(size_t i=0; i < IA.size(); ++i)
+				IA.at(i,j) += W.at(i,j);
+		//add(IA, W);
 		
 		//LIKWID_MARKER_STOP("SUM");
 		total_time_iter += timer.tickAverage();
@@ -155,7 +300,7 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, vector<long>& P, l
 		timer.start();
 		//LIKWID_MARKER_START("RES");
 		
-		c_residue = residue(A, IA, R);
+		c_residue = residue0(A, IA, R);
 		
 		//LIKWID_MARKER_STOP("RES");
 		total_time_residue += timer.tick();

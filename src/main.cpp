@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
 	lu_time = timer.tick();
 	
 	MatrixColMajor<double> IA(size);
-	/**
+	
 	cout<<"#\n";
 	inverse_refining(A, LU, IA, P, iter_n);
 
@@ -71,40 +71,6 @@ int main(int argc, char **argv) {
 	cout<<"# Tempo iter: "<< total_time_iter/(double)iter_n <<"\n";
 	cout<<"# Tempo residuo: "<< total_time_residue/(double)iter_n <<"\n#\n";
 	printm(IA);
-	/**/
-	const bool PrintMatrix = true;
-	
-	MatrixColMajor<double> I(size);
-	identity(I);
-	
-	/**
-	solveMLU(LU, IA, I, P);
-	if(PrintMatrix) printm(IA);
-	
-	/**/
-	timer.initAverage();
-	for(size_t i=0; i < 10; ++i){
-		timer.start();
-		solveMLUNew(LU, IA, I, P);
-		timer.tickAverage();
-	}
-	if(PrintMatrix) printm(IA);
-	cout << timer.averageTotal() << "\n";
-	
-	/**
-	MatrixColMajor<double> Z(size);
-	substMLU<Direction::Backwards, Diagonal::Unit, Permute::True>(LU, Z, I, P);
-	if(PrintMatrix) printm(Z);
-	
-	substMLU0<Direction::Backwards, Diagonal::Unit, Permute::True>(LU, Z, I, P);
-	if(PrintMatrix) printm(Z);
-	
-	substMLU10<Direction::Backwards, Diagonal::Unit, Permute::True>(LU, Z, I, P);
-	if(PrintMatrix) printm(Z);
-	
-	substMLUZ(LU, Z, I, P);
-	if(PrintMatrix) printm(Z);
-	/**/
 	
 	//LIKWID_MARKER_CLOSE;
 	in_f.close();

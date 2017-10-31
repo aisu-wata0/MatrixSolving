@@ -15,9 +15,8 @@ void t_matrix_mult(size_t size){
 	MatrixColMajor<double> B(size);
 	size_t i, j, k;
 	
-	printf("%llu\n", size);
+	cout << size << "\n";
 	
-	asm("SETUP");
 	for(i = 0; i < size; i++){
 		for(j = 0; j < size; j++){
 			if(true){
@@ -58,8 +57,7 @@ void t_matrix_mult(size_t size){
 	//bstep[1] = bstep[0]*L1M;
 	//bstep[2] = bstep[1]*L2M;
 	//bstep[2] = bstep[1]*L3M;
-	
-	printf("%llu, %llu, %llu, %llu\n", bstep[0], bstep[1], bstep[2], bstep[3]);
+	cout << bstep[0] <<", "<< bstep[1] <<", "<< bstep[2] <<", "<< bstep[3] <<"\n";
 	const bool PRINT_MATRIX = true;
 	//const size_t unr = 2;
 	//double acc[unr*unr];
@@ -78,11 +76,10 @@ void t_matrix_mult(size_t size){
 	}
 	// end warmup
 	
-	/**
+	/**/
 	set(X,0);
 	timer.tick();
 	for(reps = 0; reps < repetitionN; reps++){
-	asm("Tiled0");
 	block(bi[0],0,size, bj[0],0,size, bk[0],0,size, bstep[0]){
 		size_t imax = min(bi[0]+bstep[0], size);
 		size_t jmax = min(bj[0]+bstep[0], size);
@@ -91,16 +88,14 @@ void t_matrix_mult(size_t size){
 			X.at(i, j) = X.at(i, j) + LU.at(i, k) * B.at(k, j);
 		}
 	}
-	asm("END Tiled0");
 	}
-	printf("Tiled0  \t%f sec\n", timer.tick()/repetitionN);
+	cout <<"Tiled0  \t"<< timer.tick()/repetitionN <<" sec\n";
 	//if(PRINT_MATRIX) { printm(X); cout << endl; }
 	
 	
 	set(X,0);
 	timer.tick();
 	for(reps = 0; reps < repetitionN; reps++){
-	asm("Tiled1.0");
 	block(bi[1],0,size, bj[1],0,size, bk[1],0,size, bstep[1]){
 		bimax[1] = min(bi[1]+bstep[1], size);
 		bjmax[1] = min(bj[1]+bstep[1], size);
@@ -114,16 +109,14 @@ void t_matrix_mult(size_t size){
 			}
 		}
 	}
-	asm("END Tiled1.0");
 	}
-	printf("Tiled1.0 \t%f sec\n", timer.tick()/repetitionN);
+	cout <<"Tiled1.0 \t"<< timer.tick()/repetitionN <<" sec\n";
 	if(PRINT_MATRIX) { printm(X); cout << endl; }
 	
 	
 	set(X,0);
 	timer.tick();
 	for(reps = 0; reps < repetitionN; reps++){
-	asm("Tiled2.1.0");
 	block(bi[2],0,size, bj[2],0,size, bk[2],0,size, bstep[2]){
 		bimax[2] = min(bi[2]+bstep[2], size);
 		bjmax[2] = min(bj[2]+bstep[2], size);
@@ -142,16 +135,14 @@ void t_matrix_mult(size_t size){
 			}
 		}
 	}
-	asm("END Tiled2.1.0");
 	}
-	printf("Tiled2.1.0 \t%f sec\n", timer.tick()/repetitionN);
+	cout <<"Tiled2.1.0 \t"<< timer.tick()/repetitionN <<" sec\n";
 	//if(PRINT_MATRIX) { printm(X); cout << endl; }
 	/**/
 	
 	set(X,0);
 	timer.tick();
 	for(reps = 0; reps < repetitionN; reps++){
-	asm("Tiled3.2.1.0");
 	block(bi[3],0,size, bj[3],0,size, bk[3],0,size, bstep[3]){
 		bimax[3] = min(bi[3]+bstep[3], size);
 		bjmax[3] = min(bj[3]+bstep[3], size);
@@ -175,11 +166,9 @@ void t_matrix_mult(size_t size){
 			}
 		}
 	}
-	asm("END Tiled3.2.1.0");
 	}
-	printf("Tiled3.2.1.0 \t%f sec\n", timer.tick()/repetitionN);
+	cout <<"Tiled3.2.1.0 \t"<< timer.tick()/repetitionN <<" sec\n";
 	if(PRINT_MATRIX) { printm(X); cout << endl; }
-	printf("%f\n", X.at(0, 0));
 	
 	
 	////
@@ -189,7 +178,6 @@ void t_matrix_mult(size_t size){
 	timer.tick();
 	for(reps = 0; reps < repetitionN; reps++){
 	set(X,B);
-	asm("LUTiled0");
 	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
 	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0]) {
 		//bkmax[0] = bi[0]+bstep[0];
@@ -213,16 +201,14 @@ void t_matrix_mult(size_t size){
 			}
 		}
 	}
-	asm("END LUTiled0");
 	}
-	printf("LUTiled0 \t%f sec\n", timer.tick()/repetitionN);
+	cout <<"LUTiled0 \t"<< timer.tick()/repetitionN <<" sec\n";
 	if(PRINT_MATRIX) { printm(X); cout << endl; }
 	
 	
 	timer.tick();
 	for(reps = 0; reps < repetitionN; reps++){
 	set(X,B);
-	asm("LUTiled1.0");
 	block (bi[1],0,size, bj[1],0,size, bk[1],0,(bi[1]+bstep[1]), bstep[1]) {
 		bimax[0] = min(bi[1]+bstep[1], size);
 		bjmax[0] = min(bj[1]+bstep[1], size);
@@ -252,16 +238,14 @@ void t_matrix_mult(size_t size){
 			}
 		}
 	}
-	asm("END LUTiled1.0");
 	}
-	printf("LUTiled1.0 \t%f sec\n", timer.tick()/repetitionN);
+	cout <<"LUTiled1.0 \t"<< timer.tick()/repetitionN <<" sec\n";
 	if(PRINT_MATRIX) { printm(X); cout << endl; }
 	
 	
 	set(X,B);
 	timer.tick();
 	for(reps = 0; reps < repetitionN; reps++){
-	asm("LUTiled2.1.0");
 	for (bi[2] = 0; bi[2] < size; bi[2] += bstep[2])
 	for (bj[2] = 0; bj[2] < size; bj[2] += bstep[2])
 	for (bk[2] = 0; bk[2] < (bi[2]+bstep[2]); bk[2] += bstep[2]) {
@@ -301,16 +285,14 @@ void t_matrix_mult(size_t size){
 			}
 		}
 	}
-	asm("END LUTiled2.1.0");
 	}
-	printf("LUTiled2.1.0 \t%f sec\n", timer.tick()/repetitionN);
+	cout <<"LUTiled2.1.0 \t"<< timer.tick()/repetitionN <<" sec\n";
 	if(PRINT_MATRIX) { printm(X); cout << endl; }
 	
 	
 	set(X,B);
 	timer.tick();
 	for(reps = 0; reps < repetitionN; reps++){
-	asm("LUTiled3.2.1.0");
 	block (bi[3],0,size, bj[3],0,size, bk[3],0,(bi[3]+bstep[3]), bstep[3]) {
 		bimax[2] = min(bi[3]+bstep[3], size);
 		bjmax[2] = min(bj[3]+bstep[3], size);
@@ -356,9 +338,8 @@ void t_matrix_mult(size_t size){
 			}
 		}
 	}
-	asm("END LUTiled3.2.1.0");
 	}
-	printf("LUTiled3.2.1.0 \t%f sec\n", timer.tick()/repetitionN);
+	cout <<"LUTiled3.2.1.0 \t"<< timer.tick()/repetitionN <<" sec\n";
 	if(PRINT_MATRIX) { printm(X); cout << endl; }
 	
 	
@@ -366,7 +347,6 @@ void t_matrix_mult(size_t size){
 	timer.tick();
 	for(reps = 0; reps < repetitionN; reps++){
 		set(X,B);
-		asm("LU_Naive");
 		for(i=0; i < size; i += step){
 			for(j=0; j < size; j += step){
 				for(k=0; k < i; k += 1){
@@ -375,9 +355,8 @@ void t_matrix_mult(size_t size){
 				X.at(i,j) /= LU.at(i,i);
 			}
 		}
-		asm("END LU_Naive");
 	}
-	printf("LU_Naive: \t%f sec\n", timer.tick()/repetitionN);
+	cout <<"LU_Naive: \t"<< timer.tick()/repetitionN <<" sec\n";
 	if(PRINT_MATRIX) { printm(X); cout << endl; }
 	/**/
 	
@@ -386,7 +365,6 @@ void t_matrix_mult(size_t size){
 	set(X,0);
 	timer.tick();
 	for(reps = 0; reps < repetitionN; reps++){
-		asm("Naive");
 		for(i=0; i < size; i += step){
 			for(j=0; j < size; j += step){
 				for(k=0; k < size; k += 1){	
@@ -394,9 +372,8 @@ void t_matrix_mult(size_t size){
 				}
 			}
 		}
-		asm("END Naive");
 	}
-	printf("Naive: \t%f sec\n", timer.tick()/repetitionN);
+	cout <<"Naive: \t"<< timer.tick()/repetitionN <<" sec\n";
 	if(PRINT_MATRIX) { printm(X); cout << endl; }
 	/**/
 	
@@ -404,7 +381,6 @@ void t_matrix_mult(size_t size){
 	/**
 	set(X,0);
 	timer.tick();
-	asm("Tile_BI");
 	for (bi = 0; bi < size; bi += bstep[0]){
 		for (j = 0; j < size; j += unr){
 			for (i = bi; i < (bi+bstep[0]); i += unr){
@@ -416,147 +392,7 @@ void t_matrix_mult(size_t size){
 			}
 		}
 	}
-	asm("END Tile_BI");
-	printf("Tile_BI: \t%f sec\n", timer.tick()/repetitionN);
+	cout <<"Tile_BI: \t"<< timer.tick()/repetitionN <<" sec\n";
 	if(PRINT_MATRIX) { printm(X); cout << endl; }
 	/**/
 }
-
-#define ind(M,i,j) (direction == Direction::Forwards ? \
-	M.at(i, j) : \
-	M.at((size-1)-i, (size-1)-j))
-
-template<Direction direction, Diagonal diagonal, Permute permute,
-	class LUMatrix, class XMatrix, class BMatrix>
-inline void substMLU(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P){
-	size_t size = X.size();
-	size_t i, j, k;	
-	for(j = 0; j < size; ++j)
-		for(i = 0; i < size; ++i)
-			if(permute == Permute::True)
-				ind(X, i, j) = ind(B, P.at(i), j);
-			else
-				ind(X, i, j) = ind(B, i, j);
-	
-	for(i = 0; i < size; i += 1){
-		for(j = 0; j < size; j += 1){
-			for(k = 0; k != i; k += 1){
-				ind(X,i,j) = ind(X,i,j) - ind(LU,i,k) * ind(X,k,j);
-			}
-			if(diagonal == Diagonal::Value)
-				ind(X,i,j) /= ind(LU,i,i);
-		}
-	}
-}
-
-template<Direction direction, Diagonal diagonal, Permute permute,
-	class LUMatrix, class XMatrix, class BMatrix>
-inline void substMLU0(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P){
-	size_t size = X.size();
-	size_t i, j, k;
-	size_t bi[5], bj[5], bk[5];
-	//size_t bimax[5], bjmax[5], bkmax[5];
-	size_t imax, jmax, kmax;
-	size_t bstep[5];
-	//const size_t unr = 2;
-	//double acc[unr*unr];
-	/**/
-	bstep[0] = 8;
-	bstep[1] = bstep[0]*3;
-	bstep[2] = bstep[1]*3;
-	bstep[3] = bstep[2]*4;
-	/* export GCC_ARGS=" -D L1M=${3} -D L2M=${3} L3M=${4} *
-	bstep[1] = bstep[0]*L1M;
-	bstep[2] = bstep[1]*L2M;
-	bstep[2] = bstep[1]*L3M;/**/
-	for(j = 0; j < size; ++j)
-		for(i = 0; i < size; ++i)
-			if(permute == Permute::True)
-				ind(X, i, j) = ind(B, P.at(i), j);
-			else
-				ind(X, i, j) = ind(B, i, j);
-	
-	asm("LUTiled0");
-	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
-	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0]) {
-		imax = min(bi[0]+bstep[0] , size);
-		jmax = min(bj[0]+bstep[0] , size);
-		for (bk[0] = 0; bk[0] < (bi[0]); bk[0] += bstep[0]) {
-			for (i = bi[0]; i < imax; i += 1)
-			for (j = bj[0]; j < jmax; j += 1) {
-				for (k = bk[0]; k < (bk[0]+bstep[0]); k += 1)
-					ind(X, i, j) = ind(X, i, j) - ind(LU, i, k) * ind(X, k, j);
-			}
-		} // Last block in K, diagonal, divide by pivot
-		for (bk[0] = (bi[0]); bk[0] < (bi[0]+bstep[0]); bk[0] += bstep[0]) {
-			for (i = bi[0]; i < imax; i += 1)
-			for (j = bj[0]; j < jmax; j += 1) {
-				for (k = bk[0]; k < i; k += 1)
-					ind(X, i, j) = ind(X, i, j) - ind(LU, i, k) * ind(X, k, j);
-				if(diagonal == Diagonal::Value)
-					ind(X, i, j) /= ind(LU, i, i);
-			}
-		}
-	}
-	asm("END LUTiled0");
-}
-
-
-template<Direction direction, Diagonal diagonal, Permute permute,
-	class LUMatrix, class XMatrix, class BMatrix>
-inline void substMLU10(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P){
-	size_t size = X.size();
-	size_t i, j, k;
-	size_t bi[5], bj[5], bk[5];
-	size_t bimax[5], bjmax[5], bkmax[5];
-	size_t imax, jmax, kmax;
-	size_t bstep[5];
-	//const size_t unr = 2;
-	//double acc[unr*unr];
-	/**/
-	bstep[0] = 8;
-	bstep[1] = bstep[0]*3;
-	bstep[2] = bstep[1]*3;
-	bstep[3] = bstep[2]*4;
-	/* export GCC_ARGS=" -D L1M=${3} -D L2M=${3} L3M=${4} *
-	bstep[1] = bstep[0]*L1M;
-	bstep[2] = bstep[1]*L2M;
-	bstep[2] = bstep[1]*L3M;/**/
-	for(j = 0; j < size; ++j)
-		for(i = 0; i < size; ++i)
-			if(permute == Permute::True)
-				ind(X, i, j) = ind(B, P.at(i), j);
-			else
-				ind(X, i, j) = ind(B, i, j);
-	
-	asm("LUTiled1.0");
-	block (bi[1],0,size, bj[1],0,size, bk[1],0,(bi[1]+bstep[1]), bstep[1]) {
-		bimax[0] = min(bi[1]+bstep[1], size);
-		bjmax[0] = min(bj[1]+bstep[1], size);
-		for (bi[0] = bi[1]; bi[0] < bimax[0]; bi[0] += bstep[0])
-		for (bj[0] = bj[1]; bj[0] < bjmax[0]; bj[0] += bstep[0]) {
-			bkmax[0] = min(bk[1]+bstep[1], bi[0]);
-			imax = min(bi[0]+bstep[0] , size);
-			jmax = min(bj[0]+bstep[0] , size);
-			for (bk[0] = bk[1]; bk[0] < bkmax[0]; bk[0] += bstep[0]) {
-				for (i = bi[0]; i < imax; i += 1)
-				for (j = bj[0]; j < jmax; j += 1) {
-					for (k = bk[0]; k < (bk[0]+bstep[0]); k += 1)
-						ind(X, i, j) = ind(X, i, j) - ind(LU, i, k) * ind(X, k, j);
-				}
-			} // Last block in K, diagonal
-			if(bk[0] == bi[0] && bk[1] == bi[1])
-			for (bk[0] = bi[0]; bk[0] < (bi[0]+bstep[0]); bk[0] += bstep[0]) {
-				for (i = bi[0]; i < imax; i += 1)
-				for (j = bj[0]; j < jmax; j += 1) {
-					for (k = bk[0]; k < i; k += 1)
-						ind(X, i, j) = ind(X, i, j) - ind(LU, i, k) * ind(X, k, j);
-					if(diagonal == Diagonal::Value)
-						ind(X, i, j) /= ind(LU, i, i);
-				}
-			}
-		}
-	}
-	asm("END LUTiled1.0");
-}
-#undef ind

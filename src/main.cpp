@@ -84,7 +84,7 @@ bool& input, size_t& size, size_t& iter_n, ifstream& in_f, ofstream& o_f){
 	int c;
 	input = true;
 	size = 0; iter_n = -1;
-	
+#define errMsg "Usage: %s [-e inputFile] [-o outputFile] [-r randSize] -i Iterations\n"
 	while ((c = getopt(argc, argv, "e:o:r:i:")) != -1){
 		switch (c){
 			case 'e':
@@ -109,16 +109,17 @@ bool& input, size_t& size, size_t& iter_n, ifstream& in_f, ofstream& o_f){
 				fprintf(stderr, "%s: option '-%c' requires an argument\n", argv[0], optopt);
 				break;
 			default:
-				fprintf(stderr, "Usage: %s [-e inputFile] [-o outputFile] [-r randSize] -i Iterations\n", argv[0]);
+				fprintf(stderr, errMsg, argv[0]);
 				exit(EXIT_FAILURE);
 		}
 	}
 	
 	if(iter_n == -1){
-		fprintf(stderr, "Usage: %s [-e inputFile] [-o outputFile] [-r randSize] -i Iterations\n", argv[0]);
+		fprintf(stderr, errMsg, argv[0]);
 		fprintf(stderr, "-i Iterations is not optional\n");
 		exit(EXIT_FAILURE);
 	}
+#undef errMsg
 }
 
 

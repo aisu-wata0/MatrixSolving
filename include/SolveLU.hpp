@@ -62,63 +62,8 @@ inline void solveMLU(LUMatrix& LU, IAMatrix& X, IMatrix& B, vector<long>& P){
 	}
 }
 
-template<Direction direction, Diagonal diagonal, Permute permute,
-	class LUMatrix, class XMatrix, class BMatrix>
-inline void substMLU0(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P){
-	size_t size = X.size();
-	size_t i, j, k;
-	size_t bi[5], bj[5], bk[5];
-	//size_t bimax[5], bjmax[5], bkmax[5];
-	size_t imax, jmax, kmax;
-	size_t bstep[5];
-	//const size_t unr = 2;
-	//double acc[unr*unr];
-	/**/
-	bstep[0] = 8;
-	bstep[1] = bstep[0]*3;
-	bstep[2] = bstep[1]*3;
-	bstep[3] = bstep[2]*4;
-	/* export GCC_ARGS=" -D L1M=${3} -D L2M=${3} L3M=${4} *
-	bstep[1] = bstep[0]*L1M;
-	bstep[2] = bstep[1]*L2M;
-	bstep[2] = bstep[1]*L3M;/**/
-	#define ind(M,i,j) (direction == Direction::Forwards ? \
-		M.at(i, j) : \
-		M.at((size-1)-i, (size-1)-j))
-	
-	for(j = 0; j < size; ++j)
-		for(i = 0; i < size; ++i)
-			if(permute == Permute::True)
-				ind(X, i, j) = ind(B, P.at(i), j);
-			else
-				ind(X, i, j) = ind(B, i, j);
-	
-	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
-	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0]) {
-		imax = min(bi[0]+bstep[0] , size);
-		jmax = min(bj[0]+bstep[0] , size);
-		for (bk[0] = 0; bk[0] < (bi[0]); bk[0] += bstep[0]) {
-			for (i = bi[0]; i < imax; i += 1)
-			for (j = bj[0]; j < jmax; j += 1) {
-				for (k = bk[0]; k < (bk[0]+bstep[0]); k += 1)
-					ind(X, i, j) = ind(X, i, j) - ind(LU, i, k) * ind(X, k, j);
-			}
-		} // Last block in K, diagonal, divide by pivot
-		for (bk[0] = (bi[0]); bk[0] < (bi[0]+bstep[0]); bk[0] += bstep[0]) {
-			for (i = bi[0]; i < imax; i += 1)
-			for (j = bj[0]; j < jmax; j += 1) {
-				for (k = bk[0]; k < i; k += 1)
-					ind(X, i, j) = ind(X, i, j) - ind(LU, i, k) * ind(X, k, j);
-				if(diagonal == Diagonal::Value)
-					ind(X, i, j) /= ind(LU, i, i);
-			}
-		}
-	}
-	#undef ind
-}
-
 template<class LUMatrix, class IAMatrix, class IMatrix>
-inline void solveMLUNew(LUMatrix& LU, IAMatrix& X, IMatrix& B, vector<long>& P){
+inline void solveMLU0(LUMatrix& LU, IAMatrix& X, IMatrix& B, vector<long>& P){
 	static
 	MatrixColMajor<double> Z(X.size());
 	if(Z.size() != X.size()){ Z.alloc(X.size()); }
@@ -126,13 +71,6 @@ inline void solveMLUNew(LUMatrix& LU, IAMatrix& X, IMatrix& B, vector<long>& P){
 	substMLU0<Direction::Forwards, Diagonal::Unit, Permute::True>(LU, Z, B, P);
 	// find X; Ux=Z
 	substMLU0<Direction::Backwards, Diagonal::Value, Permute::False>(LU, X, Z, P);
-}
-
-template<class LUMatrix, class IAMatrix, class IMatrix>
-inline void substMLUZ(LUMatrix& LU, IAMatrix& Z, IMatrix& B, vector<long>& P){
-	for(size_t j = 0; j < B.size(); j++){
-		subst<Direction::Backwards, Diagonal::Unit, Permute::True>(LU, Z, B, P, j);
-	}
 }
 
 /**
@@ -172,7 +110,7 @@ inline double residue0(AMatrix& A, IAMatrix& IA, IMatrix& I){
 	size_t bi[5], bj[5], bk[5];
 	size_t bimax[5], bjmax[5], bkmax[5];
 	size_t bstep[5];
-	bstep[0] = B3L1;
+	bstep[0] = 8;
 	bstep[1] = bstep[0]*4;
 	bstep[2] = bstep[1]*4;
 	bstep[3] = bstep[2]*5;
@@ -261,7 +199,7 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, vector<long>& P, l
 	//LIKWID_MARKER_START("INV");
 	
 	//solveMLU(LU, IA, R, P);
-	solveMLUNew(LU, IA, R, P);
+	solveMLU0(LU, IA, R, P);
 	
 	//LIKWID_MARKER_STOP("INV");
 	//LIKWID_MARKER_START("RES");
@@ -281,7 +219,7 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, vector<long>& P, l
 		//LIKWID_MARKER_START("INV");
 		
 		//solveMLU(LU, W, R, P);
-		solveMLUNew(LU, W, R, P);
+		solveMLU0(LU, W, R, P);
 		
 		//LIKWID_MARKER_STOP("INV");
 		// W: residues of each variable of IA

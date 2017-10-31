@@ -16,7 +16,6 @@ void t_vector(size_t size) {
 	
 	cout << size << ":" << LU.sizeMem() << endl;
 	
-	asm("Setup");
 	for(i = 0; i < size; i++){
 		X.at(i) = 0;
 		B.at(i) = 1;
@@ -24,7 +23,6 @@ void t_vector(size_t size) {
 			vec(dj) LU.at(i, vj*dn+dj) = (i);
 		}
 	}
-	asm("END Setup");
 	bool PRINT_MATRIX = false;
 	if(PRINT_MATRIX) { print(LU); cout << endl; }
 	if(PRINT_MATRIX) { printv(B); cout << endl; }
@@ -40,25 +38,20 @@ void t_vector(size_t size) {
 	
 	
 	for(reps = 0; reps < repetitionN; reps++){
-		asm("VECmult_Tilroll");
 		for(bi = 0; bi < size; bi += bstep){
 			unroll(ui,bstep) X.at(bi+ui) = 0;
 			for(bk = 0; bk < size; bk += bstep){
-				asm("VECmult_Tilroll_inner");
 				for(i = bi; i < (bi + bstep); i += unr){
 					vec<double> acc[unr];
-					//memset(acc, 0, sizeof(acc));
-					unroll(ui,unr) vec(d) acc[ui].v[d] = 0;
+					memset(acc, 0, sizeof(acc));
 					for(vk = bk/dn; vk < (bk + bstep)/dn; vk++){
 						unroll(ui,unr) acc[ui].v = acc[ui].v + LU.atv(i+ui,vk).v * B.atv(vk).v;
 					}
 					unroll(ui,unr)
 						vec(d) X.at(i+ui) += acc[ui].v[d];
 				}
-				//asm("END VECmult_Tilroll inner");
 			}
 		}
-		asm("END VECmult_Tilroll");
 	}
 	t[c++] = clock();
 	printf("VECmult_Tilroll: %f sec\n", ((double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC) / repetitionN);
@@ -67,7 +60,6 @@ void t_vector(size_t size) {
 	
 	
 	for(reps = 0; reps < repetitionN; reps++){
-		asm("VECmult_Tiling");
 		for(bi = 0; bi < size; bi += bstep){
 			unroll(ui,bstep) X.at(bi+ui) = 0;
 			for(bk = 0; bk < size; bk += bstep){
@@ -80,7 +72,6 @@ void t_vector(size_t size) {
 				}
 			}
 		}
-		asm("END VECmult_Tiling");
 	}
 	t[c++] = clock();
 	printf("VECmult_Tiling:  %f sec\n", ((double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC) / repetitionN);
@@ -89,7 +80,6 @@ void t_vector(size_t size) {
 	
 	
 	for(reps = 0; reps < repetitionN; reps++){
-		asm("VECmult_Unroll");
 		for(i = 0; i < size; i += unr){
 			vec<double> acc[unr];
 			unroll(ui,unr) vec(d) acc[ui].v[d] = 0;
@@ -101,7 +91,6 @@ void t_vector(size_t size) {
 			unroll(ui,unr)
 				vec(d) X.at(i+ui) += acc[ui].v[d];
 		}
-		asm("END VECmult_Unroll");
 	}
 	t[c++] = clock();
 	printf("VECmult_Unroll:  %f sec\n", ((double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC) / repetitionN);
@@ -110,7 +99,6 @@ void t_vector(size_t size) {
 	
 	
 	for(reps = 0; reps < repetitionN; reps++){
-		asm("VECmult");
 		for(i = 0; i < size; i++){
 			vec<double> acc = {0};
 			for(k = 0; k < size/dn; k++){
@@ -119,7 +107,6 @@ void t_vector(size_t size) {
 			X.at(i) = 0;
 			vec(d) X.at(i) += acc.v[d];
 		}
-		asm("END VECmult");
 	}
 	t[c++] = clock();
 	printf("VECmult:         %f sec\n", ((double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC) / repetitionN);
@@ -128,7 +115,6 @@ void t_vector(size_t size) {
 	
 	
 	for(reps = 0; reps < repetitionN; reps++){
-		asm("Acc");
 		for(i = 0; i < size; i++){
 			double acc[dn] = {0};
 			for(k = 0; k < size/dn; k++){
@@ -137,7 +123,6 @@ void t_vector(size_t size) {
 			X.at(i) = 0;
 			vec(d) X.at(i) += acc[d];
 		}
-		asm("END Acc");
 	}
 	t[c++] = clock();
 	printf("Acc:             %f sec\n", ((double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC) / repetitionN);
@@ -146,14 +131,12 @@ void t_vector(size_t size) {
 	
 	
 	for(reps = 0; reps < repetitionN; reps++){
-		asm("Naive");
 		for(i = 0; i < size; i++){
 			X.at(i) = 0;
 			for(k = 0; k < size; k++){
 				X.at(i) = X.at(i) + LU.at(i, k) * B.at(k);
 			}
 		}
-		asm("END Naive");
 	}
 	t[c++] = clock();
 	printf("Naive:           %f sec\n", ((double)(t[c-1] - t[c-2]) / CLOCKS_PER_SEC) / repetitionN);

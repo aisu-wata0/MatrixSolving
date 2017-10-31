@@ -1,6 +1,5 @@
 #ifndef GAUSSEL_H
 #define GAUSSEL_H
-/** @file */
 
 #include "Double.h"
 #include "Matrix.hpp"

@@ -1,6 +1,5 @@
 #ifndef SUBST_H
 #define SUBST_H
-/** @file */
 
 #include "Matrix.hpp"
 
@@ -251,6 +250,151 @@ void subst(TMatrix& T, MatrixColMajor<double>& X, vector<double>& B, long col) {
 //		cout << "divided by (" << i << "," << i << ") dia" << endl;
 //	}
 }
+
+#define ind(M,i,j) (direction == Direction::Forwards ? \
+	M.at(i, j) : \
+	M.at((size-1)-i, (size-1)-j))
+template<Direction direction, Diagonal diagonal, Permute permute,
+	class LUMatrix, class XMatrix, class BMatrix>
+inline void substMLU0(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P){
+	size_t size = X.size();
+	size_t i, j, k;
+	size_t bi[5], bj[5], bk[5];
+	//size_t bimax[5], bjmax[5], bkmax[5];
+	size_t imax, jmax, kmax;
+	size_t bstep[5];
+	//const size_t unr = 2;
+	//double acc[unr*unr];
+	/**/
+	bstep[0] = 8;
+	bstep[1] = bstep[0]*3;
+	bstep[2] = bstep[1]*3;
+	bstep[3] = bstep[2]*4;
+	/* export GCC_ARGS=" -D L1M=${3} -D L2M=${3} L3M=${4} *
+	bstep[1] = bstep[0]*L1M;
+	bstep[2] = bstep[1]*L2M;
+	bstep[2] = bstep[1]*L3M;/**/
+	for(j = 0; j < size; ++j)
+		for(i = 0; i < size; ++i)
+			if(permute == Permute::True)
+				ind(X, i, j) = ind(B, P.at(i), j);
+			else
+				ind(X, i, j) = ind(B, i, j);
+	
+	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
+	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0]) {
+		imax = min(bi[0]+bstep[0] , size);
+		jmax = min(bj[0]+bstep[0] , size);
+		for (bk[0] = 0; bk[0] < (bi[0]); bk[0] += bstep[0]) {
+			for (i = bi[0]; i < imax; i += 1)
+			for (j = bj[0]; j < jmax; j += 1) {
+				for (k = bk[0]; k < (bk[0]+bstep[0]); k += 1)
+					ind(X, i, j) = ind(X, i, j) - ind(LU, i, k) * ind(X, k, j);
+			}
+		} // Last block in K, diagonal, divide by pivot
+		for (bk[0] = (bi[0]); bk[0] < (bi[0]+bstep[0]); bk[0] += bstep[0]) {
+			for (i = bi[0]; i < imax; i += 1)
+			for (j = bj[0]; j < jmax; j += 1) {
+				for (k = bk[0]; k < i; k += 1)
+					ind(X, i, j) = ind(X, i, j) - ind(LU, i, k) * ind(X, k, j);
+				if(diagonal == Diagonal::Value)
+					ind(X, i, j) /= ind(LU, i, i);
+			}
+		}
+	}
+}
+#undef ind
+
+#define ind(M,i,j) (direction == Direction::Forwards ? \
+	M.at(i, j) : \
+	M.at((size-1)-i, (size-1)-j))
+template<Direction direction, Diagonal diagonal, Permute permute,
+	class LUMatrix, class XMatrix, class BMatrix>
+inline void substMLU(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P){
+	size_t size = X.size();
+	size_t i, j, k;	
+	for(j = 0; j < size; ++j)
+		for(i = 0; i < size; ++i)
+			if(permute == Permute::True)
+				ind(X, i, j) = ind(B, P.at(i), j);
+			else
+				ind(X, i, j) = ind(B, i, j);
+	
+	for(i = 0; i < size; i += 1){
+		for(j = 0; j < size; j += 1){
+			for(k = 0; k != i; k += 1){
+				ind(X,i,j) = ind(X,i,j) - ind(LU,i,k) * ind(X,k,j);
+			}
+			if(diagonal == Diagonal::Value)
+				ind(X,i,j) /= ind(LU,i,i);
+		}
+	}
+}
+#undef ind
+
+#define ind(M,i,j) (direction == Direction::Forwards ? \
+	M.at(i, j) : \
+	M.at((size-1)-i, (size-1)-j))
+template<Direction direction, Diagonal diagonal, Permute permute,
+	class LUMatrix, class XMatrix, class BMatrix>
+inline void substMLU10(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P){
+	size_t size = X.size();
+	size_t i, j, k;
+	size_t bi[5], bj[5], bk[5];
+	size_t bimax[5], bjmax[5], bkmax[5];
+	size_t imax, jmax, kmax;
+	size_t bstep[5];
+	//const size_t unr = 2;
+	//double acc[unr*unr];
+	/**/
+	bstep[0] = 8;
+	bstep[1] = bstep[0]*3;
+	bstep[2] = bstep[1]*3;
+	bstep[3] = bstep[2]*4;
+	/* export GCC_ARGS=" -D L1M=${3} -D L2M=${3} L3M=${4} *
+	bstep[1] = bstep[0]*L1M;
+	bstep[2] = bstep[1]*L2M;
+	bstep[2] = bstep[1]*L3M;/**/
+	for(j = 0; j < size; ++j)
+		for(i = 0; i < size; ++i)
+			if(permute == Permute::True)
+				ind(X, i, j) = ind(B, P.at(i), j);
+			else
+				ind(X, i, j) = ind(B, i, j);
+	
+	asm("LUTiled1.0");
+	for (bi[1] = 0; bi[1] < size; bi[1] += bstep[1])
+	for (bj[1] = 0; bj[1] < size; bj[1] += bstep[1])
+	for (bk[1] = 0; bk[1] < (bi[1]+bstep[1]); bk[1] += bstep[1]) {
+		bimax[0] = min(bi[1]+bstep[1], size);
+		bjmax[0] = min(bj[1]+bstep[1], size);
+		for (bi[0] = bi[1]; bi[0] < bimax[0]; bi[0] += bstep[0])
+		for (bj[0] = bj[1]; bj[0] < bjmax[0]; bj[0] += bstep[0]) {
+			bkmax[0] = min(bk[1]+bstep[1], bi[0]);
+			imax = min(bi[0]+bstep[0] , size);
+			jmax = min(bj[0]+bstep[0] , size);
+			for (bk[0] = bk[1]; bk[0] < bkmax[0]; bk[0] += bstep[0]) {
+				for (i = bi[0]; i < imax; i += 1)
+				for (j = bj[0]; j < jmax; j += 1) {
+					for (k = bk[0]; k < (bk[0]+bstep[0]); k += 1)
+						ind(X, i, j) = ind(X, i, j) - ind(LU, i, k) * ind(X, k, j);
+				}
+			} // Last block in K, diagonal
+			if(bk[0] == bi[0] && bk[1] == bi[1])
+			for (bk[0] = bi[0]; bk[0] < (bi[0]+bstep[0]); bk[0] += bstep[0]) {
+				for (i = bi[0]; i < imax; i += 1)
+				for (j = bj[0]; j < jmax; j += 1) {
+					for (k = bk[0]; k < i; k += 1)
+						ind(X, i, j) = ind(X, i, j) - ind(LU, i, k) * ind(X, k, j);
+					if(diagonal == Diagonal::Value)
+						ind(X, i, j) /= ind(LU, i, i);
+				}
+			}
+		}
+	}
+	asm("END LUTiled1.0");
+}
+#undef ind
 
 
 }

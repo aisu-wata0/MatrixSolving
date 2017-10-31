@@ -1,6 +1,5 @@
 #ifndef DOUBLE_H
 #define DOUBLE_H
-/** @file */
 
 #define EPSILON 1e-15
 #define E_FACTOR 16

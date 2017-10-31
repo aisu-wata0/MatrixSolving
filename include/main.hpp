@@ -17,7 +17,6 @@
 using namespace std;
 using namespace gm;
 
-#define asm(x) ;
 #include "t_matrix_mult.hpp"
 #include "t_vector.hpp"
 

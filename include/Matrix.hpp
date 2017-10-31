@@ -67,6 +67,8 @@ public:
 	Matrix(size_t size){
 		alloc(size);
 	}
+	
+	Matrix(){}
 
 	/** @brief size of the varray */
 	size_t size() const { return mSize; }

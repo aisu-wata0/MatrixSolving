@@ -20,3 +20,5 @@ using namespace gm;
 #define asm(x) ;
 #include "t_matrix_mult.hpp"
 #include "t_vector.hpp"
+
+void parseArgs(int& argc, char**& argv, bool& input, size_t& size, size_t& iter_n, ifstream& in_f, ofstream& o_f);

@@ -30,7 +30,7 @@ double lu_time = 0.0;
  * @param col Column of the matrix to be used as B
  */
 template<class LUMatrix, class XMatrix, class BMatrix>
-void solve_lu(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P, long col){
+inline void solve_lu(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P, long col){
 	static
 	varray<double> Z(LU.sizeMem());
 	if(Z.size() != X.size()){ Z.alloc(X.size()); }
@@ -49,7 +49,7 @@ void solve_lu(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P, long col){
  * @param P Permutation vector resulting of the pivoting
  */
 template<class LUMatrix, class IAMatrix, class IMatrix>
-void solveMLU(LUMatrix& LU, IAMatrix& X, IMatrix& B, vector<long>& P){
+inline void solveMLU(LUMatrix& LU, IAMatrix& X, IMatrix& B, vector<long>& P){
 	for(long j = 0; j < X.size(); j++){
 		// for each X col solve SL to find the X col values
 		static
@@ -63,7 +63,7 @@ void solveMLU(LUMatrix& LU, IAMatrix& X, IMatrix& B, vector<long>& P){
 }
 
 template<class LUMatrix, class IAMatrix, class IMatrix>
-void substMLUZ(LUMatrix& LU, IAMatrix& Z, IMatrix& B, vector<long>& P){
+inline void substMLUZ(LUMatrix& LU, IAMatrix& Z, IMatrix& B, vector<long>& P){
 	for(size_t j = 0; j < B.size(); j++){
 		subst<Direction::Backwards, Diagonal::Unit, Permute::True>(LU, Z, B, P, j);
 	}
@@ -77,7 +77,7 @@ void substMLUZ(LUMatrix& LU, IAMatrix& Z, IMatrix& B, vector<long>& P){
  * @return Norm of the residue
  */
 template<class AMatrix, class IAMatrix, class IMatrix>
-double residue(AMatrix& A, IAMatrix& IA, IMatrix& I){
+inline double residue(AMatrix& A, IAMatrix& IA, IMatrix& I){
 	double err_norm = 0.0;
 	size_t size = A.size();
 

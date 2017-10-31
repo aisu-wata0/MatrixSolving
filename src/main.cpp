@@ -25,31 +25,110 @@ void readMatrix(Mat& A){
 
 int main(int argc, char **argv) {
 	//LIKWID_MARKER_INIT;
-	
 	cout.precision(8);
 	cout << scientific;
 	srand(20172);
 	
-	bool input = true;
-	long size = 0, iter_n = -1;
-
-	int c;
-	char* inputFile = NULL;
-	char* outputFile = NULL;
 	ifstream in_f;
 	ofstream o_f;
 	streambuf* coutbuf = cout.rdbuf(); //save old buf;
+	
+	bool input;
+	size_t size, iter_n;
+	// redirects cout & cin
+	parseArgs(argc, argv, input, size, iter_n, in_f, o_f);
+	
+	Matrix<double> A;
+	
+	if(input){
+		cin>> size;
+		A.alloc(size);
+		readMatrix(A);
+		in_f.close();
+	}else {
+		A.alloc(size);
+		randomMatrix(A);
+	}
+	
+	Matrix<double> LU(size);
+	vector<long> P(A.sizeMem());
+	
+	timer.start();
+	//LIKWID_MARKER_START("LU");
+	
+	GaussEl(A, LU, P);
+	
+	//LIKWID_MARKER_STOP("LU");
+	lu_time = timer.tick();
+	
+	MatrixColMajor<double> IA(size);
+	/**
+	cout<<"#\n";
+	inverse_refining(A, LU, IA, P, iter_n);
 
-	while (( c = getopt(argc, argv, "e:o:r:i:")) != -1){
+	cout<< defaultfloat;
+	cout<<"# Tempo LU: "<< lu_time <<"\n";
+	cout<<"# Tempo iter: "<< total_time_iter/(double)iter_n <<"\n";
+	cout<<"# Tempo residuo: "<< total_time_residue/(double)iter_n <<"\n#\n";
+	printm(IA);
+	/**/
+	const bool PrintMatrix = true;
+	
+	MatrixColMajor<double> I(size);
+	identity(I);
+	
+	/**
+	solveMLU(LU, IA, I, P);
+	if(PrintMatrix) printm(IA);
+	
+	/**/
+	timer.initAverage();
+	for(size_t i=0; i < 10; ++i){
+		timer.start();
+		solveMLUNew(LU, IA, I, P);
+		timer.tickAverage();
+	}
+	if(PrintMatrix) printm(IA);
+	cout << timer.averageTotal() << "\n";
+	
+	/**
+	MatrixColMajor<double> Z(size);
+	substMLU<Direction::Backwards, Diagonal::Unit, Permute::True>(LU, Z, I, P);
+	if(PrintMatrix) printm(Z);
+	
+	substMLU0<Direction::Backwards, Diagonal::Unit, Permute::True>(LU, Z, I, P);
+	if(PrintMatrix) printm(Z);
+	
+	substMLU10<Direction::Backwards, Diagonal::Unit, Permute::True>(LU, Z, I, P);
+	if(PrintMatrix) printm(Z);
+	
+	substMLUZ(LU, Z, I, P);
+	if(PrintMatrix) printm(Z);
+	/**/
+	
+	//LIKWID_MARKER_CLOSE;
+	in_f.close();
+	cout.rdbuf(coutbuf); //redirect
+	o_f.close();
+	return 0;
+}
+
+void parseArgs(int& argc, char**& argv,
+bool& input, size_t& size, size_t& iter_n, ifstream& in_f, ofstream& o_f){
+	int c;
+	input = true;
+	size = 0; iter_n = -1;
+	
+	while ((c = getopt(argc, argv, "e:o:r:i:")) != -1){
 		switch (c){
 			case 'e':
-				inputFile = optarg;
-				in_f.open(inputFile);
+				// inputFile
+				in_f.open(optarg);
 				cin.rdbuf(in_f.rdbuf()); //redirect
 				break;
 			case 'o':
-				outputFile = optarg;
-				o_f.open(outputFile);
+				// outputFile
+				o_f.open(optarg);
 				cout.rdbuf(o_f.rdbuf()); //redirect
 				break;
 			case 'r':	//Generate random matrix
@@ -68,101 +147,34 @@ int main(int argc, char **argv) {
 				exit(EXIT_FAILURE);
 		}
 	}
-
+	
 	if(iter_n == -1){
 		fprintf(stderr, "Usage: %s [-e inputFile] [-o outputFile] [-r randSize] -i Iterations\n", argv[0]);
 		fprintf(stderr, "-i Iterations is not optional\n");
 		exit(EXIT_FAILURE);
 	}
-	
-	if(input){
-		cin>> size;
-	}
-	
-	Matrix<double> A(size);
-	
-	if(input){
-		readMatrix(A);
-		in_f.close();
-	}else {
-		randomMatrix(A);
-	}
-	
-	Matrix<double> LU(size);
-	vector<long> P(A.sizeMem());
-	
-	timer.start();
-	//LIKWID_MARKER_START("LU");
-	
-	GaussEl(A, LU, P);
-	
-	//LIKWID_MARKER_STOP("LU");
-	lu_time = timer.tick();
-	
-	
-	MatrixColMajor<double> IA(size);
-	MatrixColMajor<double> Z(size);
-	/**
-	cout<<"#\n";
-	inverse_refining(A, LU, IA, P, iter_n);
-
-	cout<< defaultfloat;
-	cout<<"# Tempo LU: "<< lu_time <<"\n";
-	cout<<"# Tempo iter: "<< total_time_iter/(double)iter_n <<"\n";
-	cout<<"# Tempo residuo: "<< total_time_residue/(double)iter_n <<"\n#\n";
-	printm(IA);
-	/**/
-	const bool PrintMatrix = false;
-	MatrixColMajor<double> I(size);
-	identity(I);
-	/**
-	substMLU<Direction::Backwards, Diagonal::Unit, Permute::True>(LU, Z, I, P);
-	if(PrintMatrix) printm(Z);
-	
-	substMLU0<Direction::Backwards, Diagonal::Unit, Permute::True>(LU, Z, I, P);
-	if(PrintMatrix) printm(Z);
-	
-	substMLU10<Direction::Backwards, Diagonal::Unit, Permute::True>(LU, Z, I, P);
-	if(PrintMatrix) printm(Z);
-	
-	substMLUZ(LU, Z, I, P);
-	if(PrintMatrix) printm(Z);
-	/**/
-	
-	solveMLU(LU, IA, I, P);
-	if(PrintMatrix) printm(IA);
-	/**/
-	timer.initAverage();
-	for(size_t i=0; i < 5; i++){
-		timer.start();
-		solveMLUNew(LU, IA, I, P);
-		cout << timer.tickAverage() << "\n";
-	}
-	if(PrintMatrix) printm(IA);
-	cout << timer.averageTotal() << "\n";
-	/**/
-	//LIKWID_MARKER_CLOSE;
-	in_f.close();
-	cout.rdbuf(coutbuf); //redirect
-	o_f.close();
-	return 0;
 }
 
 
 
 
 
-
-
-
-
-int mainTests()
+int mainT(int argc, char **argv)
 {
 	//LIKWID_MARKER_INIT;
 	//cout.precision(4);
 	//cout << scientific;
 	srand(20172);
-	size_t size = 8192*2;
+	
+	ifstream in_f;
+	ofstream o_f;
+	streambuf* coutbuf = cout.rdbuf(); //save old buf;
+	
+	bool input;
+	size_t size, iter_n;
+	
+	parseArgs(argc, argv, input, size, iter_n, in_f, o_f);
+	
 	/**
 	vector<size_t> V_sz = {8192/4,8192/2};
 	//vector<size_t> V_sz = {BL1*2};
@@ -176,8 +188,8 @@ int mainTests()
 		}
 	}
 	/**/
-	vector<size_t> V_sz = {144,288,288*2,288*3,288*4};
-	//vector<size_t> V_sz = {8};
+	vector<size_t> V_sz{144,288,288*2,288*3,288*4};
+	//vector<size_t> V_sz = {144};
 	for (auto sz : V_sz){
 		for(size = sz; size < sz+1; size++){
 			t_matrix_mult(size);

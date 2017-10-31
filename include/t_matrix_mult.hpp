@@ -29,7 +29,7 @@ void t_matrix_mult(size_t size){
 			}
 		}
 	}
-	size_t repetitionN = 3;
+	size_t repetitionN = 300;
 	size_t reps;
 	size_t bi[5], bj[5], bk[5];
 	size_t bimax[5], bjmax[5], bkmax[5];
@@ -60,7 +60,7 @@ void t_matrix_mult(size_t size){
 	//bstep[2] = bstep[1]*L3M;
 	
 	printf("%llu, %llu, %llu, %llu\n", bstep[0], bstep[1], bstep[2], bstep[3]);
-	const bool PRINT_MATRIX = false;
+	const bool PRINT_MATRIX = true;
 	//const size_t unr = 2;
 	//double acc[unr*unr];
 	
@@ -78,7 +78,7 @@ void t_matrix_mult(size_t size){
 	}
 	// end warmup
 	
-	
+	/**
 	set(X,0);
 	timer.tick();
 	for(reps = 0; reps < repetitionN; reps++){
@@ -146,7 +146,7 @@ void t_matrix_mult(size_t size){
 	}
 	printf("Tiled2.1.0 \t%f sec\n", timer.tick()/repetitionN);
 	//if(PRINT_MATRIX) { printm(X); cout << endl; }
-	
+	/**/
 	
 	set(X,0);
 	timer.tick();
@@ -179,12 +179,13 @@ void t_matrix_mult(size_t size){
 	}
 	printf("Tiled3.2.1.0 \t%f sec\n", timer.tick()/repetitionN);
 	if(PRINT_MATRIX) { printm(X); cout << endl; }
+	printf("%f\n", X.at(0, 0));
 	
 	
 	////
 	// LU solving
 	////
-	/**/
+	/**
 	timer.tick();
 	for(reps = 0; reps < repetitionN; reps++){
 	set(X,B);
@@ -261,7 +262,9 @@ void t_matrix_mult(size_t size){
 	timer.tick();
 	for(reps = 0; reps < repetitionN; reps++){
 	asm("LUTiled2.1.0");
-	block (bi[2],0,size, bj[2],0,size, bk[2],0,(bi[2]+bstep[2]), bstep[2]) {
+	for (bi[2] = 0; bi[2] < size; bi[2] += bstep[2])
+	for (bj[2] = 0; bj[2] < size; bj[2] += bstep[2])
+	for (bk[2] = 0; bk[2] < (bi[2]+bstep[2]); bk[2] += bstep[2]) {
 		bimax[1] = min(bi[2]+bstep[2], size);
 		bjmax[1] = min(bj[2]+bstep[2], size);
 		for (bi[1] = bi[2]; bi[1] < bimax[1]; bi[1] += bstep[1])
@@ -309,6 +312,8 @@ void t_matrix_mult(size_t size){
 	for(reps = 0; reps < repetitionN; reps++){
 	asm("LUTiled3.2.1.0");
 	block (bi[3],0,size, bj[3],0,size, bk[3],0,(bi[3]+bstep[3]), bstep[3]) {
+		bimax[2] = min(bi[3]+bstep[3], size);
+		bjmax[2] = min(bj[3]+bstep[3], size);
 		for (bi[2] = bi[3]; bi[2] < bimax[2]; bi[2] += bstep[2])
 		for (bj[2] = bj[3]; bj[2] < bjmax[2]; bj[2] += bstep[2]) {
 			bkmax[2] = min(bk[3]+bstep[3], bi[2]+bstep[2]);
@@ -426,9 +431,13 @@ template<Direction direction, Diagonal diagonal, Permute permute,
 inline void substMLU(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P){
 	size_t size = X.size();
 	size_t i, j, k;	
-	if(permute == Permute::True)
-		set<direction>(X,B,P);
-	else set<direction>(X,B);
+	for(j = 0; j < size; ++j)
+		for(i = 0; i < size; ++i)
+			if(permute == Permute::True)
+				ind(X, i, j) = ind(B, P.at(i), j);
+			else
+				ind(X, i, j) = ind(B, i, j);
+	
 	for(i = 0; i < size; i += 1){
 		for(j = 0; j < size; j += 1){
 			for(k = 0; k != i; k += 1){
@@ -551,14 +560,3 @@ inline void substMLU10(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P){
 	asm("END LUTiled1.0");
 }
 #undef ind
-
-template<class LUMatrix, class IAMatrix, class IMatrix>
-inline void solveMLUNew(LUMatrix& LU, IAMatrix& X, IMatrix& B, vector<long>& P){
-	//static
-	MatrixColMajor<double> Z(X.size());
-	//if(Z.size() != X.size()){ Z.alloc(X.size()); }
-	// find Z; LZ=B
-	substMLU0<Direction::Forwards, Diagonal::Unit, Permute::True>(LU, Z, B, P);
-	// find X; Ux=Z
-	substMLU0<Direction::Backwards, Diagonal::Value, Permute::False>(LU, X, Z, P);
-}

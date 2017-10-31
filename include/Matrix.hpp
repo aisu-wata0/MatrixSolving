@@ -11,7 +11,7 @@ using namespace std;
 // Optm: test switching, the below doesnt work probably
 //#define PAD(X) ((long)floor((X)/(double)L1_LINE_DN)*(L1_LINE_DN*(L1_LINE_DN-1))/2)
 
-#define PADDING true
+#define PADDING false
 
 // Non member access functions
 
@@ -76,8 +76,8 @@ public:
 	size_t sizeVec() const { return mSizeVec; }
 	/** @brief size of the vectorized varray */
 	size_t sizeMem() const { return mSizeMem; }
-	/** @brief end of the vectorized varray */
-	size_t endVec() const { return mEndVec; }
+	/** @brief vectorization end index */
+	size_t vecEnd(){ return mEndVec; }
 
 	size_t indVecMem(size_t i, size_t j) const {
 		return i*mSizeVecMem + j;

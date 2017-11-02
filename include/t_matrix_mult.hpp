@@ -15,7 +15,7 @@ void t_matrix_mult(size_t size){
 	MatrixColMajor<double> B(size);
 	size_t i, j, k;
 	
-	cout << size << "\n";
+//	cout << size << "\n";
 	
 	for(i = 0; i < size; i++){
 		for(j = 0; j < size; j++){
@@ -28,7 +28,7 @@ void t_matrix_mult(size_t size){
 			}
 		}
 	}
-	size_t repetitionN = 300;
+	size_t repetitionN = 30;
 	size_t reps;
 	size_t bi[5], bj[5], bk[5];
 	size_t bimax[5], bjmax[5], bkmax[5];
@@ -57,8 +57,8 @@ void t_matrix_mult(size_t size){
 	//bstep[1] = bstep[0]*L1M;
 	//bstep[2] = bstep[1]*L2M;
 	//bstep[2] = bstep[1]*L3M;
-	cout << bstep[0] <<", "<< bstep[1] <<", "<< bstep[2] <<", "<< bstep[3] <<"\n";
-	const bool PRINT_MATRIX = true;
+//	cout << bstep[0] <<", "<< bstep[1] <<", "<< bstep[2] <<", "<< bstep[3] <<"\n";
+	const bool PRINT_MATRIX = false;
 	//const size_t unr = 2;
 	//double acc[unr*unr];
 	
@@ -77,9 +77,9 @@ void t_matrix_mult(size_t size){
 	// end warmup
 	
 	/**/
-	set(X,0);
-	timer.tick();
-	for(reps = 0; reps < repetitionN; reps++){
+//	set(X,0);
+//	timer.tick();
+//	for(reps = 0; reps < repetitionN; reps++){
 	block(bi[0],0,size, bj[0],0,size, bk[0],0,size, bstep[0]){
 		size_t imax = min(bi[0]+bstep[0], size);
 		size_t jmax = min(bj[0]+bstep[0], size);
@@ -88,11 +88,38 @@ void t_matrix_mult(size_t size){
 			X.at(i, j) = X.at(i, j) + LU.at(i, k) * B.at(k, j);
 		}
 	}
-	}
-	cout <<"Tiled0  \t"<< timer.tick()/repetitionN <<" sec\n";
+//	}
+//	cout <<"Tiled0  \t"<< timer.tick()/repetitionN <<" sec\n";
 	//if(PRINT_MATRIX) { printm(X); cout << endl; }
 	
+	#define vect(v) for(size_t v=0; v < X.regEN(); ++v)
+	size_t kv;
+//	set(X,0);
+//	timer.tick();
+//	for(reps = 0; reps < repetitionN; reps++){
+	block(bi[0],0,size, bj[0],0,size, bk[0],0,size, bstep[0]){
+		size_t imax = min(bi[0]+bstep[0], size);
+		size_t jmax = min(bj[0]+bstep[0], size);
+		size_t kmax = min(bk[0]+bstep[0], size);
+		for (i = bi[0]; i < imax; ++i)
+		for (j = bj[0]; j < jmax; ++j) {
+			vec<double> acc;
+			vect(v) acc[v] = 0;
+			//memset(acc.v, 0, sizeof(acc.v));
+			for (kv = bk[0]/4; k < kmax/4; ++kv)
+				acc.v = acc.v - LU.atv(i, kv).v * B.atv(kv, j).v;
+			for(k = kv*4; k < kmax; ++k)
+				X.at(i, j) = X.at(i, j) - LU.at(i, k) * B.at(k, j);
+			vect(v) X.at(i, j) -=  acc[v];
+		}
+	}
+	#undef vect
+//	}
+//	cout <<"Tiled0 acc  \t"<< timer.tick()/repetitionN <<" sec\n";
+	//if(PRINT_MATRIX) { printm(X); cout << endl; }
 	
+	set(X,0);
+	/**
 	set(X,0);
 	timer.tick();
 	for(reps = 0; reps < repetitionN; reps++){

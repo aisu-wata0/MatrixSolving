@@ -9,9 +9,9 @@ using namespace std;
 
 #define PAD(X) (div_down((X),L1_LINE_DN)*(L1_LINE_DN*(L1_LINE_DN-1))/2)
 // Optm: test switching, the below doesnt work probably
-//#define PAD(X) ((long)floor((X)/(double)L1_LINE_DN)*(L1_LINE_DN*(L1_LINE_DN-1))/2)
+//#define PAD(X) ((size_t)floor((X)/(double)L1_LINE_DN)*(L1_LINE_DN*(L1_LINE_DN-1))/2)
 
-#define PADDING false
+#define PADDING true
 
 // Non member access functions
 
@@ -34,9 +34,10 @@ public:
 	varray<Elem> varr;
 	size_t mSize;
 	size_t mSizeVec; // n of vec<element>s
-
+	
 	size_t mSizeMem;
 	size_t mSizeVecMem;
+	size_t mPad;
 
 	size_t mEndVec;
 
@@ -53,10 +54,11 @@ public:
 		if(PADDING){
 			mSizeMem += mod(-mSize,(ptrdiff_t)L1_LINE_DN);
 			// make sure m_size is odd multiple of cache line
-			if(((mSizeMem/L1_LINE_DN) % 2) == 0){
+			//if(((mSizeMem/L1_LINE_DN) % 2) == 0)
+			if(mSizeMem > L1LINE_N-1 && isPowerOfTwo(mSizeMem))
 				mSizeMem = mSizeMem + L1_LINE_DN;
-			}
 		}
+		mPad = mSizeMem - mSize;
 		mSizeVecMem = mSizeMem/regEN();
 		mEndVec = Lower_Multiple(mSize, regEN());
 		memAlloc(mSizeMem);
@@ -78,8 +80,11 @@ public:
 	size_t sizeMem() const { return mSizeMem; }
 	/** @brief vectorization end index */
 	size_t vecEnd(){ return mEndVec; }
+	/** @brief vectorization end index */
+	size_t pad(){ return mPad; }
 
 	size_t indVecMem(size_t i, size_t j) const {
+		assert(i < mSizeMem && j < mSizeVecMem);
 		return i*mSizeVecMem + j;
 	}
 	vec<Elem>& atv(size_t i, size_t j) {
@@ -89,6 +94,7 @@ public:
 		return varr.atv(indVecMem(i,j));
 	}
 	size_t indMem(size_t i, size_t j) const {
+		assert(i < mSizeMem && j < mSizeMem);
 		return i*mSizeMem + j;
 	}
 	Elem& at(size_t i, size_t j){
@@ -107,24 +113,29 @@ class MatrixColMajor : public Matrix<Elem>
 {
 public:
 	using Matrix<Elem>::Matrix;
+	using Matrix<Elem>::varr;
+	using Matrix<Elem>::mSizeMem;
+	using Matrix<Elem>::mSizeVecMem;
 
 	size_t indVecMem(size_t i, size_t j) const {
-		return j*this->mSizeVecMem + i;
+		assert(i < mSizeVecMem && j < mSizeMem);
+		return j*mSizeVecMem + i;
 	}
 	vec<Elem>& atv(size_t i, size_t j) {
-		return this->varr.atv(indVecMem(i,j));
+		return varr.atv(indVecMem(i,j));
 	}
 	const vec<Elem>& atv(size_t i, size_t j) const {
-		return this->varr.atv(indVecMem(i,j));
+		return varr.atv(indVecMem(i,j));
 	}
 	size_t indMem(size_t i, size_t j) const {
-		return j*this->mSizeMem + i;
+		assert(i < mSizeMem && j < mSizeMem);
+		return j*mSizeMem + i;
 	}
 	Elem& at(size_t i, size_t j){
-		return this->varr.at(indMem(i,j));
+		return varr.at(indMem(i,j));
 	}
 	const Elem& at(size_t i, size_t j) const {
-		return this->varr.at(indMem(i,j));
+		return varr.at(indMem(i,j));
 	}
 	/**/
 };

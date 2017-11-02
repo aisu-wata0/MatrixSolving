@@ -17,6 +17,10 @@ namespace gm
 {
 using namespace std;
 
+template <typename num>
+bool isPowerOfTwo (num n) {
+	return (n > 0) && ((n == 0) || ((n & (n - 1)) == 0));
+}
 
 template<typename elem>
 inline size_t regN() { return (REG_SZ/sizeof(elem)); }
@@ -30,11 +34,11 @@ struct vec
 {
 	elem __attribute__ ((vector_size (REG_SZ)))  v; // vectorization of elems
 	
-	const elem& operator[] (size_t i) const {
+	inline const elem& operator[] (size_t i) const {
 		assert(i < regN<elem>() && "Vectorized elem out of register access");
 		return v[i];
 	}
-	elem& operator[] (size_t i) {
+	inline elem& operator[] (size_t i) {
 		assert(i < regN<elem>() && "Vectorized elem out of register access");
 		return v[i];
 	}
@@ -95,12 +99,12 @@ public:
 		mSizeMem = mSize;
 		mSizeMem = mSize;
 		// add to make it multiple of L1_LINE_DN
-		mSizeMem += mod(-mSize,(long)L1_LINE_DN);
+		mSizeMem += mod(-mSize,(ptrdiff_t)L1_LINE_DN);
 		//mSizeMem += mod(-mSize, (ptrdiff_t)L1_LINE_DN); TODO test
 		
-		if(((mSizeMem/L1_LINE_DN) % 2) == 0){
+		//if(((mSizeMem/L1_LINE_DN) % 2) == 0)
+		if(mSizeMem > L1LINE_N-1 && isPowerOfTwo(mSizeMem))
 			mSizeMem = mSizeMem + L1_LINE_DN; // make sure mSizeMem is odd multiple
-		}
 		
 		mSizeVecMem = mSizeMem/regEN();
 		
@@ -132,20 +136,20 @@ public:
 	 * @return return vec in the position i,
 	 * it will contain elems (i*regEN()) to (i*regEN() + regEN() -1)
 	 */
-	vec<elem>& atv(size_t i) {
+	inline vec<elem>& atv(size_t i) {
 		assert(i < mSizeVec && "varray vec access out of bounds");
 		return arr.v[i];
 	}
-	const vec<elem> & atv(size_t i) const {
+	inline const vec<elem> & atv(size_t i) const {
 		assert(i < mSizeVec && "varray vec access out of bounds");
 		return arr.v[i];
 	}
 	
-	elem& at(size_t i){
+	inline elem& at(size_t i){
 		assert(i < mSize && "varray access out of bounds");
 		return arr.p[i];
 	}
-	const elem& at(size_t i) const {
+	inline const elem& at(size_t i) const {
 		assert(i < mSize && "varray access out of bounds");
 		return arr.p[i];
 	}

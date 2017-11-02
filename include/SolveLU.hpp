@@ -63,14 +63,14 @@ inline void solveMLU(LUMatrix& LU, IAMatrix& X, IMatrix& B, vector<long>& P){
 }
 
 template<class LUMatrix, class IAMatrix, class IMatrix>
-inline void solveMLU0(LUMatrix& LU, IAMatrix& X, IMatrix& B, vector<long>& P){
+inline void solveMLU0(LUMatrix& LU, IAMatrix& X, IMatrix& B, varray<size_t>& P){
 	static
 	MatrixColMajor<double> Z(X.size());
 	if(Z.size() != X.size()){ Z.alloc(X.size()); }
 	// find Z; LZ=B
-	substMLU0<Direction::Forwards, Diagonal::Unit, Permute::True>(LU, Z, B, P);
+	substMLU0A<Direction::Forwards, Diagonal::Unit, Permute::True>(LU, Z, B, P);
 	// find X; Ux=Z
-	substMLU0<Direction::Backwards, Diagonal::Value, Permute::False>(LU, X, Z, P);
+	substMLU0A<Direction::Backwards, Diagonal::Value, Permute::False>(LU, X, Z, P);
 }
 
 /**
@@ -104,8 +104,111 @@ inline double residue(AMatrix& A, IAMatrix& IA, IMatrix& I){
 	return sqrt(err_norm);
 }
 
+
 template<class AMatrix, class IAMatrix, class IMatrix>
 inline double residue0(AMatrix& A, IAMatrix& IA, IMatrix& I){
+	size_t size = A.size();
+	size_t bi[5], bj[5], bk[5];
+	size_t bimax[5], bjmax[5], bkmax[5];
+	size_t bstep[5];
+	bstep[0] = 24;
+	bstep[1] = bstep[0]*4;
+	bstep[2] = bstep[1]*4;
+	bstep[3] = bstep[2]*5;
+	
+	size_t i, j, k, kv;
+	
+	for(j = 0; j < size; ++j){
+		for(i = 0; i < j; ++i)
+			I.at(i,j) = 0;
+		I.at(j,j) = 1;
+		for(i = j+1; i < size; ++i)
+			I.at(i,j) = 0;
+	}
+	// multiply
+	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
+	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0])
+	for (bk[0] = 0; bk[0] < size; bk[0] += bstep[0]){
+		size_t imax = min(bi[0]+bstep[0], size);
+		size_t jmax = min(bj[0]+bstep[0], size);
+		size_t kmax = min(bk[0]+bstep[0], size);
+		for (i = bi[0]; i < imax; ++i)
+		for (j = bj[0]; j < jmax; ++j)
+		for (k = bk[0]; k < kmax; ++k){
+			I.at(i, j) = I.at(i, j) - A.at(i, k) * IA.at(k, j);
+		}
+	}
+	double errNorm = 0;
+	vec<double> errNormV{0};
+	for(size_t j = 0; j < size; ++j){
+		for(size_t iv = 0; iv < I.sizeVec(); ++iv)
+			errNormV.v += I.atv(iv,j).v*I.atv(iv,j).v;
+		for(size_t i = I.vecEnd(); i < I.size(); ++i)
+			errNormV[I.regEN()-1] += I.at(i,j)*I.at(i,j);
+	}
+	for(size_t v=0; v < I.regEN(); ++v) errNorm += errNormV[v];
+	
+	return sqrt(errNorm);
+}
+
+
+template<class AMatrix, class IAMatrix, class IMatrix>
+inline double residue0A(AMatrix& A, IAMatrix& IA, IMatrix& I){
+	size_t size = A.size();
+	size_t bi[5], bj[5], bk[5];
+	size_t bimax[5], bjmax[5], bkmax[5];
+	size_t bstep[5];
+	bstep[0] = 24;
+	bstep[1] = bstep[0]*4;
+	bstep[2] = bstep[1]*4;
+	bstep[3] = bstep[2]*5;
+	
+	size_t i, j, k, kv;
+	
+	for(j = 0; j < size; ++j){
+		for(i = 0; i < j; ++i)
+			I.at(i,j) = 0;
+		I.at(j,j) = 1;
+		for(i = j+1; i < size; ++i)
+			I.at(i,j) = 0;
+	}
+	size_t nv = I.regEN();
+	#define vect(v) for(size_t v=0; v < nv; ++v)
+	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
+	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0])
+	for (bk[0] = 0; bk[0] < size; bk[0] += bstep[0]){
+		size_t imax = min(bi[0]+bstep[0], size);
+		size_t jmax = min(bj[0]+bstep[0], size);
+		size_t kmax = min(bk[0]+bstep[0], size);
+		for (i = bi[0]; i < imax; ++i)
+		for (j = bj[0]; j < jmax; ++j) {
+			vec<double> acc;
+			vect(v) acc[v] = 0;
+			for (kv = bk[0]/nv; kv < kmax/nv; ++kv)
+				acc.v = acc.v - A.atv(i, kv).v * IA.atv(kv, j).v;
+			for(k = kv*nv; k < kmax; ++k)
+				I.at(i, j) = I.at(i, j) - A.at(i, k) * IA.at(k, j);
+			vect(v) I.at(i, j) += acc[v];
+		}
+	}
+	#undef vect
+	
+	double errNorm = 0;
+	vec<double> errNormV{0};
+	for(size_t j = 0; j < size; ++j){
+		for(size_t iv = 0; iv < I.sizeVec(); ++iv)
+			errNormV.v += I.atv(iv,j).v*I.atv(iv,j).v;
+		for(size_t i = I.vecEnd(); i < I.size(); ++i)
+			errNormV[I.regEN()-1] += I.at(i,j)*I.at(i,j);
+	}
+	for(size_t v=0; v < I.regEN(); ++v) errNorm += errNormV[v];
+	
+	return sqrt(errNorm);
+}
+
+
+template<class AMatrix, class IAMatrix, class IMatrix>
+inline double residue3210(AMatrix& A, IAMatrix& IA, IMatrix& I){
 	size_t size = A.size();
 	size_t bi[5], bj[5], bk[5];
 	size_t bimax[5], bjmax[5], bkmax[5];
@@ -114,7 +217,7 @@ inline double residue0(AMatrix& A, IAMatrix& IA, IMatrix& I){
 	bstep[1] = bstep[0]*4;
 	bstep[2] = bstep[1]*4;
 	bstep[3] = bstep[2]*5;
-	
+
 	for(size_t j = 0; j < size; ++j){
 		for(size_t i = 0; i < j; ++i)
 			I.at(i,j) = 0;
@@ -166,9 +269,12 @@ inline double residue0(AMatrix& A, IAMatrix& IA, IMatrix& I){
 			errNormV[I.regEN()-1] += I.at(i,j)*I.at(i,j);
 	}
 	for(size_t v=0; v < I.regEN(); ++v) errNorm += errNormV[v];
-	
+
 	return sqrt(errNorm);
 }
+
+
+
 
 /**
  * @brief Calculates inverse of A into IA
@@ -178,7 +284,7 @@ inline double residue0(AMatrix& A, IAMatrix& IA, IMatrix& I){
  * @param iter_n
  */
 template<class AMatrix, class LUMatrix, class IAMatrix>
-void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, vector<long>& P, long iter_n){
+void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, varray<size_t>& P, long iter_n){
 	long i=0;
 	// number of digits of iter_n, for pretty printing
 	long digits = (long)log10((double) iter_n) + 1;
@@ -204,7 +310,7 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, vector<long>& P, l
 	//LIKWID_MARKER_STOP("INV");
 	//LIKWID_MARKER_START("RES");
 	
-	c_residue = residue0(A, IA, R);
+	c_residue = residue0A(A, IA, R);
 	
 	//LIKWID_MARKER_STOP("RES");
 	
@@ -238,7 +344,7 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, vector<long>& P, l
 		timer.start();
 		//LIKWID_MARKER_START("RES");
 		
-		c_residue = residue0(A, IA, R);
+		c_residue = residue0A(A, IA, R);
 		
 		//LIKWID_MARKER_STOP("RES");
 		total_time_residue += timer.tick();

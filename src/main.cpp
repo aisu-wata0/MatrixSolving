@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
 	}
 	
 	Matrix<double> LU(size);
-	vector<long> P(A.sizeMem());
+	varray<size_t> P(A.sizeMem());
 	
 	timer.start();
 	//LIKWID_MARKER_START("LU");

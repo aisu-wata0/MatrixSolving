@@ -7,11 +7,16 @@
 #define CACHE_LINE_SIZE (64) // likwid-topology: Cache line size:	64
 #define L1_LINE_DN (CACHE_LINE_SIZE/sizeof(double)) // how many doubles in a line
 // likwid-topology: Size
-#define CACHE_L1_SIZE (32*1024/2)
+#define L1KiB 32
+#define CACHE_L1_SIZE (L1KiB*1024/2)
 #define CACHE_L2_SIZE (256*1024/2)
 #define CACHE_L3_SIZE (3*1024*1024/2)
 // divided by 2 because we wont be able to fill L1 completely without throwing
 // useful values out
+
+// aproximate minimum number of lines L1 cache has
+// (for this capacity)(min lines mean max associativ)
+#define L1LINE_N ((L1KiB*1024/8)/64)
 
 // 2048
 #define L1_DN (CACHE_L1_SIZE/sizeof(double)) // how many doubles in L1 cache

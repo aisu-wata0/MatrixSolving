@@ -1,6 +1,8 @@
 #ifndef SUBST_H
 #define SUBST_H
 
+#include <assert.h>
+
 #include "Matrix.hpp"
 
 namespace gm {
@@ -42,7 +44,7 @@ const Elem& at(varray<Elem> const& arr, size_t i, size_t j){
  * @param col Column of the matrix I to be used as B
  */
 template<Direction direction, Diagonal diagonal, Permute permute, class TMatrix, class XMatrix, class IMatrix>
-void subst(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
+void subst(TMatrix& T, XMatrix& X, IMatrix& I, vector<size_t>& P, size_t col){
 	size_t i, j;
 	int step;
 	size_t size = T.size();
@@ -82,13 +84,13 @@ void subst(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
  * @param col Column of the matrix I to be used as B
  */
 template<Direction direction, Diagonal diagonal, Permute permute, class TMatrix, class XMatrix, class IMatrix>
-void substR(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
-	long i, j;
-	long bi, bj;
+void substR(TMatrix& T, XMatrix& X, IMatrix& I, vector<size_t>& P, size_t col){
+	size_t i, j;
+	size_t bi, bj;
 	int step;
 	int bstep;
-	long size = T.size();
-	long endi, endj;
+	size_t size = T.size();
+	size_t endi, endj;
 	
 	if(direction == Direction::Forwards){
 		bi = 0;
@@ -146,11 +148,11 @@ void substR(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
  * @param col Column of the matrix I to be used as B
  */
 template<Direction direction, Diagonal diagonal, Permute permute, class TMatrix, class XMatrix, class IMatrix>
-void substUnroll(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
-	long i, j;
+void substUnroll(TMatrix& T, XMatrix& X, IMatrix& I, vector<size_t>& P, size_t col){
+	size_t i, j;
 	int step;
 	int bstep;
-	long size = T.size;
+	size_t size = T.size;
 	
 	if(direction == Direction::Forwards){
 		i = 0;
@@ -185,12 +187,12 @@ void substUnroll(TMatrix& T, XMatrix& X, IMatrix& I, vector<long>& P, long col){
  * @param col Column of the matrix to be used as B
  */
 template<Direction direction, class TMatrix>
-void subst(TMatrix& T, MatrixColMajor<double>& X, vector<double>& B, long col) {
-	long size = T.size;
-	long bi; long bj;
-	long i; long j;
-	long iend; long jend;
-	long step;
+void subst(TMatrix& T, MatrixColMajor<double>& X, vector<double>& B, size_t col) {
+	size_t size = T.size;
+	size_t bi; size_t bj;
+	size_t i; size_t j;
+	size_t iend; size_t jend;
+	size_t step;
 
 	// TODO test iterate blocks by col (bj) instead of as currently by row (bi)
 	if(direction == Direction::Forwards){
@@ -200,7 +202,7 @@ void subst(TMatrix& T, MatrixColMajor<double>& X, vector<double>& B, long col) {
 		bj = size-1;
 		step = -1;
 	}
-	long bstep = step * BL1;
+	size_t bstep = step * BL1;
 	
 	for(; bj >= 0 && bj < size; bj += bstep){
 		if(direction == Direction::Forwards) {
@@ -256,7 +258,7 @@ void subst(TMatrix& T, MatrixColMajor<double>& X, vector<double>& B, long col) {
 	M.at((size-1)-i, (size-1)-j))
 template<Direction direction, Diagonal diagonal, Permute permute,
 	class LUMatrix, class XMatrix, class BMatrix>
-inline void substMLU0(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P){
+inline void substMLU0(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
 	size_t size = X.size();
 	size_t i, j, k;
 	size_t bi[5], bj[5], bk[5];
@@ -305,12 +307,89 @@ inline void substMLU0(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P){
 }
 #undef ind
 
+
+#define ind(M,i,j) (direction == Direction::Forwards ? \
+	M.at(i, j) : \
+	M.at((size-1)-i, (size-1)-j))
+#define indvi(M,i,j) (direction == Direction::Forwards ? \
+	M.atv(i, j) : \
+	M.atv((size-1)/nv-i, (size-1)-j))
+#define indvj(M,i,j) (direction == Direction::Forwards ? \
+	M.atv(i, j) : \
+	M.atv((size-1)-i, (size-1)/nv-j))
+template<Direction direction, Diagonal diagonal, Permute permute,
+	class LUMatrix, class XMatrix, class BMatrix>
+inline void substMLU0A(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
+	size_t size = X.sizeMem();
+	size_t i, j, k, kv;
+	size_t bi[5], bj[5], bk[5];
+	//size_t bimax[5], bjmax[5], bkmax[5];
+	size_t imax, jmax, kmax;
+	size_t bstep[5];
+	size_t isrt;
+	//const size_t unr = 2;
+	//double acc[unr*unr];
+	/**/
+	bstep[0] = 8;
+	bstep[1] = bstep[0]*3;
+	bstep[2] = bstep[1]*3;
+	bstep[3] = bstep[2]*4;
+	/* export GCC_ARGS=" -D L1M=${3} -D L2M=${3} L3M=${4} *
+	bstep[1] = bstep[0]*L1M;
+	bstep[2] = bstep[1]*L2M;
+	bstep[2] = bstep[1]*L3M;/**/
+	for(j = 0; j < size; ++j)
+		for(i = 0; i < size; ++i)
+			if(permute == Permute::True)
+				ind(X, i, j) = ind(B, P.at(i), j);
+			else
+				ind(X, i, j) = ind(B, i, j);
+	size_t nv = X.regEN();
+	vec<double> acc;
+
+#define vect(v) for(size_t v = 0; v < nv; ++v)
+	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
+	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0]) {
+		imax = min(bi[0]+bstep[0] , size);
+		jmax = min(bj[0]+bstep[0] , size);
+		if(direction == Direction::Forwards)
+			isrt = bi[0];
+		else isrt = max(bi[0], X.pad());
+		for (bk[0] = 0; bk[0] < (bi[0]); bk[0] += bstep[0]) {
+			for (i = bi[0]; i < imax; ++i)
+			for (j = bj[0]; j < jmax; ++j) {
+				assert( ((direction == Direction::Backwards) && (((size-1-bk[0])-(nv-1)) % 4 == 0))
+				|| ((direction == Direction::Forwards) && (bk[0] % 4 == 0)));
+				vect(v)
+					acc[v] = 0;
+				for (kv = bk[0]/nv; kv < (bk[0]+bstep[0])/nv; ++kv)
+					acc.v = acc.v - indvj(LU, i, kv).v * indvi(X, kv, j).v;
+				vect(v)
+					ind(X,i,j) += acc[v];
+			}
+		} // Last block in K, diagonal, divide by pivot
+		for (bk[0] = (bi[0]); bk[0] < (bi[0]+bstep[0]); bk[0] += bstep[0]) {
+			for (i = isrt; i < imax; ++i)
+			for (j = bj[0]; j < jmax; ++j) {
+				for (k = bk[0]; k < i; ++k)
+					ind(X, i, j) = ind(X, i, j) - ind(LU, i, k) * ind(X, k, j);
+				if(diagonal == Diagonal::Value)
+					ind(X, i, j) /= ind(LU, i, i);
+			}
+		}
+	}
+#undef vect
+#undef ind
+#undef indv
+}
+
+
 #define ind(M,i,j) (direction == Direction::Forwards ? \
 	M.at(i, j) : \
 	M.at((size-1)-i, (size-1)-j))
 template<Direction direction, Diagonal diagonal, Permute permute,
 	class LUMatrix, class XMatrix, class BMatrix>
-inline void substMLU(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P){
+inline void substMLU(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
 	size_t size = X.size();
 	size_t i, j, k;	
 	for(j = 0; j < size; ++j)
@@ -337,7 +416,7 @@ inline void substMLU(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P){
 	M.at((size-1)-i, (size-1)-j))
 template<Direction direction, Diagonal diagonal, Permute permute,
 	class LUMatrix, class XMatrix, class BMatrix>
-inline void substMLU10(LUMatrix& LU, XMatrix& X, BMatrix& B, vector<long>& P){
+inline void substMLU10(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
 	size_t size = X.size();
 	size_t i, j, k;
 	size_t bi[5], bj[5], bk[5];

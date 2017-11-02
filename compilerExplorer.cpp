@@ -7,11 +7,16 @@
 #define CACHE_LINE_SIZE (64) // likwid-topology: Cache line size:	64
 #define L1_LINE_DN (CACHE_LINE_SIZE/sizeof(double)) // how many doubles in a line
 // likwid-topology: Size
-#define CACHE_L1_SIZE (32*1024/2)
+#define L1KiB 32
+#define CACHE_L1_SIZE (L1KiB*1024/2)
 #define CACHE_L2_SIZE (256*1024/2)
 #define CACHE_L3_SIZE (3*1024*1024/2)
 // divided by 2 because we wont be able to fill L1 completely without throwing
 // useful values out
+
+// aproximate minimum number of lines L1 cache has
+// (for this capacity)(min lines mean max associativ)
+#define L1LINE_N ((L1KiB*1024/8)/64)
 
 // 2048
 #define L1_DN (CACHE_L1_SIZE/sizeof(double)) // how many doubles in L1 cache
@@ -41,6 +46,7 @@
 
 #endif
 
+
 #ifndef VARRAY_HPP
 #define VARRAY_HPP
 
@@ -59,6 +65,10 @@ namespace gm
 {
 using namespace std;
 
+template <typename num>
+bool isPowerOfTwo (num n) {
+	return (n > 0) && ((n == 0) || ((n & (n - 1)) == 0));
+}
 
 template<typename elem>
 inline size_t regN() { return (REG_SZ/sizeof(elem)); }
@@ -71,12 +81,12 @@ template<typename elem>
 struct vec
 {
 	elem __attribute__ ((vector_size (REG_SZ)))  v; // vectorization of elems
-	
-	const elem& operator[] (size_t i) const {
+
+	inline const elem& operator[] (size_t i) const {
 		assert(i < regN<elem>() && "Vectorized elem out of register access");
 		return v[i];
 	}
-	elem& operator[] (size_t i) {
+	inline elem& operator[] (size_t i) {
 		assert(i < regN<elem>() && "Vectorized elem out of register access");
 		return v[i];
 	}
@@ -115,42 +125,42 @@ public:
 	vecp<elem> arr;
 	size_t mSize; //  n of types
 	size_t mSizeVec; // n of vec<elem>s
-	
+
 	size_t mSizeMem; // n of elem in memory
 	size_t mSizeVecMem; // n of vec<elem>s in memory
-	
+
 	size_t mEndVec; // elem index where vectorization ends
 	void* mpMem; // pointer to be freed
-	
+
 	/** @brief elem number in a register */
 	inline size_t regEN(){ return regN<elem>(); }
-	
+
 	void memAlloc(size_t mSizeMem){
 		if(mpMem != NULL) { free(mpMem); }
 		mpMem = al_allloc(&arr.p, mSizeMem, CACHE_LINE_SIZE);
 	}
-	
+
 	void alloc(size_t size){
 		mSize = size;
 		mSizeVec = mSize/regEN();
-		
+
 		mSizeMem = mSize;
 		mSizeMem = mSize;
 		// add to make it multiple of L1_LINE_DN
-		mSizeMem += mod(-mSize,(long)L1_LINE_DN);
+		mSizeMem += mod(-mSize,(ptrdiff_t)L1_LINE_DN);
 		//mSizeMem += mod(-mSize, (ptrdiff_t)L1_LINE_DN); TODO test
-		
-		if(((mSizeMem/L1_LINE_DN) % 2) == 0){
+
+		//if(((mSizeMem/L1_LINE_DN) % 2) == 0)
+		if(mSizeMem > L1LINE_N-1 && isPowerOfTwo(mSizeMem))
 			mSizeMem = mSizeMem + L1_LINE_DN; // make sure mSizeMem is odd multiple
-		}
-		
+
 		mSizeVecMem = mSizeMem/regEN();
-		
+
 		mEndVec = Lower_Multiple(mSize, regEN());
-		
+
 		memAlloc(mSizeMem);
 	}
-	
+
 	varray() {
 		mpMem = NULL;
 	}
@@ -161,12 +171,12 @@ public:
 	~varray(){
 		if(mpMem != NULL) { free(mpMem); }
 	}
-	
+
 	/** @brief size of the varray */
 	size_t size(){ return mSize; }
 	/** @brief size of the vectorized varray */
 	size_t sizeVec(){ return mSizeVec; }
-	
+
 	/** @brief vectorization end index */
 	size_t vecEnd(){ return mEndVec; }
 	/**
@@ -182,7 +192,7 @@ public:
 		assert(i < mSizeVec && "varray vec access out of bounds");
 		return arr.v[i];
 	}
-	
+
 	inline elem& at(size_t i){
 		assert(i < mSize && "varray access out of bounds");
 		return arr.p[i];
@@ -191,13 +201,13 @@ public:
 		assert(i < mSize && "varray access out of bounds");
 		return arr.p[i];
 	}
-	
+
 	elem* begin() { return &arr.p[0]; }
 	elem* end() { return &arr.p[size()]; }
-	
+
 	vec<elem>* beginVec() { return &arr.v[0]; }
 	vec<elem>* endVec() { return &arr.v[sizeVec()]; }
-	
+
 	const elem& operator[] (size_t i) const { return at(i); }
 	elem& operator[] (size_t i) {return at(i); }
 };
@@ -223,8 +233,10 @@ void printv(Cont<Elem>& C){
 }
 #endif
 
+
 #ifndef MATRIX_HPP
 #define MATRIX_HPP
+
 
 namespace gm
 {
@@ -232,9 +244,9 @@ using namespace std;
 
 #define PAD(X) (div_down((X),L1_LINE_DN)*(L1_LINE_DN*(L1_LINE_DN-1))/2)
 // Optm: test switching, the below doesnt work probably
-//#define PAD(X) ((long)floor((X)/(double)L1_LINE_DN)*(L1_LINE_DN*(L1_LINE_DN-1))/2)
+//#define PAD(X) ((size_t)floor((X)/(double)L1_LINE_DN)*(L1_LINE_DN*(L1_LINE_DN-1))/2)
 
-#define PADDING false
+#define PADDING true
 
 // Non member access functions
 
@@ -260,6 +272,7 @@ public:
 
 	size_t mSizeMem;
 	size_t mSizeVecMem;
+	size_t mPad;
 
 	size_t mEndVec;
 
@@ -276,10 +289,11 @@ public:
 		if(PADDING){
 			mSizeMem += mod(-mSize,(ptrdiff_t)L1_LINE_DN);
 			// make sure m_size is odd multiple of cache line
-			if(((mSizeMem/L1_LINE_DN) % 2) == 0){
+			//if(((mSizeMem/L1_LINE_DN) % 2) == 0)
+			if(mSizeMem > L1LINE_N-1 && isPowerOfTwo(mSizeMem))
 				mSizeMem = mSizeMem + L1_LINE_DN;
-			}
 		}
+		mPad = mSizeMem - mSize;
 		mSizeVecMem = mSizeMem/regEN();
 		mEndVec = Lower_Multiple(mSize, regEN());
 		memAlloc(mSizeMem);
@@ -290,7 +304,7 @@ public:
 	Matrix(size_t size){
 		alloc(size);
 	}
-	
+
 	Matrix(){}
 
 	/** @brief size of the varray */
@@ -301,23 +315,27 @@ public:
 	size_t sizeMem() const { return mSizeMem; }
 	/** @brief vectorization end index */
 	size_t vecEnd(){ return mEndVec; }
+	/** @brief vectorization end index */
+	size_t pad(){ return mPad; }
 
 	size_t indVecMem(size_t i, size_t j) const {
+		assert(i < mSizeMem && j < mSizeVecMem);
 		return i*mSizeVecMem + j;
 	}
-	inline vec<Elem>& atv(size_t i, size_t j) {
+	vec<Elem>& atv(size_t i, size_t j) {
 		return varr.atv(indVecMem(i,j));
 	}
-	inline const vec<Elem>& atv(size_t i, size_t j) const {
+	const vec<Elem>& atv(size_t i, size_t j) const {
 		return varr.atv(indVecMem(i,j));
 	}
-	inline size_t indMem(size_t i, size_t j) const {
+	size_t indMem(size_t i, size_t j) const {
+		assert(i < mSizeMem && j < mSizeMem);
 		return i*mSizeMem + j;
 	}
-	inline Elem& at(size_t i, size_t j){
+	Elem& at(size_t i, size_t j){
 		return varr.at(indMem(i,j));
 	}
-	inline const Elem& at(size_t i, size_t j) const {
+	const Elem& at(size_t i, size_t j) const {
 		return varr.at(indMem(i,j));
 	}
 };
@@ -330,24 +348,29 @@ class MatrixColMajor : public Matrix<Elem>
 {
 public:
 	using Matrix<Elem>::Matrix;
+	using Matrix<Elem>::varr;
+	using Matrix<Elem>::mSizeMem;
+	using Matrix<Elem>::mSizeVecMem;
 
 	size_t indVecMem(size_t i, size_t j) const {
-		return j*this->mSizeVecMem + i;
+		assert(i < mSizeVecMem && j < mSizeMem);
+		return j*mSizeVecMem + i;
 	}
 	vec<Elem>& atv(size_t i, size_t j) {
-		return this->varr.atv(indVecMem(i,j));
+		return varr.atv(indVecMem(i,j));
 	}
 	const vec<Elem>& atv(size_t i, size_t j) const {
-		return this->varr.atv(indVecMem(i,j));
+		return varr.atv(indVecMem(i,j));
 	}
 	size_t indMem(size_t i, size_t j) const {
-		return j*this->mSizeMem + i;
+		assert(i < mSizeMem && j < mSizeMem);
+		return j*mSizeMem + i;
 	}
 	Elem& at(size_t i, size_t j){
-		return this->varr.at(indMem(i,j));
+		return varr.at(indMem(i,j));
 	}
 	const Elem& at(size_t i, size_t j) const {
-		return this->varr.at(indMem(i,j));
+		return varr.at(indMem(i,j));
 	}
 	/**/
 };
@@ -444,6 +467,7 @@ void printm(Mat& M){
 }
 #endif
 
+
 using namespace std;
 using namespace gm;
 
@@ -496,22 +520,22 @@ inline void substMLU0(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
 				ind(X, i, j) = ind(B, P.at(i), j);
 			else
 				ind(X, i, j) = ind(B, i, j);
-	
+
 	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
 	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0]) {
 		imax = min(bi[0]+bstep[0] , size);
 		jmax = min(bj[0]+bstep[0] , size);
 		for (bk[0] = 0; bk[0] < (bi[0]); bk[0] += bstep[0]) {
-			for (i = bi[0]; i < imax; i += 1)
-			for (j = bj[0]; j < jmax; j += 1) {
-				for (k = bk[0]; k < (bk[0]+bstep[0]); k += 1)
+			for (i = bi[0]; i < imax; ++i)
+			for (j = bj[0]; j < jmax; ++j) {
+				for (k = bk[0]; k < (bk[0]+bstep[0]); ++k)
 					ind(X, i, j) = ind(X, i, j) - ind(LU, i, k) * ind(X, k, j);
 			}
 		} // Last block in K, diagonal, divide by pivot
 		for (bk[0] = (bi[0]); bk[0] < (bi[0]+bstep[0]); bk[0] += bstep[0]) {
-			for (i = bi[0]; i < imax; i += 1)
-			for (j = bj[0]; j < jmax; j += 1) {
-				for (k = bk[0]; k < i; k += 1)
+			for (i = bi[0]; i < imax; ++i)
+			for (j = bj[0]; j < jmax; ++j) {
+				for (k = bk[0]; k < i; ++k)
 					ind(X, i, j) = ind(X, i, j) - ind(LU, i, k) * ind(X, k, j);
 				if(diagonal == Diagonal::Value)
 					ind(X, i, j) /= ind(LU, i, i);
@@ -521,6 +545,85 @@ inline void substMLU0(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
 }
 #undef ind
 
+
+
+#define ind(M,i,j) (direction == Direction::Forwards ? \
+	M.at(i, j) : \
+	M.at((size-1)-i, (size-1)-j))
+#define indvi(M,i,j) (direction == Direction::Forwards ? \
+	M.atv(i, j) : \
+	M.atv((size-1)/nv-i, (size-1)-j))
+#define indvj(M,i,j) (direction == Direction::Forwards ? \
+	M.atv(i, j) : \
+	M.atv((size-1)-i, (size-1)/nv-j))
+template<Direction direction, Diagonal diagonal, Permute permute,
+	class LUMatrix, class XMatrix, class BMatrix>
+inline void substMLU0A(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
+	size_t size = X.sizeMem();
+	size_t i, j, k, kv;
+	size_t bi[5], bj[5], bk[5];
+	//size_t bimax[5], bjmax[5], bkmax[5];
+	size_t imax, jmax, kmax;
+	size_t bstep[5];
+	size_t isrt;
+	//const size_t unr = 2;
+	//double acc[unr*unr];
+	/**/
+	bstep[0] = 8;
+	bstep[1] = bstep[0]*3;
+	bstep[2] = bstep[1]*3;
+	bstep[3] = bstep[2]*4;
+	/* export GCC_ARGS=" -D L1M=${3} -D L2M=${3} L3M=${4} *
+	bstep[1] = bstep[0]*L1M;
+	bstep[2] = bstep[1]*L2M;
+	bstep[2] = bstep[1]*L3M;/**/
+	for(j = 0; j < size; ++j)
+		for(i = 0; i < size; ++i)
+			if(permute == Permute::True)
+				ind(X, i, j) = ind(B, P.at(i), j);
+			else
+				ind(X, i, j) = ind(B, i, j);
+	size_t nv = X.regEN();
+	vec<double> acc;
+
+#define vect(v) for(size_t v = 0; v < nv; ++v)
+	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
+	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0]) {
+		imax = min(bi[0]+bstep[0] , size);
+		jmax = min(bj[0]+bstep[0] , size);
+		if(direction == Direction::Forwards)
+			isrt = bi[0];
+		else isrt = max(bi[0], X.pad());
+		for (bk[0] = 0; bk[0] < (bi[0]); bk[0] += bstep[0]) {
+			for (i = bi[0]; i < imax; ++i)
+			for (j = bj[0]; j < jmax; ++j) {
+				assert( ((direction == Direction::Backwards) && (((size-1-bk[0])-(nv-1)) % 4 == 0))
+				|| ((direction == Direction::Forwards) && (bk[0] % 4 == 0)));
+				vect(v)
+					acc[v] = 0;
+				for (kv = bk[0]/nv; kv < (bk[0]+bstep[0])/nv; ++kv)
+					acc.v = acc.v - indvj(LU, i, kv).v * indvi(X, kv, j).v;
+				vect(v)
+					ind(X,i,j) += acc[v];
+			}
+		} // Last block in K, diagonal, divide by pivot
+		for (bk[0] = (bi[0]); bk[0] < (bi[0]+bstep[0]); bk[0] += bstep[0]) {
+			for (i = isrt; i < imax; ++i)
+			for (j = bj[0]; j < jmax; ++j) {
+				for (k = bk[0]; k < i; ++k)
+					ind(X, i, j) = ind(X, i, j) - ind(LU, i, k) * ind(X, k, j);
+				if(diagonal == Diagonal::Value)
+					ind(X, i, j) /= ind(LU, i, i);
+			}
+		}
+	}
+#undef vect
+#undef ind
+#undef indv
+}
+
+
+
 #define ind(M,i,j) (direction == Direction::Forwards ? \
 	M.at(i, j) : \
 	M.at((size-1)-i, (size-1)-j))
@@ -528,14 +631,14 @@ template<Direction direction, Diagonal diagonal, Permute permute,
 	class LUMatrix, class XMatrix, class BMatrix>
 inline void substMLU(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
 	size_t size = X.size();
-	size_t i, j, k;	
+	size_t i, j, k;
 	for(j = 0; j < size; ++j)
 		for(i = 0; i < size; ++i)
 			if(permute == Permute::True)
 				ind(X, i, j) = ind(B, P.at(i), j);
 			else
 				ind(X, i, j) = ind(B, i, j);
-	
+
 	for(i = 0; i < size; i += 1){
 		for(j = 0; j < size; j += 1){
 			for(k = 0; k != i; k += 1){
@@ -560,20 +663,26 @@ template<Direction direction, Diagonal diagonal, Permute permute,
 	class LUMatrix, class XMatrix, class BMatrix>
 inline void substMLUA(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
 	size_t size = X.size();
-	size_t i, j, k, kv;	
+	size_t i, j, k, kv;
+	vec<double> acc;
 	for(j = 0; j < size; ++j)
 		for(i = 0; i < size; ++i)
 			if(permute == Permute::True)
 				ind(X, i, j) = ind(B, P.at(i), j);
 			else
 				ind(X, i, j) = ind(B, i, j);
-	
-	for(i = 0; i < size; i += 1){
-		for(j = 0; j < size; j += 1){
-			for(kv = 0; kv < i/4; kv += 1){
-				ind(X,i,j) = ind(X,i,j) - indv(LU,i,kv).v * indv(X,kv,j).v;
+
+#define vect(v) for(size_t v = 0; v < 4; v++)
+	for(i = 0; i < size; ++i){
+		for(j = 0; j < size; ++j){
+			vect(v)
+				acc[v] = 0;
+			for(kv = 0; kv < i/LU.regEN(); ++kv){
+				acc.v = acc.v - indv(LU,i,kv).v * indv(X,kv,j).v;
 			}
-			for(k = kv*4; k < i; k += 1){
+			vect(v)
+				ind(X,i,j) += acc[v];
+			for(k = kv*4; k < i; ++k){
 				ind(X,i,j) = ind(X,i,j) - ind(LU,i,k) * ind(X,k,j);
 			}
 			if(diagonal == Diagonal::Value)
@@ -581,6 +690,7 @@ inline void substMLUA(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
 		}
 	}
 }
+#undef vect
 #undef ind
 
 
@@ -591,9 +701,9 @@ inline void solveMLU0(LUMatrix& LU, IAMatrix& X, IMatrix& B, varray<size_t>& P){
 	MatrixColMajor<double> Z(X.size());
 	if(Z.size() != X.size()){ Z.alloc(X.size()); }
 	// find Z; LZ=B
-	substMLUA<Direction::Forwards, Diagonal::Unit, Permute::True>(LU, Z, B, P);
+	substMLU0A<Direction::Forwards, Diagonal::Unit, Permute::True>(LU, Z, B, P);
 	// find X; Ux=Z
-	substMLUA<Direction::Backwards, Diagonal::Value, Permute::False>(LU, X, Z, P);
+	substMLU0A<Direction::Backwards, Diagonal::Value, Permute::False>(LU, X, Z, P);
 }
 
 #include <cmath>
@@ -609,7 +719,7 @@ inline double residue0(AMatrix& A, IAMatrix& IA, IMatrix& I){
 	bstep[1] = bstep[0]*4;
 	bstep[2] = bstep[1]*4;
 	bstep[3] = bstep[2]*5;
-	
+
 	for(size_t j = 0; j < size; ++j){
 		for(size_t i = 0; i < j; ++i)
 			I.at(i,j) = 0;
@@ -617,7 +727,7 @@ inline double residue0(AMatrix& A, IAMatrix& IA, IMatrix& I){
 		for(size_t i = j+1; i < size; ++i)
 			I.at(i,j) = 0;
 	}
-	
+
 	for (bi[3] = 0; bi[3] < size; bi[3] += bstep[3])
 	for (bj[3] = 0; bj[3] < size; bj[3] += bstep[3])
 	for (bk[3] = 0; bk[3] < size; bk[3] += bstep[3]){
@@ -661,7 +771,7 @@ inline double residue0(AMatrix& A, IAMatrix& IA, IMatrix& I){
 			errNormV[I.regEN()-1] += I.at(i,j)*I.at(i,j);
 	}
 	for(size_t v=0; v < I.regEN(); ++v) errNorm += errNormV[v];
-	
+
 	return sqrt(errNorm);
 }
 
@@ -682,7 +792,7 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, varray<size_t>& P,
 	size_t size = A.size();
 	// Optm: iterating line by line
 	MatrixColMajor<double> W(A.size()), R(A.size());
-	
+
 	for(size_t j = 0; j < size; ++j){
 		for(size_t i = 0; i < j; ++i)
 			R.at(i,j) = 0;
@@ -692,17 +802,17 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, varray<size_t>& P,
 	}
 
 	//LIKWID_MARKER_START("INV");
-	
+
 	//solveMLU(LU, IA, R, P);
 	solveMLU0(LU, IA, R, P);
-	
+
 	//LIKWID_MARKER_STOP("INV");
 	//LIKWID_MARKER_START("RES");
-	
+
 	c_residue = residue0(A, IA, R);
-	
+
 	//LIKWID_MARKER_STOP("RES");
-	
+
 	while(i < iter_n){
 		// (abs(l_residue - c_residue)/c_residue > EPSILON) && (l_residue > c_residue)
 		// relative approximate error
@@ -711,21 +821,21 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, varray<size_t>& P,
 
 		//solveMLU(LU, W, R, P);
 		solveMLU0(LU, W, R, P);
-		
+
 		//LIKWID_MARKER_STOP("INV");
 		// W: residues of each variable of IA
 		// adjust IA with found errors
 		//LIKWID_MARKER_START("SUM");
-		
+
 		for(size_t j=0; j < IA.size(); ++j)
 			for(size_t i=0; i < IA.size(); ++i)
 				IA.at(i,j) += W.at(i,j);
 		//add(IA, W);
-		
-		
-		
+
+
+
 		c_residue = residue0(A, IA, R);
-		
+
 		//LIKWID_MARKER_STOP("RES");
 	}
 }
@@ -734,10 +844,10 @@ void testVec(size_t size){
 	Matrix<double> LU(size);
 	MatrixColMajor<double> B(LU.size()), X(LU.size());
 	size_t i,j,kv;
-	
+
     size_t step = 8;
 	vec<double> acc[step];
-	
+
 #define vect(v) for(size_t v = 0; v < step; v++)
     vect(s)
         acc[s][0] += 4;
@@ -749,8 +859,9 @@ void testVec(size_t size){
         for(size_t o = 0; o < 4; o++)
             acc[o][0] += o;
     }
-	
+
 	cout << acc[0][0] << endl;
+#undef vect
 }
 
 int main(int argc, char **argv) {
@@ -760,9 +871,9 @@ int main(int argc, char **argv) {
 	Matrix<double> A(size);
 	MatrixColMajor<double> IA(LU.size());
 	varray<size_t> P(LU.size());
-	
+
 	inverse_refining(A, LU, IA, P, iter_n);
-	
+
 	//testVec(1024);
     return 0;
 }

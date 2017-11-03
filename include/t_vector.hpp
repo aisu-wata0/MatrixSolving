@@ -3,6 +3,9 @@ namespace gm
 {
 using namespace std;
 
+#define unroll(v,n) for(size_t v = 0; v < n; v++)
+#define unroll2(vi,vj,n) unroll(vi,n)unroll(vj,n)
+#define vec(v) for(size_t v = 0; v < regDN; v++)
 
 void t_vector(size_t size) {
 	Matrix<double> LU(size);

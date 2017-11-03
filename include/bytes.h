@@ -39,6 +39,16 @@
 #define MAX_B3L3 ((long)sqrt(L3_DN/3))
 #define B3L3 (Lower_Multiple(MAX_B3L3, B3L2))
 
+// to fit 2 matrices
+#define MAX_B2L1 ((long)sqrt(L1_DN/2))
+#define B2L1 (Lower_Multiple(MAX_B2L1, L1_LINE_DN))
+
+#define MAX_B2L2 ((long)sqrt(L2_DN/2))
+#define B2L2 (Lower_Multiple(MAX_B2L2, B2L1))
+
+#define MAX_B2L3 ((long)sqrt(L3_DN/2))
+#define B2L3 (Lower_Multiple(MAX_B2L3, B2L2))
+
 #define REG_SZ (32) // how many bytes in a register
 
 #define regDN (REG_SZ/sizeof(double)) // how many doubles is a register

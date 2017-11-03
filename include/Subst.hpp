@@ -265,17 +265,9 @@ inline void substMLU0(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
 	//size_t bimax[5], bjmax[5], bkmax[5];
 	size_t imax, jmax, kmax;
 	size_t bstep[5];
-	//const size_t unr = 2;
-	//double acc[unr*unr];
-	/**/
-	bstep[0] = 8;
+	bstep[0] = 24;
 	bstep[1] = bstep[0]*3;
-	bstep[2] = bstep[1]*3;
-	bstep[3] = bstep[2]*4;
-	/* export GCC_ARGS=" -D L1M=${3} -D L2M=${3} L3M=${4} *
-	bstep[1] = bstep[0]*L1M;
-	bstep[2] = bstep[1]*L2M;
-	bstep[2] = bstep[1]*L3M;/**/
+	
 	for(j = 0; j < size; ++j)
 		for(i = 0; i < size; ++i)
 			if(permute == Permute::True)
@@ -330,14 +322,12 @@ inline void substMLU0A(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
 	//const size_t unr = 2;
 	//double acc[unr*unr];
 	/**/
-	bstep[0] = 8;
+	bstep[0] = B2L1;
 	bstep[1] = bstep[0]*3;
-	bstep[2] = bstep[1]*3;
-	bstep[3] = bstep[2]*4;
-	/* export GCC_ARGS=" -D L1M=${3} -D L2M=${3} L3M=${4} *
-	bstep[1] = bstep[0]*L1M;
-	bstep[2] = bstep[1]*L2M;
-	bstep[2] = bstep[1]*L3M;/**/
+	/* export GCC_ARGS=" -D L0=${32} -D L1M=${3}"*
+	bstep[0] = L0;
+	bstep[1] = bstep[0]*L1M;/**/
+	
 	for(j = 0; j < size; ++j)
 		for(i = 0; i < size; ++i)
 			if(permute == Permute::True)

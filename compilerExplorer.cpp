@@ -39,6 +39,16 @@
 #define MAX_B3L3 ((long)sqrt(L3_DN/3))
 #define B3L3 (Lower_Multiple(MAX_B3L3, B3L2))
 
+// to fit 2 matrices
+#define MAX_B2L1 ((long)sqrt(L1_DN/2))
+#define B2L1 (Lower_Multiple(MAX_B2L1, L1_LINE_DN))
+
+#define MAX_B2L2 ((long)sqrt(L2_DN/2))
+#define B2L2 (Lower_Multiple(MAX_B2L2, B2L1))
+
+#define MAX_B2L3 ((long)sqrt(L3_DN/2))
+#define B2L3 (Lower_Multiple(MAX_B2L3, B2L2))
+
 #define REG_SZ (32) // how many bytes in a register
 
 #define regDN (REG_SZ/sizeof(double)) // how many doubles is a register
@@ -546,10 +556,10 @@ inline void substMLU0(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
 #undef ind
 
 
-
 #define ind(M,i,j) (direction == Direction::Forwards ? \
 	M.at(i, j) : \
 	M.at((size-1)-i, (size-1)-j))
+
 #define indvi(M,i,j) (direction == Direction::Forwards ? \
 	M.atv(i, j) : \
 	M.atv((size-1)/nv-i, (size-1)-j))
@@ -621,7 +631,6 @@ inline void substMLU0A(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
 #undef ind
 #undef indv
 }
-
 
 
 #define ind(M,i,j) (direction == Direction::Forwards ? \
@@ -709,57 +718,38 @@ inline void solveMLU0(LUMatrix& LU, IAMatrix& X, IMatrix& B, varray<size_t>& P){
 #include <cmath>
 #include <ctgmath>
 
+
 template<class AMatrix, class IAMatrix, class IMatrix>
 inline double residue0(AMatrix& A, IAMatrix& IA, IMatrix& I){
 	size_t size = A.size();
 	size_t bi[5], bj[5], bk[5];
 	size_t bimax[5], bjmax[5], bkmax[5];
 	size_t bstep[5];
-	bstep[0] = 8;
+	bstep[0] = 24;
 	bstep[1] = bstep[0]*4;
 	bstep[2] = bstep[1]*4;
 	bstep[3] = bstep[2]*5;
 
-	for(size_t j = 0; j < size; ++j){
-		for(size_t i = 0; i < j; ++i)
+	size_t i, j, k, kv;
+
+	for(j = 0; j < size; ++j){
+		for(i = 0; i < j; ++i)
 			I.at(i,j) = 0;
 		I.at(j,j) = 1;
-		for(size_t i = j+1; i < size; ++i)
+		for(i = j+1; i < size; ++i)
 			I.at(i,j) = 0;
 	}
-
-	for (bi[3] = 0; bi[3] < size; bi[3] += bstep[3])
-	for (bj[3] = 0; bj[3] < size; bj[3] += bstep[3])
-	for (bk[3] = 0; bk[3] < size; bk[3] += bstep[3]){
-		bimax[3] = min(bi[3]+bstep[3], size);
-		bjmax[3] = min(bj[3]+bstep[3], size);
-		bkmax[3] = min(bk[3]+bstep[3], size);
-		for (bi[2] = bi[3]; bi[2] < bimax[3]; bi[2] += bstep[2])
-		for (bj[2] = bj[3]; bj[2] < bjmax[3]; bj[2] += bstep[2])
-		for (bk[2] = bk[3]; bk[2] < bkmax[3]; bk[2] += bstep[2]){
-			bimax[2] = min(bi[2]+bstep[2], size);
-			bjmax[2] = min(bj[2]+bstep[2], size);
-			bkmax[2] = min(bk[2]+bstep[2], size);
-			for (bi[1] = bi[2]; bi[1] < bimax[2]; bi[1] += bstep[1])
-			for (bj[1] = bj[2]; bj[1] < bjmax[2]; bj[1] += bstep[1])
-			for (bk[1] = bk[2]; bk[1] < bkmax[2]; bk[1] += bstep[1]){
-				bimax[1] = min(bi[1]+bstep[1], size);
-				bjmax[1] = min(bj[1]+bstep[1], size);
-				bkmax[1] = min(bk[1]+bstep[1], size);
-				for (bi[0] = bi[1]; bi[0] < bimax[1]; bi[0] += bstep[0])
-				for (bj[0] = bj[1]; bj[0] < bjmax[1]; bj[0] += bstep[0])
-				for (bk[0] = bk[1]; bk[0] < bkmax[1]; bk[0] += bstep[0]){
-					size_t imax = min(bi[0]+bstep[0], size);
-					size_t jmax = min(bj[0]+bstep[0], size);
-					size_t kmax = min(bk[0]+bstep[0], size);
-					for (size_t i = bi[0]; i < imax; ++i)
-					for (size_t j = bj[0]; j < jmax; ++j) {
-						for (size_t k = bk[0]; k < kmax; ++k) {
-							I.at(i, j) = I.at(i, j) - A.at(i, k) * IA.at(k, j);
-						}
-					}
-				}
-			}
+	// multiply
+	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
+	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0])
+	for (bk[0] = 0; bk[0] < size; bk[0] += bstep[0]){
+		size_t imax = min(bi[0]+bstep[0], size);
+		size_t jmax = min(bj[0]+bstep[0], size);
+		size_t kmax = min(bk[0]+bstep[0], size);
+		for (i = bi[0]; i < imax; ++i)
+		for (j = bj[0]; j < jmax; ++j)
+		for (k = bk[0]; k < kmax; ++k){
+			I.at(i, j) = I.at(i, j) - A.at(i, k) * IA.at(k, j);
 		}
 	}
 	double errNorm = 0;
@@ -774,6 +764,197 @@ inline double residue0(AMatrix& A, IAMatrix& IA, IMatrix& I){
 
 	return sqrt(errNorm);
 }
+
+
+template<class AMatrix, class IAMatrix, class IMatrix>
+inline double residue0A(AMatrix& A, IAMatrix& IA, IMatrix& I){
+	size_t size = A.size();
+	size_t bi[5], bj[5], bk[5];
+	size_t bimax[5], bjmax[5], bkmax[5];
+	size_t bstep[5];
+	//const size_t unr = 2;
+	//double acc[unr*unr];
+	/**/
+	bstep[0] = B2L1;
+	bstep[1] = bstep[0]*3;
+	/* export GCC_ARGS=" -D L0=${24} -D L1M=${3}"*
+	bstep[0] = L0;
+	bstep[1] = bstep[0]*L1M;/**/
+
+	size_t i, j, k, kv;
+
+	for(j = 0; j < size; ++j){
+		for(i = 0; i < j; ++i)
+			I.at(i,j) = 0;
+		I.at(j,j) = 1;
+		for(i = j+1; i < size; ++i)
+			I.at(i,j) = 0;
+	}
+	size_t nv = I.regEN();
+	#define vect(v) for(size_t v=0; v < nv; ++v)
+	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
+	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0])
+	for (bk[0] = 0; bk[0] < size; bk[0] += bstep[0]){
+		size_t imax = min(bi[0]+bstep[0], size);
+		size_t jmax = min(bj[0]+bstep[0], size);
+		size_t kmax = min(bk[0]+bstep[0], size);
+		for (i = bi[0]; i < imax; ++i)
+		for (j = bj[0]; j < jmax; ++j) {
+			vec<double> acc;
+			vect(v) acc[v] = 0;
+			for (kv = bk[0]/nv; kv < kmax/nv; ++kv)
+				acc.v = acc.v - A.atv(i, kv).v * IA.atv(kv, j).v;
+			for(k = kv*nv; k < kmax; ++k)
+				I.at(i, j) = I.at(i, j) - A.at(i, k) * IA.at(k, j);
+			vect(v) I.at(i, j) += acc[v];
+		}
+	}
+	#undef vect
+
+	double errNorm = 0;
+	vec<double> errNormV{0};
+	for(size_t j = 0; j < size; ++j){
+		for(size_t iv = 0; iv < I.sizeVec(); ++iv)
+			errNormV.v += I.atv(iv,j).v*I.atv(iv,j).v;
+		for(size_t i = I.vecEnd(); i < I.size(); ++i)
+			errNormV[I.regEN()-1] += I.at(i,j)*I.at(i,j);
+	}
+	for(size_t v=0; v < I.regEN(); ++v) errNorm += errNormV[v];
+
+	return sqrt(errNorm);
+}
+
+
+
+template<class AMatrix, class IAMatrix, class IMatrix>
+inline double residue0AU(AMatrix& A, IAMatrix& IA, IMatrix& I){
+	size_t size = A.size();
+	size_t bi[5], bj[5], bk[5];
+	size_t bimax[5], bjmax[5], bkmax[5];
+	size_t bstep[5];
+	const size_t unr = 8;
+	vec<double> acc;
+	/**/
+	bstep[0] = B2L1;
+	bstep[1] = bstep[0]*3;
+	/* export GCC_ARGS=" -D L0=${24} -D L1M=${3}"*
+	bstep[0] = L0;
+	bstep[1] = bstep[0]*L1M;/**/
+
+	size_t i, j, k, kv, rem;
+
+	for(j = 0; j < size; ++j){
+		for(i = 0; i < j; ++i)
+			I.at(i,j) = 0;
+		I.at(j,j) = 1;
+		for(i = j+1; i < size; ++i)
+			I.at(i,j) = 0;
+	}
+	size_t nv = I.regEN();
+#define vect(v) for(size_t v=0; v < nv; ++v)
+#define unr(v) for(size_t v=0; v < unr; ++v)
+	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
+	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0])
+	for (bk[0] = 0; bk[0] < size; bk[0] += bstep[0]){
+		size_t imax = min(bi[0]+bstep[0], size);
+		size_t jmax = min(bj[0]+bstep[0], size);
+		size_t kmax = min(bk[0]+bstep[0], size);
+		for (i = bi[0]; i < imax; ++i)
+		for (j = bj[0]; j < jmax; ++j) {
+			vect(u) vect(v) acc[v] = 0;
+			for (kv = bk[0]/nv; kv < kmax/nv -(unr-1); kv += unr)
+				unr(u) acc.v += A.atv(i, kv+u).v * IA.atv(kv+u, j).v;
+//			for (rem = 0; rem < kmax/nv % unr; ++rem) // unroll remainder
+//				acc.v += A.atv(i, kv+rem).v * IA.atv(kv+rem, j).v;
+			for(k = kv*nv; k < kmax; ++k) // sse remainder
+				I.at(i, j) = I.at(i, j) - A.at(i, k) * IA.at(k, j);
+			vect(v) I.at(i, j) -= acc[v]; // sse result sum
+		}
+	}
+#undef vect
+#undef unr
+
+	double errNorm = 0;
+	vec<double> errNormV{0};
+	for(size_t j = 0; j < size; ++j){
+		for(size_t iv = 0; iv < I.sizeVec(); ++iv)
+			errNormV.v += I.atv(iv,j).v*I.atv(iv,j).v;
+		for(size_t i = I.vecEnd(); i < I.size(); ++i)
+			errNormV[I.regEN()-1] += I.at(i,j)*I.at(i,j);
+	}
+	for(size_t v=0; v < I.regEN(); ++v) errNorm += errNormV[v];
+
+	return sqrt(errNorm);
+}
+
+
+
+template<class AMatrix, class IAMatrix, class IMatrix>
+inline double residue0AUU(AMatrix& A, IAMatrix& IA, IMatrix& I){
+	size_t size = A.size();
+	size_t bi[5], bj[5], bk[5];
+	size_t bimax[5], bjmax[5], bkmax[5];
+	size_t bstep[5];
+	const size_t unr = 2;
+	vec<double> acc[unr*unr];
+	/**/
+	bstep[0] = B2L1;
+	bstep[1] = bstep[0]*3;
+	/* export GCC_ARGS=" -D L0=${24} -D L1M=${3}"*
+	bstep[0] = L0;
+	bstep[1] = bstep[0]*L1M;/**/
+
+	size_t i, j, k, kv, rem;
+
+	for(j = 0; j < size; ++j){
+		for(i = 0; i < j; ++i)
+			I.at(i,j) = 0;
+		I.at(j,j) = 1;
+		for(i = j+1; i < size; ++i)
+			I.at(i,j) = 0;
+	}
+	size_t nv = I.regEN();
+#define vect(v) for(size_t v=0; v < nv; ++v)
+#define unr(u,n) for(size_t u = 0; u < n; ++u)
+#define unr2(iu,ju,n) unr(iu,n) unr(ju,n)
+	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
+	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0])
+	for (bk[0] = 0; bk[0] < size; bk[0] += bstep[0]){
+		size_t imax = min(bi[0]+bstep[0], size);
+		size_t jmax = min(bj[0]+bstep[0], size);
+		size_t kmax = min(bk[0]+bstep[0], size);
+		for (i = bi[0]; i < imax; i += unr)
+		for (j = bj[0]; j < jmax; j += unr) {
+			unr2(iu,ju,unr) vect(v) acc[iu*unr + ju][v] = 0;
+			for (kv = bk[0]/nv; kv < kmax/nv; ++kv)
+				unr2(iu,ju,unr)
+					acc[iu*unr+ju].v += A.atv(i+iu, kv).v * IA.atv(kv, j+ju).v;
+//			for (rem = 0; rem < kmax/nv % unr; ++rem) // unroll remainder
+//				acc[0].v -= A.atv(i, kv+rem).v * IA.atv(kv+rem, j).v;
+			for(k = kv*nv; k < kmax; ++k) // sse remainder
+				unr2(iu,ju,unr)
+					I.at(i+iu, j+ju) -= A.at(i+iu, k) * IA.at(k, j+ju);
+			unr2(iu,ju,unr)
+				vect(v) I.at(i+iu, j+ju) -= acc[iu*unr+ju][v]; // sse result sum
+		}
+	}
+#undef vect
+#undef unr
+#undef unr2
+
+	double errNorm = 0;
+	vec<double> errNormV{0};
+	for(size_t j = 0; j < size; ++j){
+		for(size_t iv = 0; iv < I.sizeVec(); ++iv)
+			errNormV.v += I.atv(iv,j).v*I.atv(iv,j).v;
+		for(size_t i = I.vecEnd(); i < I.size(); ++i)
+			errNormV[I.regEN()-1] += I.at(i,j)*I.at(i,j);
+	}
+	for(size_t v=0; v < I.regEN(); ++v) errNorm += errNormV[v];
+
+	return sqrt(errNorm);
+}
+
 
 /**
  * @brief Calculates inverse of A into IA
@@ -809,7 +990,7 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, varray<size_t>& P,
 	//LIKWID_MARKER_STOP("INV");
 	//LIKWID_MARKER_START("RES");
 
-	c_residue = residue0(A, IA, R);
+	c_residue = residue0A(A, IA, R);
 
 	//LIKWID_MARKER_STOP("RES");
 
@@ -834,7 +1015,7 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, varray<size_t>& P,
 
 
 
-		c_residue = residue0(A, IA, R);
+		c_residue = residue0A(A, IA, R);
 
 		//LIKWID_MARKER_STOP("RES");
 	}
@@ -873,6 +1054,42 @@ int main(int argc, char **argv) {
 	varray<size_t> P(LU.size());
 
 	inverse_refining(A, LU, IA, P, iter_n);
+
+
+// to fit 2 matrices
+#define MAX_B2L1 ((long)sqrt(L1_DN/2))
+#define B2L1 (Lower_Multiple(MAX_B2L1, L1_LINE_DN))
+
+#define MAX_B2L2 ((long)sqrt(L2_DN/2))
+#define B2L2 (Lower_Multiple(MAX_B2L2, B2L1))
+
+#define MAX_B2L3 ((long)sqrt(L3_DN/2))
+#define B2L3 (Lower_Multiple(MAX_B2L3, B2L2))
+	cout << "L1_DN";
+	cout << L1_DN;
+	cout << "MAX_BL1";
+	cout << MAX_BL1;
+	cout << "BL1";
+	cout << BL1;
+	cout << "MAX_B3L1";
+	cout << MAX_B3L1;
+	cout << "B3L1";
+	cout << B3L1;
+	cout << "MAX_B2L1";
+	cout << MAX_B2L1;
+	cout << "B2L1";
+	cout << B2L1;
+
+	cout << "B2L1";
+	cout << MAX_B2L2;
+	cout << "B2L1";
+	cout << B2L2;
+	cout << "MAX_B2L3";
+	cout << MAX_B2L3;
+	cout << "B2L3";
+	cout << B2L3;
+
+
 
 	//testVec(1024);
     return 0;

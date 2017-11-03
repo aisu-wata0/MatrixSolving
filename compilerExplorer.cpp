@@ -1166,6 +1166,83 @@ inline double residue0AUIJ(AMatrix& A, IAMatrix& IA, IMatrix& R){
 	return sqrt(errNorm);
 }
 /**
+ * @brief Given a matrix A and it's inverse, calculates residue into R. \
+ * Uses tiling on L0, SSE, unrolling on i,j.
+ */
+template<class AMatrix, class IAMatrix, class IMatrix>
+inline double residue0AUIJ(AMatrix& A, IAMatrix& IA, IMatrix& R){
+	size_t size = A.size();
+	size_t bi[5], bj[5], bk[5];
+	size_t bimax[5], bjmax[5], bkmax[5];
+	size_t bstep[5];
+	const size_t iunr = 2;
+	const size_t junr = 4;
+	vec<double> acc[iunr*junr];
+	/**/
+	bstep[0] = B2L1;
+	bstep[1] = bstep[0]*3;
+	/* export GCC_ARGS=" -D L0=${24} -D L1M=${3}"*
+	bstep[0] = L0;
+	bstep[1] = bstep[0]*L1M;/**/
+	size_t i, j, k, kv, rem;
+	for(j = 0; j < size; ++j){
+		for(i = 0; i < j; ++i)
+			R.at(i,j) = 0;
+		R.at(j,j) = 1;
+		for(i = j+1; i < size; ++i)
+			R.at(i,j) = 0;
+	}
+	size_t nv = R.regEN();
+#define vect(v) for(size_t v=0; v < nv; ++v)
+#define unri(iu,iunr) for(size_t iu = 0; iu < iunr; ++iu)
+#define unrj(ju,junr) for(size_t ju = 0; ju < junr; ++ju)
+#define unr(iu,iunr,ju,junr) unri(iu,iunr) unrj(ju,junr)
+	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
+	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0])
+	for (bk[0] = 0; bk[0] < size; bk[0] += bstep[0]){
+		size_t imax = min(bi[0]+bstep[0], size);
+		size_t jmax = min(bj[0]+bstep[0], size);
+		size_t kmax = min(bk[0]+bstep[0], size);
+		for (i = bi[0]; i < imax -(iunr-1); i += iunr) { // i unroll
+			for (j = bj[0]; j < jmax -(junr-1); j += junr) { // j unroll
+#define kloop(iunr, junr) \
+				unr(iu,iunr,ju,junr) vect(v) acc[iu*junr + ju][v] = 0;\
+				for (kv = bk[0]/nv; kv < kmax/nv; ++kv) /*vectorized loop*/\
+					unr(iu,iunr,ju,junr)\
+					acc[iu*junr+ju].v += A.atv(i+iu, kv).v * IA.atv(kv, j+ju).v;\
+				for(k = kv*nv; k < kmax; ++k) /*vect remainder*/\
+					unr(iu,iunr,ju,junr)\
+					R.at(i+iu, j+ju) -= A.at(i+iu, k) * IA.at(k, j+ju);\
+				unr(iu,iunr,ju,junr) /*vect result sum*/\
+				vect(v) R.at(i+iu, j+ju) -= acc[iu*junr+ju][v];
+
+				kloop(iunr, junr)
+			}
+			for(j = j; j < jmax; ++j){ // j unroll reminder
+				kloop(iunr,1)
+			}
+		}
+		for(i = i; i < imax; ++i){ // i unroll remainder
+			kloop(1,junr)
+		}
+	}
+#undef vect
+#undef unri
+#undef unrj
+#undef kloop
+	double errNorm = 0;
+	vec<double> errNormV{0};
+	for(size_t j = 0; j < size; ++j){
+		for(size_t iv = 0; iv < R.sizeVec(); ++iv)
+			errNormV.v += R.atv(iv,j).v*R.atv(iv,j).v;
+		for(size_t i = R.vecEnd(); i < R.size(); ++i)
+			errNormV[R.regEN()-1] += R.at(i,j)*R.at(i,j);
+	}
+	for(size_t v=0; v < R.regEN(); ++v) errNorm += errNormV[v];
+
+	return sqrt(errNorm);
+}
+/**
  * @brief Calculates inverse of A into IA
  * @param LU decomposition of A
  * @param IA return value, no init needed

@@ -394,7 +394,12 @@ inline double residue0AUIJ(AMatrix& A, IAMatrix& IA, IMatrix& R){
 			}
 		}
 		for(i = i; i < imax; ++i){ // i unroll remainder
-			kloop(1,junr)
+			for (j = bj[0]; j < jmax -(junr-1); j += junr) { // j unroll
+				kloop(1,junr)
+			}
+			for(j = j; j < jmax; ++j){ // j unroll reminder
+				kloop(1,1)
+			}
 		}
 	}
 #undef vect

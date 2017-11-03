@@ -956,6 +956,215 @@ inline double residue0AUU(AMatrix& A, IAMatrix& IA, IMatrix& I){
 }
 
 
+
+template<class AMatrix, class IAMatrix, class IMatrix>
+inline double residue0AUUR(AMatrix& A, IAMatrix& IA, IMatrix& I){
+	size_t size = A.size();
+	size_t bi[5], bj[5], bk[5];
+	size_t bimax[5], bjmax[5], bkmax[5];
+	size_t bstep[5];
+	const size_t unr = 2;
+	vec<double> acc[unr*unr];
+	/**/
+	bstep[0] = B2L1;
+	bstep[1] = bstep[0]*3;
+	/* export GCC_ARGS=" -D L0=${24} -D L1M=${3}"*
+	bstep[0] = L0;
+	bstep[1] = bstep[0]*L1M;/**/
+
+	size_t i, j, k, kv, rem;
+
+	for(j = 0; j < size; ++j){
+		for(i = 0; i < j; ++i)
+			I.at(i,j) = 0;
+		I.at(j,j) = 1;
+		for(i = j+1; i < size; ++i)
+			I.at(i,j) = 0;
+	}
+	size_t nv = I.regEN();
+#define vect(v) for(size_t v=0; v < nv; ++v)
+#define unr(u) for(size_t u = 0; u < unr; ++u)
+#define unr2(iu,ju) unr(iu) unr(ju)
+	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
+	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0])
+	for (bk[0] = 0; bk[0] < size; bk[0] += bstep[0]){
+		size_t imax = min(bi[0]+bstep[0], size);
+		size_t jmax = min(bj[0]+bstep[0], size);
+		size_t kmax = min(bk[0]+bstep[0], size);
+		for (i = bi[0]; i < imax -(unr-1); i += unr) {
+			for (j = bj[0]; j < jmax -(unr-1); j += unr) {
+				unr2(iu,ju) vect(v) acc[iu*unr + ju][v] = 0;
+				for (kv = bk[0]/nv; kv < kmax/nv; ++kv)
+					unr2(iu,ju)
+						acc[iu*unr+ju].v += A.atv(i+iu, kv).v * IA.atv(kv, j+ju).v;
+	//			for (rem = 0; rem < kmax/nv % unr; ++rem) // unroll remainder
+	//				acc[0].v -= A.atv(i, kv+rem).v * IA.atv(kv+rem, j).v;
+				for(k = kv*nv; k < kmax; ++k) // sse remainder
+					unr2(iu,ju)
+						I.at(i+iu, j+ju) -= A.at(i+iu, k) * IA.at(k, j+ju);
+				unr2(iu,ju)
+					vect(v) I.at(i+iu, j+ju) -= acc[iu*unr+ju][v]; // sse result sum
+			}
+			if(j != jmax){ // j unroll reminder
+				unr(iu) vect(v) acc[iu*unr][v] = 0;
+				for (kv = bk[0]/nv; kv < kmax/nv; ++kv)
+					unr(iu)
+						acc[iu*unr].v += A.atv(i+iu, kv).v * IA.atv(kv, j).v;
+	//			for (rem = 0; rem < kmax/nv % unr; ++rem) // unroll remainder
+	//				acc[0].v -= A.atv(i, kv+rem).v * IA.atv(kv+rem, j).v;
+				for(k = kv*nv; k < kmax; ++k) // sse remainder
+					unr(iu)
+						I.at(i+iu, j) -= A.at(i+iu, k) * IA.at(k, j);
+				unr(iu)
+					vect(v) I.at(i+iu, j) -= acc[iu*unr][v]; // sse result sum
+			}
+		}
+		if(i != imax){ // i unroll remainder
+			for (j = bj[0]; j < jmax -(unr-1); j += unr) {
+				unr(ju) vect(v) acc[ju][v] = 0;
+				for (kv = bk[0]/nv; kv < kmax/nv; ++kv)
+					unr(ju)
+						acc[ju].v += A.atv(i, kv).v * IA.atv(kv, j+ju).v;
+	//			for (rem = 0; rem < kmax/nv % unr; ++rem) // unroll remainder
+	//				acc[0].v -= A.atv(i, kv+rem).v * IA.atv(kv+rem, j).v;
+				for(k = kv*nv; k < kmax; ++k) // sse remainder
+					unr(ju)
+						I.at(i, j+ju) -= A.at(i, k) * IA.at(k, j+ju);
+				unr(ju)
+					vect(v) I.at(i, j+ju) -= acc[ju][v]; // sse result sum
+			}
+			if(j != jmax){ // j unroll reminder
+				unr(iu) vect(v) acc[iu*unr][v] = 0;
+				for (kv = bk[0]/nv; kv < kmax/nv; ++kv)
+					unr(iu)
+						acc[iu*unr].v += A.atv(i+iu, kv).v * IA.atv(kv, j).v;
+	//			for (rem = 0; rem < kmax/nv % unr; ++rem) // unroll remainder
+	//				acc[0].v -= A.atv(i, kv+rem).v * IA.atv(kv+rem, j).v;
+				for(k = kv*nv; k < kmax; ++k) // sse remainder
+					unr(iu)
+						I.at(i+iu, j) -= A.at(i+iu, k) * IA.at(k, j);
+				unr(iu)
+					vect(v) I.at(i+iu, j) -= acc[iu*unr][v]; // sse result sum
+			}
+		}
+	}
+#undef vect
+#undef unr
+#undef unr2
+	double errNorm = 0;
+	vec<double> errNormV{0};
+	for(size_t j = 0; j < size; ++j){
+		for(size_t iv = 0; iv < I.sizeVec(); ++iv)
+			errNormV.v += I.atv(iv,j).v*I.atv(iv,j).v;
+		for(size_t i = I.vecEnd(); i < I.size(); ++i)
+			errNormV[I.regEN()-1] += I.at(i,j)*I.at(i,j);
+	}
+	for(size_t v=0; v < I.regEN(); ++v) errNorm += errNormV[v];
+
+	return sqrt(errNorm);
+}
+/**
+ * @brief Given a matrix A and it's inverse, calculates residue into R. \
+ * Uses tiling on L0, SSE, unrolling on i,j.
+ */
+template<class AMatrix, class IAMatrix, class IMatrix>
+inline double residue0AUIJ(AMatrix& A, IAMatrix& IA, IMatrix& R){
+	size_t size = A.size();
+	size_t bi[5], bj[5], bk[5];
+	size_t bimax[5], bjmax[5], bkmax[5];
+	size_t bstep[5];
+	const size_t iunr = 2;
+	const size_t junr = 4;
+	vec<double> acc[iunr*junr];
+	/**/
+	bstep[0] = B2L1;
+	bstep[1] = bstep[0]*3;
+	/* export GCC_ARGS=" -D L0=${24} -D L1M=${3}"*
+	bstep[0] = L0;
+	bstep[1] = bstep[0]*L1M;/**/
+	size_t i, j, k, kv, rem;
+	for(j = 0; j < size; ++j){
+		for(i = 0; i < j; ++i)
+			R.at(i,j) = 0;
+		R.at(j,j) = 1;
+		for(i = j+1; i < size; ++i)
+			R.at(i,j) = 0;
+	}
+	size_t nv = R.regEN();
+#define vect(v) for(size_t v=0; v < nv; ++v)
+#define unri(iu) for(size_t iu = 0; iu < iunr; ++iu)
+#define unrj(ju) for(size_t ju = 0; ju < junr; ++ju)
+#define unr(iu,ju) unri(iu) unrj(ju)
+	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
+	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0])
+	for (bk[0] = 0; bk[0] < size; bk[0] += bstep[0]){
+		size_t imax = min(bi[0]+bstep[0], size);
+		size_t jmax = min(bj[0]+bstep[0], size);
+		size_t kmax = min(bk[0]+bstep[0], size);
+		for (i = bi[0]; i < imax -(iunr-1); i += iunr) { // i unroll
+			for (j = bj[0]; j < jmax -(junr-1); j += junr) { // j unroll
+				unr(iu,ju) vect(v) acc[iu*junr + ju][v] = 0;
+				for (kv = bk[0]/nv; kv < kmax/nv; ++kv) // vectorized loop
+					unr(iu,ju)
+					acc[iu*junr+ju].v += A.atv(i+iu, kv).v * IA.atv(kv, j+ju).v;
+				for(k = kv*nv; k < kmax; ++k) // vect remainder
+					unr(iu,ju)
+					R.at(i+iu, j+ju) -= A.at(i+iu, k) * IA.at(k, j+ju);
+				unr(iu,ju) // sse result sum
+				vect(v) R.at(i+iu, j+ju) -= acc[iu*junr+ju][v];
+			}
+			for(j = j; j < jmax; ++j){ // j unroll reminder
+				unri(iu) vect(v) acc[iu*junr][v] = 0;
+				for (kv = bk[0]/nv; kv < kmax/nv; ++kv) // vectorized loop
+					unri(iu)
+					acc[iu*junr].v += A.atv(i+iu, kv).v * IA.atv(kv, j).v;
+				for(k = kv*nv; k < kmax; ++k) // vect remainder
+					unri(iu)
+					R.at(i+iu, j) -= A.at(i+iu, k) * IA.at(k, j);
+				unri(iu) // sse result sum
+				vect(v) R.at(i+iu, j) -= acc[iu*junr][v];
+			}
+		}
+		for(i = i; i < imax; ++i){ // i unroll remainder
+			for (j = bj[0]; j < jmax -(junr-1); j += junr) { // j unroll
+				unrj(ju) vect(v) acc[ju][v] = 0;
+				for (kv = bk[0]/nv; kv < kmax/nv; ++kv) // vectorized loop
+					unrj(ju)
+					acc[ju].v += A.atv(i, kv).v * IA.atv(kv, j+ju).v;
+				for(k = kv*nv; k < kmax; ++k) // vect remainder
+					unrj(ju)
+					R.at(i, j+ju) -= A.at(i, k) * IA.at(k, j+ju);
+				unrj(ju) // sse result sum
+				vect(v) R.at(i, j+ju) -= acc[ju][v];
+			}
+			for(j = j; j < jmax; ++j){  // j unroll reminder
+				unri(iu) vect(v) acc[iu*junr][v] = 0;
+				for (kv = bk[0]/nv; kv < kmax/nv; ++kv) // vectorized loop
+					unri(iu)
+						acc[iu*junr].v += A.atv(i+iu, kv).v * IA.atv(kv, j).v;
+				for(k = kv*nv; k < kmax; ++k) // vect remainder
+					unri(iu)
+						R.at(i+iu, j) -= A.at(i+iu, k) * IA.at(k, j);
+				unri(iu)
+					vect(v) R.at(i+iu, j) -= acc[iu*junr][v]; // sse result sum
+			}
+		}
+	}
+#undef vect
+#undef unr
+#undef unr2
+	double errNorm = 0;
+	vec<double> errNormV{0};
+	for(size_t j = 0; j < size; ++j){
+		for(size_t iv = 0; iv < R.sizeVec(); ++iv)
+			errNormV.v += R.atv(iv,j).v*R.atv(iv,j).v;
+		for(size_t i = R.vecEnd(); i < R.size(); ++i)
+			errNormV[R.regEN()-1] += R.at(i,j)*R.at(i,j);
+	}
+	for(size_t v=0; v < R.regEN(); ++v) errNorm += errNormV[v];
+
+	return sqrt(errNorm);
+}
 /**
  * @brief Calculates inverse of A into IA
  * @param LU decomposition of A
@@ -990,7 +1199,7 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, varray<size_t>& P,
 	//LIKWID_MARKER_STOP("INV");
 	//LIKWID_MARKER_START("RES");
 
-	c_residue = residue0A(A, IA, R);
+	c_residue = residue0AUIJ(A, IA, R);
 
 	//LIKWID_MARKER_STOP("RES");
 
@@ -1015,7 +1224,7 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, varray<size_t>& P,
 
 
 
-		c_residue = residue0A(A, IA, R);
+		c_residue = residue0AUIJ(A, IA, R);
 
 		//LIKWID_MARKER_STOP("RES");
 	}

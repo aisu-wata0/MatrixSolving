@@ -165,5 +165,6 @@ int mainT(int argc, char **argv)
 	}
 	/**/
 	//LIKWID_MARKER_CLOSE;
+	cout.rdbuf(coutbuf); //redirect
 	return 0;
 }

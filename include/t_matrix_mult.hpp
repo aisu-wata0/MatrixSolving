@@ -92,7 +92,7 @@ void t_matrix_mult(size_t size){
 //	cout <<"Tiled0  \t"<< timer.tick()/repetitionN <<" sec\n";
 	//if(PRINT_MATRIX) { printm(X); cout << endl; }
 	
-	#define vect(v) for(size_t v=0; v < X.regEN(); ++v)
+	#define vect(v) for(size_t v=0; v < X.vecN(); ++v)
 	size_t kv;
 //	set(X,0);
 //	timer.tick();

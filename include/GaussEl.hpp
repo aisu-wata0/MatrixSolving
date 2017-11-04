@@ -17,7 +17,7 @@ inline void GaussEl(const Matrix<double>& A, Matrix<double>& LU, varray<size_t>&
 	// copy A to LU
 	set(LU, A);
 	// initializing permutation vector
-	for(size_t i = 0; i < A.size(); i++){
+	for(size_t i = 0; i < A.sizeMem(); i++){
 		P.at(i) = i;
 	}
 

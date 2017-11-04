@@ -15,7 +15,7 @@ void t_vector(size_t size) {
 	size_t bi, bk;
 	size_t i, k;
 	size_t vj, vk;
-	size_t dn = LU.regEN();
+	size_t vn = LU.vecN();
 	
 	cout << size << ":" << LU.sizeMem() << endl;
 	
@@ -23,7 +23,7 @@ void t_vector(size_t size) {
 		X.at(i) = 0;
 		B.at(i) = 1;
 		for(vj = 0; vj < LU.sizeVec(); vj += 1){
-			vec(dj) LU.at(i, vj*dn+dj) = (i);
+			vec(dj) LU.at(i, vj*vn+dj) = (i);
 		}
 	}
 	bool PRINT_MATRIX = false;
@@ -47,7 +47,7 @@ void t_vector(size_t size) {
 				for(i = bi; i < (bi + bstep); i += unr){
 					vec<double> acc[unr];
 					memset(acc, 0, sizeof(acc));
-					for(vk = bk/dn; vk < (bk + bstep)/dn; vk++){
+					for(vk = bk/vn; vk < (bk + bstep)/vn; vk++){
 						unroll(ui,unr) acc[ui].v = acc[ui].v + LU.atv(i+ui,vk).v * B.atv(vk).v;
 					}
 					unroll(ui,unr)
@@ -68,7 +68,7 @@ void t_vector(size_t size) {
 			for(bk = 0; bk < size; bk += bstep){
 				for(i = bi; i < (bi + bstep); i++){
 					vec<double> acc = {0};
-					for(vk = bk/dn; vk < (bk + bstep)/dn; vk++){
+					for(vk = bk/vn; vk < (bk + bstep)/vn; vk++){
 						acc.v = acc.v + LU.atv(i,vk).v * B.atv(vk).v;
 					}
 					vec(d) X.at(i) += acc.v[d];
@@ -86,7 +86,7 @@ void t_vector(size_t size) {
 		for(i = 0; i < size; i += unr){
 			vec<double> acc[unr];
 			unroll(ui,unr) vec(d) acc[ui].v[d] = 0;
-			for(k = 0; k < size/dn; k++){
+			for(k = 0; k < size/vn; k++){
 				unroll(ui,unr) acc[ui].v = acc[ui].v + LU.atv(i+ui,k).v * B.atv(k).v;
 			}
 			unroll(ui,unr) X.at(i+ui) = 0;
@@ -104,7 +104,7 @@ void t_vector(size_t size) {
 	for(reps = 0; reps < repetitionN; reps++){
 		for(i = 0; i < size; i++){
 			vec<double> acc = {0};
-			for(k = 0; k < size/dn; k++){
+			for(k = 0; k < size/vn; k++){
 				acc.v = acc.v + LU.atv(i,k).v * B.atv(k).v;
 			}
 			X.at(i) = 0;
@@ -119,8 +119,8 @@ void t_vector(size_t size) {
 	
 	for(reps = 0; reps < repetitionN; reps++){
 		for(i = 0; i < size; i++){
-			double acc[dn] = {0};
-			for(k = 0; k < size/dn; k++){
+			double acc[vn] = {0};
+			for(k = 0; k < size/vn; k++){
 				vec(d) acc[d] = acc[d] + LU.at(i, k*4+d) * B.at(k*4+d);
 			}
 			X.at(i) = 0;

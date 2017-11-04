@@ -25,62 +25,62 @@ const Elem& at(Cont<Elem> const& M, size_t i, size_t j){
 }
 
 /**
- * @brief Stores values of matrix in a vector, Row Major Order
+ * @brief Stores values of a square matrix in a varray, Row Major Order
  */
 template<class Elem>
 class Matrix
 {
-public:
+protected:
 	varray<Elem> varr;
-	size_t mSize;
-	size_t mSizeVec; // n of vec<element>s
+	size_t mSize; // n of elems per row
+	size_t mSizeVec; // n of vec<elem>s per row
 	
-	size_t mSizeMem;
-	size_t mSizeVecMem;
-	size_t mPad;
-
+	size_t mSizeMem; // n of elems per row in memory
+	size_t mSizeVecMem; // n of vec<elem>s per row in memory
+	size_t mPad; // n of elems as padding per row
+	
 	size_t mEndVec;
-
-	/** @return Number of elements in register*/
-	size_t regEN() { return varr.regEN(); }
-
-	void memAlloc(size_t mSize){
-		varr.alloc(mSize*mSize);
+	/** @brief Allocates n elems (if existed: frees old varray pointer) */
+	void memAlloc(size_t size){
+		varr.alloc(size*size);
 	}
+public:
+	/** @brief n of elems in a vec */
+	size_t vecN() { return varr.vecN(); }
+	/** @brief Sets size to n elems (if existed: frees old varray pointer) */
 	void alloc(size_t size){
 		mSize = size;
-		mSizeVec = mSize/regEN();
-		mSizeMem = mSize;
-		if(PADDING){
-			mSizeMem += mod(-mSize,(ptrdiff_t)L1_LINE_DN);
-			// make sure m_size is odd multiple of cache line
-			//if(((mSizeMem/L1_LINE_DN) % 2) == 0)
-			if(mSizeMem > L1LINE_N-1 && isPowerOfTwo(mSizeMem))
-				mSizeMem = mSizeMem + L1_LINE_DN;
-		}
+		mSizeVec = mSize/vecN();
+		mSizeMem = calcPadSize(mSize);
+		mSizeVecMem = mSizeMem/vecN();
+		mEndVec = Lower_Multiple(mSize, vecN());
 		mPad = mSizeMem - mSize;
-		mSizeVecMem = mSizeMem/regEN();
-		mEndVec = Lower_Multiple(mSize, regEN());
 		memAlloc(mSizeMem);
 	}
-	/**
-	 * @param size of matrix, total number of lines
-	 */
+	/** @param size of the matrix, total number of lines */
 	Matrix(size_t size){
 		alloc(size);
 	}
 	
 	Matrix(){}
 
-	/** @brief size of the varray */
+	/** @brief n of elems in a row/column */
 	size_t size() const { return mSize; }
-	/** @brief size of the vectorized varray */
-	size_t sizeVec() const { return mSizeVec; }
-	/** @brief size of the vectorized varray */
+	/** @brief n of elems in a row/column in memory */
 	size_t sizeMem() const { return mSizeMem; }
-	/** @brief vectorization end index */
-	size_t vecEnd(){ return mEndVec; }
-	/** @brief vectorization end index */
+	/** @brief n of vec elems in a row/column */
+	size_t sizeVec() const { return mSizeVec; }
+	/** @brief n of vec elems in a row/column in memory*/
+	size_t sizeVecMem() const { return mSizeVecMem; }
+	/** @brief Input the index
+	 * @return the vec index */
+	size_t vecInd(size_t index) const { return index/vecN(); }
+	/** @brief remaining loop start index */
+	size_t remStart() const { return mEndVec; }
+	/** @brief Input vec index
+	 * @return index */
+	size_t remInd(size_t index) const { return index*vecN(); }
+	/** @brief size of the padding in the matrix */
 	size_t pad(){ return mPad; }
 
 	size_t indVecMem(size_t i, size_t j) const {
@@ -106,17 +106,17 @@ public:
 };
 
 /**
- * @brief Stores values of matrix in a vector, Column Major Order
+ * @brief Stores values of matrix in a varray, Column Major Order
  */
 template<class Elem>
 class MatrixColMajor : public Matrix<Elem>
 {
-public:
 	using Matrix<Elem>::Matrix;
 	using Matrix<Elem>::varr;
 	using Matrix<Elem>::mSizeMem;
 	using Matrix<Elem>::mSizeVecMem;
-
+public:
+	
 	size_t indVecMem(size_t i, size_t j) const {
 		assert(i < mSizeVecMem && j < mSizeMem);
 		return j*mSizeVecMem + i;
@@ -137,7 +137,6 @@ public:
 	const Elem& at(size_t i, size_t j) const {
 		return varr.at(indMem(i,j));
 	}
-	/**/
 };
 
 template<class Mat>

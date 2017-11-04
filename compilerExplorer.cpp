@@ -478,6 +478,9 @@ void printm(Mat& M){
 #endif
 
 
+#include <cmath>
+#include <ctgmath>
+
 using namespace std;
 using namespace gm;
 
@@ -632,6 +635,105 @@ inline void substMLU0A(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
 #undef indv
 }
 
+/**
+ * @brief
+ * @param LU
+ * @param X
+ * @param B
+ * @param P
+ */
+template<Direction direction, Diagonal diagonal, Permute permute,
+	class LUMatrix, class XMatrix, class BMatrix>
+inline void substMLU0AU(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
+#define ind(M,i,j) (direction == Direction::Forwards ? \
+	M.at(i, j) : \
+	M.at((size-1)-i, (size-1)-j))
+#define indvi(M,i,j) (direction == Direction::Forwards ? \
+	M.atv(i, j) : \
+	M.atv((size-1)/nv-i, (size-1)-j))
+#define indvj(M,i,j) (direction == Direction::Forwards ? \
+	M.atv(i, j) : \
+	M.atv((size-1)-i, (size-1)/nv-j))
+
+	size_t size = X.sizeMem();
+	size_t i, j, k, kv;
+	size_t bi[5], bj[5], bk[5];
+	//size_t bimax[5], bjmax[5], bkmax[5];
+	size_t imax, jmax;
+	size_t bstep[5];
+	size_t isrt;
+	const size_t iunr = 1;
+	const size_t junr = 1;
+	/**/
+	bstep[0] = 8;
+	bstep[1] = bstep[0]*3;
+	/* export GCC_ARGS=" -D L0=${32} -D L1M=${3}"*
+	bstep[0] = L0;
+	bstep[1] = bstep[0]*L1M;/**/
+
+	for(j = 0; j < size; ++j)
+		for(i = 0; i < size; ++i)
+			if(permute == Permute::True)
+				ind(X, i, j) = ind(B, P.at(i), j);
+			else
+				ind(X, i, j) = ind(B, i, j);
+
+	size_t nv = X.regEN();
+	vec<double> acc[iunr*junr];
+#define vect(v) for(size_t v = 0; v < nv; ++v)
+#define unri(iu,iunr) for(size_t iu = 0; iu < iunr; ++iu)
+#define unrj(ju,junr) for(size_t ju = 0; ju < junr; ++ju)
+#define unr(iu,iunr,ju,junr) unri(iu,iunr) unrj(ju,junr)
+	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
+	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0]) {
+		imax = min(bi[0]+bstep[0] , size);
+		jmax = min(bj[0]+bstep[0] , size);
+		if(direction == Direction::Forwards)
+			isrt = bi[0];
+		else isrt = max(bi[0], X.pad());
+		for (bk[0] = 0; bk[0] < (bi[0]); bk[0] += bstep[0]) {
+			for (i = bi[0]; i < imax; ++i) {
+				for (j = bj[0]; j < jmax -(junr-1); j += junr) { // j unroll
+					// assert( ((direction == Direction::Backwards) && (((size-1-bk[0])-(nv-1)) % 4 == 0))
+					// || ((direction == Direction::Forwards) && (bk[0] % 4 == 0)));
+#define kloop(iunr, junr)	\
+					unr(iu,iunr,ju,junr) vect(v) acc[iu*junr + ju][v] = 0;	\
+					for (kv = bk[0]/nv; kv < (bk[0]+bstep[0])/nv; ++kv) /*vectorized loop*/	\
+						unr(iu,iunr,ju,junr)	\
+						acc[iu*junr+ju].v += indvj(LU, i+iu, kv).v * indvi(X, kv, j+ju).v;\
+					for(k = kv*nv; k < (bk[0]+bstep[0]); ++k) /*vect remainder*/	\
+						unr(iu,iunr,ju,junr)	\
+						X.at(i+iu, j+ju) -= LU.at(i+iu, k) * X.at(k, j+ju);	\
+					unr(iu,iunr,ju,junr) /*vect result sum*/	\
+					vect(v) X.at(i+iu, j+ju) -= acc[iu*junr+ju][v];
+// end define
+					unrj(ju,junr)
+						vect(v) acc[ju][v] = 0;
+					for (kv = bk[0]/nv; kv < (bk[0]+bstep[0])/nv; ++kv) /*vectorized loop*/
+						unrj(ju,junr)
+						acc[ju].v -= indvj(LU, i, kv).v * indvi(X, kv, j+ju).v;
+					unrj(ju,junr) /*vect result sum*/
+					vect(v) X.at(i, j+ju) += acc[ju][v];
+				}
+			}
+		} // Last block in K, diagonal, divide by pivot
+		for (bk[0] = (bi[0]); bk[0] < (bi[0]+bstep[0]); bk[0] += bstep[0]) {
+			for (i = isrt; i < imax; ++i)
+			for (j = bj[0]; j < jmax; ++j) {
+				for (k = bk[0]; k < i; ++k)
+					ind(X, i, j) = ind(X, i, j) - ind(LU, i, k) * ind(X, k, j);
+				if(diagonal == Diagonal::Value)
+					ind(X, i, j) /= ind(LU, i, i);
+			}
+		}
+	}
+#undef vect
+#undef unri
+#undef unrj
+#undef unr
+#undef kloop
+}
+
 
 #define ind(M,i,j) (direction == Direction::Forwards ? \
 	M.at(i, j) : \
@@ -714,10 +816,6 @@ inline void solveMLU0(LUMatrix& LU, IAMatrix& X, IMatrix& B, varray<size_t>& P){
 	// find X; Ux=Z
 	substMLU0A<Direction::Backwards, Diagonal::Value, Permute::False>(LU, X, Z, P);
 }
-
-#include <cmath>
-#include <ctgmath>
-
 
 template<class AMatrix, class IAMatrix, class IMatrix>
 inline double residue0(AMatrix& A, IAMatrix& IA, IMatrix& I){
@@ -1092,108 +1190,6 @@ inline double residue0AUIJ(AMatrix& A, IAMatrix& IA, IMatrix& R){
 	}
 	size_t nv = R.regEN();
 #define vect(v) for(size_t v=0; v < nv; ++v)
-#define unri(iu) for(size_t iu = 0; iu < iunr; ++iu)
-#define unrj(ju) for(size_t ju = 0; ju < junr; ++ju)
-#define unr(iu,ju) unri(iu) unrj(ju)
-	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
-	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0])
-	for (bk[0] = 0; bk[0] < size; bk[0] += bstep[0]){
-		size_t imax = min(bi[0]+bstep[0], size);
-		size_t jmax = min(bj[0]+bstep[0], size);
-		size_t kmax = min(bk[0]+bstep[0], size);
-		for (i = bi[0]; i < imax -(iunr-1); i += iunr) { // i unroll
-			for (j = bj[0]; j < jmax -(junr-1); j += junr) { // j unroll
-				unr(iu,ju) vect(v) acc[iu*junr + ju][v] = 0;
-				for (kv = bk[0]/nv; kv < kmax/nv; ++kv) // vectorized loop
-					unr(iu,ju)
-					acc[iu*junr+ju].v += A.atv(i+iu, kv).v * IA.atv(kv, j+ju).v;
-				for(k = kv*nv; k < kmax; ++k) // vect remainder
-					unr(iu,ju)
-					R.at(i+iu, j+ju) -= A.at(i+iu, k) * IA.at(k, j+ju);
-				unr(iu,ju) // sse result sum
-				vect(v) R.at(i+iu, j+ju) -= acc[iu*junr+ju][v];
-			}
-			for(j = j; j < jmax; ++j){ // j unroll reminder
-				unri(iu) vect(v) acc[iu*junr][v] = 0;
-				for (kv = bk[0]/nv; kv < kmax/nv; ++kv) // vectorized loop
-					unri(iu)
-					acc[iu*junr].v += A.atv(i+iu, kv).v * IA.atv(kv, j).v;
-				for(k = kv*nv; k < kmax; ++k) // vect remainder
-					unri(iu)
-					R.at(i+iu, j) -= A.at(i+iu, k) * IA.at(k, j);
-				unri(iu) // sse result sum
-				vect(v) R.at(i+iu, j) -= acc[iu*junr][v];
-			}
-		}
-		for(i = i; i < imax; ++i){ // i unroll remainder
-			for (j = bj[0]; j < jmax -(junr-1); j += junr) { // j unroll
-				unrj(ju) vect(v) acc[ju][v] = 0;
-				for (kv = bk[0]/nv; kv < kmax/nv; ++kv) // vectorized loop
-					unrj(ju)
-					acc[ju].v += A.atv(i, kv).v * IA.atv(kv, j+ju).v;
-				for(k = kv*nv; k < kmax; ++k) // vect remainder
-					unrj(ju)
-					R.at(i, j+ju) -= A.at(i, k) * IA.at(k, j+ju);
-				unrj(ju) // sse result sum
-				vect(v) R.at(i, j+ju) -= acc[ju][v];
-			}
-			for(j = j; j < jmax; ++j){  // j unroll reminder
-				unri(iu) vect(v) acc[iu*junr][v] = 0;
-				for (kv = bk[0]/nv; kv < kmax/nv; ++kv) // vectorized loop
-					unri(iu)
-						acc[iu*junr].v += A.atv(i+iu, kv).v * IA.atv(kv, j).v;
-				for(k = kv*nv; k < kmax; ++k) // vect remainder
-					unri(iu)
-						R.at(i+iu, j) -= A.at(i+iu, k) * IA.at(k, j);
-				unri(iu)
-					vect(v) R.at(i+iu, j) -= acc[iu*junr][v]; // sse result sum
-			}
-		}
-	}
-#undef vect
-#undef unr
-#undef unr2
-	double errNorm = 0;
-	vec<double> errNormV{0};
-	for(size_t j = 0; j < size; ++j){
-		for(size_t iv = 0; iv < R.sizeVec(); ++iv)
-			errNormV.v += R.atv(iv,j).v*R.atv(iv,j).v;
-		for(size_t i = R.vecEnd(); i < R.size(); ++i)
-			errNormV[R.regEN()-1] += R.at(i,j)*R.at(i,j);
-	}
-	for(size_t v=0; v < R.regEN(); ++v) errNorm += errNormV[v];
-
-	return sqrt(errNorm);
-}
-/**
- * @brief Given a matrix A and it's inverse, calculates residue into R. \
- * Uses tiling on L0, SSE, unrolling on i,j.
- */
-template<class AMatrix, class IAMatrix, class IMatrix>
-inline double residue0AUIJ(AMatrix& A, IAMatrix& IA, IMatrix& R){
-	size_t size = A.size();
-	size_t bi[5], bj[5], bk[5];
-	size_t bimax[5], bjmax[5], bkmax[5];
-	size_t bstep[5];
-	const size_t iunr = 2;
-	const size_t junr = 4;
-	vec<double> acc[iunr*junr];
-	/**/
-	bstep[0] = B2L1;
-	bstep[1] = bstep[0]*3;
-	/* export GCC_ARGS=" -D L0=${24} -D L1M=${3}"*
-	bstep[0] = L0;
-	bstep[1] = bstep[0]*L1M;/**/
-	size_t i, j, k, kv, rem;
-	for(j = 0; j < size; ++j){
-		for(i = 0; i < j; ++i)
-			R.at(i,j) = 0;
-		R.at(j,j) = 1;
-		for(i = j+1; i < size; ++i)
-			R.at(i,j) = 0;
-	}
-	size_t nv = R.regEN();
-#define vect(v) for(size_t v=0; v < nv; ++v)
 #define unri(iu,iunr) for(size_t iu = 0; iu < iunr; ++iu)
 #define unrj(ju,junr) for(size_t ju = 0; ju < junr; ++ju)
 #define unr(iu,iunr,ju,junr) unri(iu,iunr) unrj(ju,junr)
@@ -1229,6 +1225,7 @@ inline double residue0AUIJ(AMatrix& A, IAMatrix& IA, IMatrix& R){
 #undef vect
 #undef unri
 #undef unrj
+#undef unr
 #undef kloop
 	double errNorm = 0;
 	vec<double> errNormV{0};

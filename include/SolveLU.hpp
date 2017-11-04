@@ -489,7 +489,7 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, varray<size_t>& P,
 		//LIKWID_MARKER_START("SUM");
 		
 		//add(IA, W);
-#define unrll(u,step) for(size_t u; u < step; ++u)
+#define unrll(u,step) for(size_t u = 0; u < step; ++u) // ease unrolling
 		size_t j, junr = 8;
 		for(j=0; j < IA.size() -(junr-1); j += junr)
 			for(size_t i=0; i < IA.size(); ++i)

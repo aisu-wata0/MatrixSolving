@@ -105,7 +105,7 @@ size_t calcPadSize(size_t size){
  * 		something(V[i]);
  * for(iv = V.vecInd(i); iv < V.vecInd(end); ++iv) // vec loop
  * 		something(V.atv(vi));
- * for(i = vi; i < end; ++i) // remaining loop // if end%vecN == 0, no loop
+ * for(i = V.remInd(vi); i < end; ++i) // remaining loop // if end%vecN == 0, no loop
  * 		something(V.at(i));
  */
 template<class elem>

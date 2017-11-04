@@ -320,35 +320,30 @@ inline void substMLU0AU(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P)
 #define unrll(u,step) for(size_t u = 0; u < step; ++u) // ease unrolling
 #define unr(iu,iunr,ju,junr) unrll(iu,iunr) unrll(ju,junr) // unroll 2 dimensions
 	
-	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
+	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0]) // L1 tiling
 	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0]) {
-		imax = min(bi[0]+bstep[0] , size);
+		imax = min(bi[0]+bstep[0] , size); // setting tile limits
 		jmax = min(bj[0]+bstep[0] , size);
 		if(direction == Direction::Forwards)
 			isrt = bi[0];
 		else isrt = max(bi[0], X.pad());
 		for (bk[0] = 0; bk[0] < (bi[0]); bk[0] += bstep[0]) {
-			for (i = bi[0]; i < imax -(iunr-1); i += iunr) {
+			for (i = bi[0]; i < imax -(iunr-1); i += iunr) { // i unroll
 				for (j = bj[0]; j < jmax -(junr-1); j += junr) { // j unroll
-					// assert( ((direction == Direction::Backwards) && (((size-1-bk[0])-(vn-1)) % 4 == 0))
-					// || ((direction == Direction::Forwards) && (bk[0] % 4 == 0)));
+assert(((direction == Direction::Backwards) && (((size-1-bk[0])-(vn-1)) % 4 == 0))
+|| ((direction == Direction::Forwards) && (bk[0] % 4 == 0))); // So that vectorization doesn't give segfault -O2
+// Multiply current tile: i,j = A krow * IA kcol
+// For (i,j): from i to i+iunr; from j to j+junr
 #define kloop(iunr, junr)	\
 					unr(iu,iunr,ju,junr) vect(v) acc[iu*junr + ju][v] = 0;	\
 					/*vectorized loop*/	\
 					for (kv = bk[0]/vn; kv < (bk[0]+bstep[0])/vn; ++kv)	\
 						unr(iu,iunr,ju,junr)	\
-						acc[iu*junr+0].v += indvj(LU, i+iu, kv).v * indvi(X, kv, j+0).v;	\
+						acc[iu*junr+ju].v += indvj(LU, i+iu, kv).v * indvi(X, kv, j+ju).v;	\
 					unr(iu,iunr,ju,junr) /*vect result sum*/	\
 					vect(v) ind(X, i+iu, j+ju) -= acc[iu*junr+ju][v];
 // end define
-					unr(iu,iunr,ju,junr) vect(v) acc[iu*junr + ju][v] = 0;
-					/*vectorized loop*/
-					for (kv = bk[0]/vn; kv < (bk[0]+bstep[0])/vn; ++kv) {
-						unr(iu,iunr,ju,junr)
-						acc[iu*junr+ju].v += indvj(LU, i+iu, kv).v * indvi(X, kv, j+ju).v;
-					}
-					unr(iu,iunr,ju,junr) /*vect result sum*/
-					vect(v) ind(X, i+iu, j+ju) -= acc[iu*junr+ju][v];
+					kloop(iunr,junr)
 				}
 				for (j = j; j < jmax; ++j) { // j unroll reminder
 					kloop(iunr,1)

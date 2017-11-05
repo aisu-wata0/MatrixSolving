@@ -1,0 +1,3 @@
+[submodule "Grimoire"]
+	path = Grimoire
+	url = https://github.com/bfs15/Grimoire.git

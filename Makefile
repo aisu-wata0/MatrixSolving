@@ -16,7 +16,7 @@ LIKDIR=/usr/local/likwid
 LIKDIR2=/home/soft/likwid
 LIKDIR3=/usr/include/likwid
 LIKDIR4=/usr/include
-INC := -I./include -I$(LIKDIR)/include  -I$(LIKDIR)/include -L$(LIKDIR1)/lib -I$(LIKDIR2)/include -L$(LIKDIR2)/lib -I$(LIKDIR3)/include -L$(LIKDIR3)/lib -I$(LIKDIR4)/include -L$(LIKDIR4)/lib
+INC := -I./include -I./Grimoire/include -I$(LIKDIR)/include  -I$(LIKDIR)/include -L$(LIKDIR1)/lib -I$(LIKDIR2)/include -L$(LIKDIR2)/lib -I$(LIKDIR3)/include -L$(LIKDIR3)/lib -I$(LIKDIR4)/include -L$(LIKDIR4)/lib
 
 LIB := -pthread -L lib -DLIKWID_PERFMON -lm -pthread -llikwid
 
@@ -93,4 +93,3 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp $(INCDIR)/%.hpp
 	$(CC) $(CFLAGS) $(LIB) $(INC) ${CCARGS} -c -fmessage-length=80 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo
-

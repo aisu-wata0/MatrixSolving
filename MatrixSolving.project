@@ -42,12 +42,7 @@
   <Dependencies Name="Debug"/>
   <Dependencies Name="Release"/>
   <VirtualDirectory Name="include">
-    <File Name="include/Chronometer.hpp"/>
-    <File Name="include/Double.h"/>
     <File Name="include/main.hpp"/>
-    <File Name="include/varray.hpp"/>
-    <File Name="include/bytes.h"/>
-    <File Name="include/Matrix.hpp"/>
     <File Name="include/Subst.hpp"/>
     <File Name="include/GaussEl.hpp"/>
     <File Name="include/t_matrix_mult.hpp"/>
@@ -57,8 +52,9 @@
   <Settings Type="Executable">
     <GlobalSettings>
       <Compiler Options="-std=c++11 -Wno-comment  -Wno-sign-compare" C_Options="-Wno-comment -Wno-sign-compare" Assembler="">
-        <IncludePath Value="."/>
-        <IncludePath Value="./include"/>
+        <IncludePath Value="&quot;.&quot;"/>
+        <IncludePath Value="&quot;./include&quot;"/>
+        <IncludePath Value="&quot;./Grimoire/include&quot;"/>
       </Compiler>
       <Linker Options="">
         <LibraryPath Value="."/>
@@ -145,4 +141,13 @@
       </Completion>
     </Configuration>
   </Settings>
+  <VirtualDirectory Name="Grimoire">
+    <VirtualDirectory Name="include">
+      <File Name="Grimoire/include/bytes.h"/>
+      <File Name="Grimoire/include/Chronometer.hpp"/>
+      <File Name="Grimoire/include/Double.h"/>
+      <File Name="Grimoire/include/Matrix.hpp"/>
+      <File Name="Grimoire/include/varray.hpp"/>
+    </VirtualDirectory>
+  </VirtualDirectory>
 </CodeLite_Project>

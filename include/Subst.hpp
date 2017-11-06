@@ -73,209 +73,15 @@ void subst(TMatrix& T, XMatrix& X, IMatrix& I, vector<size_t>& P, size_t col){
 			{ at(X, i,col) /= T.at(i,i); }
 	}
 }
-/**
- * @brief Subtitution method for linear sistems, forward or backward
- * @param T Triangular coeficient Matrix
- * @param X Variables to be found
- * @param B Independant terms
- * @param forward true is forward subst, false is backward.
- * @param col Column of the matrix to be used as B
- */
-template<Direction direction, class TMatrix>
-void subst(TMatrix& T, MatrixColMajor<double>& X, vector<double>& B, size_t col) {
-	size_t size = T.size;
-	size_t bi; size_t bj;
-	size_t i; size_t j;
-	size_t iend; size_t jend;
-	size_t step;
-
-	// TODO test iterate blocks by col (bj) instead of as currently by row (bi)
-	if(direction == Direction::Forwards){
-		bj = 0;
-		step = +1;
-	} else {
-		bj = size-1;
-		step = -1;
-	}
-	size_t bstep = step * BL1;
-	
-	for(; bj >= 0 && bj < size; bj += bstep){
-		if(direction == Direction::Forwards) {
-			jend = bj + bstep > size ? size : bj + bstep;
-		} else {
-			jend = bj + bstep < 0 ? -1 : bj + bstep;
-		}
-		// go though diagonal block
-		for(i = bj; i != jend; i += step){
-			if((bj == 0 && direction == Direction::Forwards) || (bj == size-1 && direction == Direction::Backwards)){
-				X.at(i,col) = B.at(i);
-			}
-			for(j = bj; j != jend && j != i; j += step){
-				X.at(i,col) -= X.at(j,col) * T.at(i, j);
-			}
-			X.at(i,col) = X.at(i,col) / T.at(i, i);
-		}
-		for(bi = bj+bstep; bi >= 0 && bi < size; bi += bstep){
-			if(direction == Direction::Forwards) {
-				iend = bi + bstep > size ? size : bi + bstep;
-			} else {
-				iend = bi + bstep < 0 ? -1 : bi + bstep;
-			}
-			if((bj == 0 && direction == Direction::Forwards) || (bj == size-1 && direction == Direction::Backwards))
-				for(i = bi; i != iend; i += step){
-					X.at(i,col) = B.at(i);
-				}
-			// go though current block
-			for(i = bi; i != iend; i += step){
-				for(j = bj; j != jend && j != i; j += step){
-					X.at(i,col) -= X.at(j,col) * T.at(i, j);
-				}
-			}
-		}
-		// remainder
-//		for(i = size - mod(size, bstep); i < size; i += step){
-//			for(j = bj; j < bj+bstep; j += step){
-//				cout << "(" << i << "," << j << ")" << endl; 
-//			}
-//		}
-	}
-	// remainder
-//	for(i = size - mod(size, bstep); i < size; i += step){
-//		for(j = size - mod(size, bstep); j != i; j += step){
-//			cout << "(" << i << "," << j << ")" << endl; 
-//		}
-//		cout << "divided by (" << i << "," << i << ") dia" << endl;
-//	}
-}
-
-
-template<Direction direction, Diagonal diagonal, Permute permute,
-	class LUMatrix, class XMatrix, class BMatrix>
-inline void substMLU0(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
-#define ind(M,i,j) (direction == Direction::Forwards ? \
-	M.at(i, j) : \
-	M.at((size-1)-i, (size-1)-j))
-	
-	size_t size = X.size();
-	size_t i, j, k;
-	size_t bi[5], bj[5], bk[5];
-	//size_t bimax[5], bjmax[5], bkmax[5];
-	size_t imax, jmax, kmax;
-	size_t bstep[5];
-	bstep[0] = 24;
-	bstep[1] = bstep[0]*3;
-	
-	for(j = 0; j < size; ++j)
-		for(i = 0; i < size; ++i)
-			if(permute == Permute::True)
-				ind(X, i, j) = ind(B, P.at(i), j);
-			else
-				ind(X, i, j) = ind(B, i, j);
-	
-	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
-	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0]) {
-		imax = min(bi[0]+bstep[0] , size);
-		jmax = min(bj[0]+bstep[0] , size);
-		for (bk[0] = 0; bk[0] < (bi[0]); bk[0] += bstep[0]) {
-			for (i = bi[0]; i < imax; i += 1)
-			for (j = bj[0]; j < jmax; j += 1) {
-				for (k = bk[0]; k < (bk[0]+bstep[0]); k += 1)
-					ind(X, i, j) = ind(X, i, j) - ind(LU, i, k) * ind(X, k, j);
-			}
-		} // Last block in K, diagonal, divide by pivot
-		for (bk[0] = (bi[0]); bk[0] < (bi[0]+bstep[0]); bk[0] += bstep[0]) {
-			for (i = bi[0]; i < imax; i += 1)
-			for (j = bj[0]; j < jmax; j += 1) {
-				for (k = bk[0]; k < i; k += 1)
-					ind(X, i, j) = ind(X, i, j) - ind(LU, i, k) * ind(X, k, j);
-				if(diagonal == Diagonal::Value)
-					ind(X, i, j) /= ind(LU, i, i);
-			}
-		}
-	}
-}
-#undef ind
-
-
-#define ind(M,i,j) (direction == Direction::Forwards ? \
-	M.at(i, j) : \
-	M.at((size-1)-i, (size-1)-j))
-#define indvi(M,i,j) (direction == Direction::Forwards ? \
-	M.atv(i, j) : \
-	M.atv((size-1)/vn-i, (size-1)-j))
-#define indvj(M,i,j) (direction == Direction::Forwards ? \
-	M.atv(i, j) : \
-	M.atv((size-1)-i, (size-1)/vn-j))
-template<Direction direction, Diagonal diagonal, Permute permute,
-	class LUMatrix, class XMatrix, class BMatrix>
-inline void substMLU0A(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
-	size_t size = X.sizeMem();
-	size_t i, j, k, kv;
-	size_t bi[5], bj[5], bk[5];
-	//size_t bimax[5], bjmax[5], bkmax[5];
-	size_t imax, jmax;
-	size_t bstep[5];
-	size_t isrt;
-	//const size_t unr = 2;
-	//double acc[unr*unr];
-	/**/
-	bstep[0] = B2L1;
-	bstep[1] = bstep[0]*3;
-	/* export GCC_ARGS=" -D L0=${32} -D L1M=${3}"*
-	bstep[0] = L0;
-	bstep[1] = bstep[0]*L1M;/**/
-	for(j = 0; j < size; ++j)
-		for(i = 0; i < size; ++i)
-			if(permute == Permute::True)
-				ind(X, i, j) = ind(B, P.at(i), j);
-			else
-				ind(X, i, j) = ind(B, i, j);
-	size_t vn = X.vecN();
-	vec<double> acc;
-
-#define vect(v) for(size_t v = 0; v < vn; ++v)
-	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
-	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0]) {
-		imax = min(bi[0]+bstep[0] , size);
-		jmax = min(bj[0]+bstep[0] , size);
-		if(direction == Direction::Forwards)
-			isrt = bi[0];
-		else isrt = max(bi[0], X.pad());
-		for (bk[0] = 0; bk[0] < (bi[0]); bk[0] += bstep[0]) {
-			for (i = bi[0]; i < imax; ++i)
-			for (j = bj[0]; j < jmax; ++j) {
-				assert( ((direction == Direction::Backwards) && (((size-1-bk[0])-(vn-1)) % 4 == 0))
-				|| ((direction == Direction::Forwards) && (bk[0] % 4 == 0)));
-				vect(v)
-					acc[v] = 0;
-				for (kv = bk[0]/vn; kv < (bk[0]+bstep[0])/vn; ++kv)
-					acc.v = acc.v - indvj(LU, i, kv).v * indvi(X, kv, j).v;
-				vect(v)
-					ind(X,i,j) += acc[v];
-			}
-		} // Last block in K, diagonal, divide by pivot
-		for (bk[0] = (bi[0]); bk[0] < (bi[0]+bstep[0]); bk[0] += bstep[0]) {
-			for (i = isrt; i < imax; ++i)
-			for (j = bj[0]; j < jmax; ++j) {
-				for (k = bk[0]; k < i; ++k)
-					ind(X, i, j) = ind(X, i, j) - ind(LU, i, k) * ind(X, k, j);
-				if(diagonal == Diagonal::Value)
-					ind(X, i, j) /= ind(LU, i, i);
-			}
-		}
-	}
-#undef vect
-#undef ind
-#undef indvi
-#undef indvj
-}
 
 /**
- * @brief
- * @param LU
- * @param X
- * @param B
- * @param P
+ * @brief Solves LU*X = B, B having LU.size() columns of independant terms.
+ * Resulting in LU.size() columns of X, each being the solution to LU*x = B.col(j).
+ * Tiling on L0, SSE, and Unrolling on i,j
+ * @param LU triangular matrix, Lower or Upper
+ * @param X Matrix of solutions
+ * @param B Matrix of independent terms
+ * @param P Permutation obtained in GaussEl()
  */
 template<Direction direction, Diagonal diagonal, Permute permute,
 	class LUMatrix, class XMatrix, class BMatrix>
@@ -316,6 +122,7 @@ inline void substMLU0AU(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P)
 
 	size_t vn = X.vecN(); // number of doubles in vec
 	vec<double> acc[iunr*junr];
+	
 #define vect(v) for(size_t v=0; v < vn; ++v) // ease vectorization
 #define unrll(u,step) for(size_t u = 0; u < step; ++u) // ease unrolling
 #define unr(iu,iunr,ju,junr) unrll(iu,iunr) unrll(ju,junr) // unroll 2 dimensions
@@ -376,22 +183,118 @@ assert(((direction == Direction::Backwards) && (((size-1-bk[0])-(vn-1)) % 4 == 0
 #undef indvi
 #undef indvj
 }
+
 /**
- * @brief 
- * @param LU
- * @param X
- * @param B
- * @param P
+ * @brief Solves LU*X = B, B having LU.size() columns of independant terms.
+ * Resulting in LU.size() columns of X, each being the solution to LU*x = B.col(j).
+ * Tiling on L0 and SSE
+ * @param LU triangular matrix, Lower or Upper
+ * @param X Matrix of solutions
+ * @param B Matrix of independent terms
+ * @param P Permutation obtained in GaussEl()
  */
 template<Direction direction, Diagonal diagonal, Permute permute,
 	class LUMatrix, class XMatrix, class BMatrix>
-inline void substMLU(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
+inline void substMLU0A(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
+// Defines to index Matrices, if direction is backwards, access is reversed
 #define ind(M,i,j) (direction == Direction::Forwards ? \
 	M.at(i, j) : \
-	M.at((size-1)-i, (size-1)-j))
+	M.at((size-1)-(i), (size-1)-(j)))
+#define indvi(M,i,j) (direction == Direction::Forwards ? \
+	M.atv(i, j) : \
+	M.atv((size-1)/vn-(i), (size-1)-(j)))
+#define indvj(M,i,j) (direction == Direction::Forwards ? \
+	M.atv(i, j) : \
+	M.atv((size-1)-(i), (size-1)/vn-(j)))
+	
+	size_t size = X.sizeMem();
+	size_t i, j, k, kv;
+	size_t bi[5], bj[5], bk[5];
+	//size_t bimax[5], bjmax[5], bkmax[5];
+	size_t imax, jmax;
+	size_t bstep[5];
+	size_t isrt;
+	//const size_t unr = 2;
+	//double acc[unr*unr];
+	/**/
+	bstep[0] = B2L1;
+	bstep[1] = bstep[0]*3;
+	/* export GCC_ARGS=" -D L0=${32} -D L1M=${3}"*
+	bstep[0] = L0;
+	bstep[1] = bstep[0]*L1M;/**/
+	for(j = 0; j < size; ++j)
+		for(i = 0; i < size; ++i)
+			if(permute == Permute::True)
+				ind(X, i, j) = ind(B, P.at(i), j);
+			else
+				ind(X, i, j) = ind(B, i, j);
+	size_t vn = X.vecN();
+	vec<double> acc;
+	
+#define vect(v) for(size_t v = 0; v < vn; ++v)
+	
+	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
+	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0]) {
+		imax = min(bi[0]+bstep[0] , size);
+		jmax = min(bj[0]+bstep[0] , size);
+		if(direction == Direction::Forwards)
+			isrt = bi[0];
+		else isrt = max(bi[0], X.pad());
+		for (bk[0] = 0; bk[0] < (bi[0]); bk[0] += bstep[0]) {
+			for (i = bi[0]; i < imax; ++i)
+			for (j = bj[0]; j < jmax; ++j) {
+				assert( ((direction == Direction::Backwards) && (((size-1-bk[0])-(vn-1)) % 4 == 0))
+				|| ((direction == Direction::Forwards) && (bk[0] % 4 == 0)));
+				vect(v)
+					acc[v] = 0;
+				for (kv = bk[0]/vn; kv < (bk[0]+bstep[0])/vn; ++kv)
+					acc.v = acc.v - indvj(LU, i, kv).v * indvi(X, kv, j).v;
+				vect(v)
+					ind(X,i,j) += acc[v];
+			}
+		} // Last block in K, diagonal, divide by pivot
+		for (bk[0] = (bi[0]); bk[0] < (bi[0]+bstep[0]); bk[0] += bstep[0]) {
+			for (i = isrt; i < imax; ++i)
+			for (j = bj[0]; j < jmax; ++j) {
+				for (k = bk[0]; k < i; ++k)
+					ind(X, i, j) = ind(X, i, j) - ind(LU, i, k) * ind(X, k, j);
+				if(diagonal == Diagonal::Value)
+					ind(X, i, j) /= ind(LU, i, i);
+			}
+		}
+	}
+#undef vect
+#undef ind
+#undef indvi
+#undef indvj
+}
+
+/**
+ * @brief Solves LU*X = B, B having LU.size() columns of independant terms.
+ * Resulting in LU.size() columns of X, each being the solution to LU*x = B.col(j).
+ * Tiling on L0
+ * @param LU triangular matrix, Lower or Upper
+ * @param X Matrix of solutions
+ * @param B Matrix of independent terms
+ * @param P Permutation obtained in GaussEl()
+ */
+template<Direction direction, Diagonal diagonal, Permute permute,
+	class LUMatrix, class XMatrix, class BMatrix>
+inline void substMLU0(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
+// Defines to index Matrices, if direction is backwards, access is reversed
+#define ind(M,i,j) (direction == Direction::Forwards ? \
+	M.at(i, j) : \
+	M.at((size-1)-(i), (size-1)-(j)))
 	
 	size_t size = X.size();
-	size_t i, j, k;	
+	size_t i, j, k;
+	size_t bi[5], bj[5], bk[5];
+	//size_t bimax[5], bjmax[5], bkmax[5];
+	size_t imax, jmax, kmax;
+	size_t bstep[5];
+	bstep[0] = 24;
+	bstep[1] = bstep[0]*3;
+	
 	for(j = 0; j < size; ++j)
 		for(i = 0; i < size; ++i)
 			if(permute == Permute::True)
@@ -399,24 +302,48 @@ inline void substMLU(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
 			else
 				ind(X, i, j) = ind(B, i, j);
 	
-	for(i = 0; i < size; i += 1){
-		for(j = 0; j < size; j += 1){
-			for(k = 0; k != i; k += 1){
-				ind(X,i,j) = ind(X,i,j) - ind(LU,i,k) * ind(X,k,j);
+	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
+	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0]) {
+		imax = min(bi[0]+bstep[0] , size);
+		jmax = min(bj[0]+bstep[0] , size);
+		for (bk[0] = 0; bk[0] < (bi[0]); bk[0] += bstep[0]) {
+			for (i = bi[0]; i < imax; i += 1)
+			for (j = bj[0]; j < jmax; j += 1) {
+				for (k = bk[0]; k < (bk[0]+bstep[0]); k += 1)
+					ind(X, i, j) = ind(X, i, j) - ind(LU, i, k) * ind(X, k, j);
 			}
-			if(diagonal == Diagonal::Value)
-				ind(X,i,j) /= ind(LU,i,i);
+		} // Last block in K, diagonal, divide by pivot
+		for (bk[0] = (bi[0]); bk[0] < (bi[0]+bstep[0]); bk[0] += bstep[0]) {
+			for (i = bi[0]; i < imax; i += 1)
+			for (j = bj[0]; j < jmax; j += 1) {
+				for (k = bk[0]; k < i; k += 1)
+					ind(X, i, j) = ind(X, i, j) - ind(LU, i, k) * ind(X, k, j);
+				if(diagonal == Diagonal::Value)
+					ind(X, i, j) /= ind(LU, i, i);
+			}
 		}
 	}
-}
 #undef ind
+}
 
-#define ind(M,i,j) (direction == Direction::Forwards ? \
-	M.at(i, j) : \
-	M.at((size-1)-i, (size-1)-j))
+
+/**
+ * @brief Solves LU*X = B, B having LU.size() columns of independant terms.
+ * Resulting in LU.size() columns of X, each being the solution to LU*x = B.col(j).
+ * Tiling on L0 and L1
+ * @param LU triangular matrix, Lower or Upper
+ * @param X Matrix of solutions
+ * @param B Matrix of independent terms
+ * @param P Permutation obtained in GaussEl()
+ */
 template<Direction direction, Diagonal diagonal, Permute permute,
 	class LUMatrix, class XMatrix, class BMatrix>
 inline void substMLU10(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
+// Defines to index Matrices, if direction is backwards, access is reversed
+#define ind(M,i,j) (direction == Direction::Forwards ? \
+	M.at(i, j) : \
+	M.at((size-1)-(i), (size-1)-(j)))
+	
 	size_t size = X.size();
 	size_t i, j, k;
 	size_t bi[5], bj[5], bk[5];
@@ -441,7 +368,6 @@ inline void substMLU10(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
 			else
 				ind(X, i, j) = ind(B, i, j);
 	
-	asm("LUTiled1.0");
 	for (bi[1] = 0; bi[1] < size; bi[1] += bstep[1])
 	for (bj[1] = 0; bj[1] < size; bj[1] += bstep[1])
 	for (bk[1] = 0; bk[1] < (bi[1]+bstep[1]); bk[1] += bstep[1]) {
@@ -452,7 +378,7 @@ inline void substMLU10(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
 			bkmax[0] = min(bk[1]+bstep[1], bi[0]);
 			imax = min(bi[0]+bstep[0] , size);
 			jmax = min(bj[0]+bstep[0] , size);
-			for (bk[0] = bk[1]; bk[0] < bkmax[0]; bk[0] += bstep[0]) {
+				for (bk[0] = bk[1]; bk[0] < bkmax[0]; bk[0] += bstep[0]) {
 				for (i = bi[0]; i < imax; i += 1)
 				for (j = bj[0]; j < jmax; j += 1) {
 					for (k = bk[0]; k < (bk[0]+bstep[0]); k += 1)
@@ -471,9 +397,45 @@ inline void substMLU10(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
 			}
 		}
 	}
-	asm("END LUTiled1.0");
-}
 #undef ind
+}
+
+/**
+ * @brief Solves LU*X = B, B having LU.size() columns of independant terms.
+ * Resulting in LU.size() columns of X, each being the solution to LU*x = B.col(j).
+ * @param LU triangular matrix, Lower or Upper
+ * @param X Matrix of solutions
+ * @param B Matrix of independent terms
+ * @param P Permutation obtained in GaussEl()
+ */
+template<Direction direction, Diagonal diagonal, Permute permute,
+	class LUMatrix, class XMatrix, class BMatrix>
+inline void substMLU(LUMatrix& LU, XMatrix& X, BMatrix& B, varray<size_t>& P){
+// Defines to index Matrices, if direction is backwards, access is reversed
+#define ind(M,i,j) (direction == Direction::Forwards ? \
+	M.at(i, j) : \
+	M.at((size-1)-(i), (size-1)-(j)))
+	
+	size_t size = X.size();
+	size_t i, j, k;	
+	for(j = 0; j < size; ++j)
+		for(i = 0; i < size; ++i)
+			if(permute == Permute::True)
+				ind(X, i, j) = ind(B, P.at(i), j);
+			else
+				ind(X, i, j) = ind(B, i, j);
+	
+	for(i = 0; i < size; i += 1){
+		for(j = 0; j < size; j += 1){
+			for(k = 0; k != i; k += 1){
+				ind(X,i,j) = ind(X,i,j) - ind(LU,i,k) * ind(X,k,j);
+			}
+			if(diagonal == Diagonal::Value)
+				ind(X,i,j) /= ind(LU,i,i);
+		}
+	}
+#undef ind
+}
 
 
 }

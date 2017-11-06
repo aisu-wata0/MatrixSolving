@@ -104,8 +104,8 @@ inline double residue(AMatrix& A, IAMatrix& IA, IMatrix& I){
 	return sqrt(err_norm);
 }
 /**
- * @brief Given a matrix A and it's inverse, calculates residue into R. \
- * Uses tiling on L0.
+ * @brief Given a matrix A and it's inverse, calculates residue into R. \n
+ * Tiling on L0
  */
 template<class AMatrix, class IAMatrix, class IMatrix>
 inline double residue0(AMatrix& A, IAMatrix& IA, IMatrix& R){
@@ -155,8 +155,8 @@ inline double residue0(AMatrix& A, IAMatrix& IA, IMatrix& R){
 	return sqrt(errNorm);
 }
 /**
- * @brief Given a matrix A and it's inverse, calculates residue into R. \
- * Uses tiling on L0, SSE.
+ * @brief Given a matrix A and it's inverse, calculates residue into R. \n
+ * Tiling on L0, SSE
  */
 template<class AMatrix, class IAMatrix, class IMatrix>
 inline double residue0A(AMatrix& A, IAMatrix& IA, IMatrix& R){
@@ -179,7 +179,9 @@ inline double residue0A(AMatrix& A, IAMatrix& IA, IMatrix& R){
 	}
 	// Multiply A*IA and subtract from R
 	size_t vn = R.vecN();
+	
 #define vect(v) for(size_t v=0; v < vn; ++v)
+	
 	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
 	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0])
 	for (bk[0] = 0; bk[0] < size; bk[0] += bstep[0]){
@@ -213,8 +215,8 @@ inline double residue0A(AMatrix& A, IAMatrix& IA, IMatrix& R){
 	return sqrt(errNorm);
 }
 /**
- * @brief Given a matrix A and it's inverse, calculates residue into R. \
- * Uses tiling on L0, SSE, Unrolling on k.
+ * @brief Given a matrix A and it's inverse, calculates residue into R. \n
+ * Tiling on L0, SSE, Unrolling on k
  */
 template<class AMatrix, class IAMatrix, class IMatrix>
 inline double residue0AU(AMatrix& A, IAMatrix& IA, IMatrix& R){
@@ -222,7 +224,7 @@ inline double residue0AU(AMatrix& A, IAMatrix& IA, IMatrix& R){
 	size_t bi[5], bj[5], bk[5];
 	size_t bimax[5], bjmax[5], bkmax[5];
 	size_t bstep[5];
-	const size_t unr = 8;
+	const size_t kunr = 8;
 	vec<double> acc;
 	/**/
 	bstep[0] = B2L1;
@@ -242,8 +244,10 @@ inline double residue0AU(AMatrix& A, IAMatrix& IA, IMatrix& R){
 	}
 	// Multiply A*IA and subtract from R
 	size_t vn = R.vecN();
+	
 #define vect(v) for(size_t v=0; v < vn; ++v)
-#define unr(v) for(size_t v=0; v < unr; ++v)
+#define unr(u,n) for(size_t u = 0; u < n; ++u)
+	
 	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
 	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0])
 	for (bk[0] = 0; bk[0] < size; bk[0] += bstep[0]){
@@ -253,10 +257,8 @@ inline double residue0AU(AMatrix& A, IAMatrix& IA, IMatrix& R){
 		for (i = bi[0]; i < imax; ++i)
 		for (j = bj[0]; j < jmax; ++j) {
 			vect(u) vect(v) acc[v] = 0;
-			for (kv = bk[0]/vn; kv < kmax/vn -(unr-1); kv += unr)
-				unr(u) acc.v += A.atv(i, kv+u).v * IA.atv(kv+u, j).v;
-//			for (rem = 0; rem < kmax/vn % unr; ++rem) // unroll remainder
-//				acc.v += A.atv(i, kv+rem).v * IA.atv(kv+rem, j).v;
+			for (kv = bk[0]/vn; kv < kmax/vn -(kunr-1); kv += kunr)
+				unr(u,kunr) acc.v += A.atv(i, kv+u).v * IA.atv(kv+u, j).v;
 			for(k = kv*vn; k < kmax; ++k) // vect remainder
 				R.at(i, j) = R.at(i, j) - A.at(i, k) * IA.at(k, j);
 			vect(v) R.at(i, j) -= acc[v]; // vect result sum
@@ -279,8 +281,8 @@ inline double residue0AU(AMatrix& A, IAMatrix& IA, IMatrix& R){
 	return sqrt(errNorm);
 }
 /**
- * @brief Given a matrix A and it's inverse, calculates residue into R. \
- * Uses tiling on L0, SSE, Unrolling on i,j. (Doen't care for the remainder of the unrolling, unnacurate)
+ * @brief Given a matrix A and it's inverse, calculates residue into R. \n
+ * Tiling on L0, SSE, Unrolling on i,j (Doen't care for the remainder of the unrolling, unnacurate)
  */
 template<class AMatrix, class IAMatrix, class IMatrix>
 inline double residue0AUU(AMatrix& A, IAMatrix& IA, IMatrix& R){
@@ -306,9 +308,11 @@ inline double residue0AUU(AMatrix& A, IAMatrix& IA, IMatrix& R){
 	}
 	// Multiply A*IA and subtract from R
 	size_t vn = R.vecN();
+	
 #define vect(v) for(size_t v=0; v < vn; ++v)
 #define unr(u,n) for(size_t u = 0; u < n; ++u)
 #define unr2(iu,ju,n) unr(iu,n) unr(ju,n)
+
 	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0])
 	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0])
 	for (bk[0] = 0; bk[0] < size; bk[0] += bstep[0]){
@@ -321,8 +325,6 @@ inline double residue0AUU(AMatrix& A, IAMatrix& IA, IMatrix& R){
 			for (kv = bk[0]/vn; kv < kmax/vn; ++kv)
 				unr2(iu,ju,unr)
 					acc[iu*unr+ju].v += A.atv(i+iu, kv).v * IA.atv(kv, j+ju).v;
-//			for (rem = 0; rem < kmax/vn % unr; ++rem) // unroll remainder
-//				acc[0].v -= A.atv(i, kv+rem).v * IA.atv(kv+rem, j).v;
 			for(k = kv*vn; k < kmax; ++k) // vect remainder
 				unr2(iu,ju,unr)
 					R.at(i+iu, j+ju) -= A.at(i+iu, k) * IA.at(k, j+ju);
@@ -348,24 +350,24 @@ inline double residue0AUU(AMatrix& A, IAMatrix& IA, IMatrix& R){
 	return sqrt(errNorm);
 }
 /**
- * @brief Given a matrix A and it's inverse, calculates residue into R. \
- * Uses tiling on L0, SSE, unrolling on i,j.
+ * @brief Given a matrix A and it's inverse, calculates residue into R. \n
+ * Tiling on L0, SSE, unrolling on i,j
  */
 template<class AMatrix, class IAMatrix, class IMatrix>
 inline double residue0AUIJ(AMatrix& A, IAMatrix& IA, IMatrix& R){
-	size_t size = A.size();
-	size_t bi[5], bj[5], bk[5];
+	ssize_t size = A.size();
+	ssize_t bi[5], bj[5], bk[5];
 	//size_t bimax[5], bjmax[5], bkmax[5];
-	size_t bstep[5];
+	ssize_t bstep[5];
 	/**/
-	const size_t iunr = 2;
-	const size_t junr = 4;
+	const ssize_t iunr = 2;
+	const ssize_t junr = 4;
 	/* export GCC_ARGS=" -D IUNRLL=${2} -D JUNRLL=${4}"* const size_t iunr = IUNRLL; const size_t junr = JUNRLL;/**/
 	vec<double> acc[iunr*junr];
 	/**/
 	bstep[0] = B2L1;
 	/* export GCC_ARGS=" -D L0=${24} -D L1M=${3}"* bstep[0] = L0; bstep[1] = bstep[0]*L1M;/**/
-	size_t i, j, k, kv;
+	ssize_t i, j, k, kv;
 	for(j = 0; j < size; ++j){
 		for(i = 0; i < j; ++i)
 			R.at(i,j) = 0;
@@ -374,17 +376,18 @@ inline double residue0AUIJ(AMatrix& A, IAMatrix& IA, IMatrix& R){
 			R.at(i,j) = 0;
 	}
 	// Multiply A*IA and subtract from R
-	size_t vn = R.vecN(); // number of elements on the register (vectorization)
-#define vect(v) for(size_t v=0; v < vn; ++v) // ease vectorization
+	ssize_t vn = R.vecN(); // number of elements on the register (vectorization)
+	
+#define vect(v) for(ssize_t v=0; v < vn; ++v) // ease vectorization
 #define unrll(u,step) for(size_t u = 0; u < step; ++u) // ease unrolling
 #define unr(iu,iunr,ju,junr) unrll(iu,iunr) unrll(ju,junr) // unroll 2 dimensions
 	
 	for (bi[0] = 0; bi[0] < size; bi[0] += bstep[0]) // L1 tiling
 	for (bj[0] = 0; bj[0] < size; bj[0] += bstep[0])
 	for (bk[0] = 0; bk[0] < size; bk[0] += bstep[0]){
-		size_t imax = min(bi[0]+bstep[0], size); // setting tile limits
-		size_t jmax = min(bj[0]+bstep[0], size);
-		size_t kmax = min(bk[0]+bstep[0], size);
+		ssize_t imax = min(bi[0]+bstep[0], size); // setting tile limits
+		ssize_t jmax = min(bj[0]+bstep[0], size);
+		ssize_t kmax = min(bk[0]+bstep[0], size);
 		for (i = bi[0]; i < imax -(iunr-1); i += iunr) { // i unroll
 			for (j = bj[0]; j < jmax -(junr-1); j += junr) { // j unroll
 // Multiply current tile: i,j = A krow * IA kcol
@@ -418,7 +421,7 @@ inline double residue0AUIJ(AMatrix& A, IAMatrix& IA, IMatrix& R){
 #undef unrll
 #undef kloop
 	// Calculate norm error from R
-	size_t iv;
+	ssize_t iv;
 	double errNorm = 0;
 	vec<double> errNormV{0};
 	for(j = 0; j < size; ++j){
@@ -489,14 +492,14 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, varray<size_t>& P,
 		//LIKWID_MARKER_START("SUM");
 		
 		//add(IA, W);
-#define unrll(u,step) for(size_t u = 0; u < step; ++u) // ease unrolling
-		size_t j, junr = 8;
-		for(j=0; j < IA.size() -(junr-1); j += junr)
-			for(size_t i=0; i < IA.size(); ++i)
+#define unrll(u,step) for(ssize_t u = 0; u < step; ++u) // ease unrolling
+		ssize_t i, j, junr = 8, size = IA.size();
+		for(j=0; j < size -(junr-1); j += junr)
+			for(i=0; i < size; ++i)
 				unrll(ju,junr)
 				IA.at(i,j+ju) += W.at(i,j+ju);
-		for(j = j; j < IA.size(); ++j)
-			for(size_t i=0; i < IA.size(); ++i)
+		for(j = j; j < size; ++j)
+			for(i=0; i < size; ++i)
 				IA.at(i,j) += W.at(i,j);
 #undef unrll
 		

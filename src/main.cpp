@@ -24,7 +24,7 @@ void readMatrix(Mat& A){
 }
 
 int main(int argc, char **argv) {
-	//LIKWID_MARKER_INIT;
+	LIKWID_MARKER_INIT;
 	cout.precision(8);
 	cout << scientific;
 	srand(20172);
@@ -54,11 +54,11 @@ int main(int argc, char **argv) {
 	varray<size_t> P(A.sizeMem());
 	
 	timer.start();
-	//LIKWID_MARKER_START("LU");
+	LIKWID_MARKER_START("LU");
 	
 	GaussEl(A, LU, P);
 	
-	//LIKWID_MARKER_STOP("LU");
+	LIKWID_MARKER_STOP("LU");
 	lu_time = timer.tick();
 	
 	MatrixColMajor<double> IA(size);
@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
 	cout<<"# Tempo residuo: "<< total_time_residue/(double)iter_n <<"\n#\n";
 	printm(IA);
 	
-	//LIKWID_MARKER_CLOSE;
+	LIKWID_MARKER_CLOSE;
 	in_f.close();
 	cout.rdbuf(coutbuf); //redirect
 	o_f.close();
@@ -128,7 +128,7 @@ bool& input, size_t& size, size_t& iter_n, ifstream& in_f, ofstream& o_f){
 
 int mainT(int argc, char **argv)
 {
-	//LIKWID_MARKER_INIT;
+	LIKWID_MARKER_INIT;
 	//cout.precision(4);
 	//cout << scientific;
 	srand(20172);
@@ -159,12 +159,12 @@ int mainT(int argc, char **argv)
 	//vector<size_t> V_sz = {144};
 	for (auto sz : V_sz){
 		for(size = sz; size < sz+1; size++){
-			t_matrix_mult(size);
+			//t_matrix_mult(size);
 			cout << endl;
 		}
 	}
 	/**/
-	//LIKWID_MARKER_CLOSE;
+	LIKWID_MARKER_CLOSE;
 	cout.rdbuf(coutbuf); //redirect
 	return 0;
 }

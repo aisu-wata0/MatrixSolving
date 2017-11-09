@@ -5,7 +5,7 @@
 #include <vector>
 #include <cmath>
 #include <ctgmath>
-//#include <likwid.h>
+#include <likwid.h>
 #include <unistd.h>
 
 #include "Matrix.hpp"
@@ -461,17 +461,17 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, varray<size_t>& P,
 			R.at(i,j) = 0;
 	}
 
-	//LIKWID_MARKER_START("INV");
+	LIKWID_MARKER_START("INV");
 	
 	//solveMLU(LU, IA, R, P);
 	solveMLU0(LU, IA, R, P);
 	
-	//LIKWID_MARKER_STOP("INV");
-	//LIKWID_MARKER_START("RES");
+	LIKWID_MARKER_STOP("INV");
+	LIKWID_MARKER_START("RES");
 	
 	c_residue = residue0AUIJ(A, IA, R);
 	
-	//LIKWID_MARKER_STOP("RES");
+	LIKWID_MARKER_STOP("RES");
 	
 	cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";
 	while(i < iter_n){
@@ -481,15 +481,15 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, varray<size_t>& P,
 		// R: residue of IA
 
 		timer.start();
-		//LIKWID_MARKER_START("INV");
+		LIKWID_MARKER_START("INV");
 		
 		//solveMLU(LU, W, R, P);
 		solveMLU0(LU, W, R, P);
 		
-		//LIKWID_MARKER_STOP("INV");
+		LIKWID_MARKER_STOP("INV");
 		// W: residues of each variable of IA
 		// adjust IA with found errors
-		//LIKWID_MARKER_START("SUM");
+		LIKWID_MARKER_START("SUM");
 		
 		//add(IA, W);
 #define unrll(u,step) for(ssize_t u = 0; u < step; ++u) // ease unrolling
@@ -503,16 +503,16 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, varray<size_t>& P,
 				IA.at(i,j) += W.at(i,j);
 #undef unrll
 		
-		//LIKWID_MARKER_STOP("SUM");
+		LIKWID_MARKER_STOP("SUM");
 		total_time_iter += timer.tickAverage();
 		
 		//l_residue = c_residue;
 		timer.start();
-		//LIKWID_MARKER_START("RES");
+		LIKWID_MARKER_START("RES");
 		
 		c_residue = residue0AUIJ(A, IA, R);
 		
-		//LIKWID_MARKER_STOP("RES");
+		LIKWID_MARKER_STOP("RES");
 		total_time_residue += timer.tick();
 		
 		cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";

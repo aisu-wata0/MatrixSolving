@@ -16,9 +16,7 @@
 namespace gm {
 using namespace std;
 
-double total_time_iter = 0.0;
-double total_time_residue = 0.0;
-double lu_time = 0.0;
+Chronometer<TimerHistoryMax> timer_iter, timer_residue;
 
 /**
  * @brief Solves LU system using subst functions.
@@ -479,8 +477,8 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, varray<size_t>& P,
 		// relative approximate error
 		i += 1;
 		// R: residue of IA
-
-		timer.start();
+		
+		timer_iter.start();
 		LIKWID_MARKER_START("INV");
 		
 		//solveMLU(LU, W, R, P);
@@ -504,18 +502,18 @@ void inverse_refining(AMatrix& A, LUMatrix& LU, IAMatrix& IA, varray<size_t>& P,
 #undef unrll
 		
 		LIKWID_MARKER_STOP("SUM");
-		total_time_iter += timer.tickAverage();
+		timer_iter.tickAverage();
 		
 		//l_residue = c_residue;
-		timer.start();
+		timer_residue.start();
 		LIKWID_MARKER_START("RES");
 		
 		c_residue = residue0AUIJ(A, IA, R);
 		
 		LIKWID_MARKER_STOP("RES");
-		total_time_residue += timer.tick();
+		timer_residue.tickAverage();
 		
-		cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";
+		//cout<<"# iter "<< setfill('0') << setw(digits) << i <<": "<< c_residue <<"\n";
 	}
 }
 

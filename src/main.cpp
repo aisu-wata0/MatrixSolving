@@ -53,6 +53,7 @@ int main(int argc, char **argv) {
 	Matrix<double> LU(size);
 	varray<size_t> P(A.sizeMem());
 	
+	double lu_time = 0.0;
 	timer.start();
 	LIKWID_MARKER_START("LU");
 	
@@ -63,14 +64,14 @@ int main(int argc, char **argv) {
 	
 	MatrixColMajor<double> IA(size);
 	
-	cout<<"#\n";
+	//cout<<"#\n";
 	inverse_refining(A, LU, IA, P, iter_n);
-
+	
 	cout<< defaultfloat;
-	cout<<"# Tempo LU: "<< lu_time <<"\n";
-	cout<<"# Tempo iter: "<< total_time_iter/(double)iter_n <<"\n";
-	cout<<"# Tempo residuo: "<< total_time_residue/(double)iter_n <<"\n#\n";
-	printm(IA);
+	cout<< lu_time <<"\n";
+	cout<< timer_iter.averageTotal() <<"\n";
+	cout<< timer_residue.averageTotal() << endl;
+	//printm(IA);
 	
 	LIKWID_MARKER_CLOSE;
 	in_f.close();

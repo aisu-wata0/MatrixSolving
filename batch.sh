@@ -8,7 +8,7 @@ outDir=$1
 #"32 33 64 65 128 129 256 257 512 1000 2000"
 sizes="32 33 64 65 128 129 256 257 512 1000 2000"
 #"naive_lik" "mult_block_likwid"
-versions="naive_lik" "mult_block_likwid"
+versions="naive_lik mult_block_likwid"
 
 for version in $versions; do
 	er git checkout $version

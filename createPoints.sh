@@ -35,24 +35,21 @@ for flagDir in "$@"; do
 		i=0
 		for y in $ys; do
 			case "$i" in
-				0)  flag="INV"
+				0)  re="INV"
 					;;
 				
-				1)  flag="RES"
+				1)  re="RES"
 					;;
 			
-				2)  flag="SUM"
+				2)  re="SUM"
 					;;
 				
-				*)  flag="err"
+				*)  re="err"
 					;;
 			esac
 			touch $outDir/$flag.txt
-			echo $x $y >> $outDir/$flag.txt
+			echo $x $y >> $outDir/$re-$flag-$version.dat
 			i=$(($i+1))
 		done
 	done
 done
-	
-	
-

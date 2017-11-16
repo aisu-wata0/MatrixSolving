@@ -1,0 +1,78 @@
+STRUCT,Info,3
+CPU name:,Intel(R) Core(TM) i5-3470 CPU @ 3.20GHz,
+CPU type:,Intel Core IvyBridge processor,
+CPU clock:,3.192532479 GHz,
+TABLE,Region INV,Group 1 Raw,L3,5
+Region Info,Core 1,
+RDTSC Runtime [s],0.005728,
+call count,11,
+Event,Counter,Core 1
+INSTR_RETIRED_ANY,FIXC0,24689760
+CPU_CLK_UNHALTED_CORE,FIXC1,9829496
+CPU_CLK_UNHALTED_REF,FIXC2,18436610
+L2_LINES_IN_ALL,PMC0,26846
+L2_LINES_OUT_DIRTY_ALL,PMC1,3696
+TABLE,Region INV,Group 1 Metric,L3,10
+Metric,Core 1,
+Runtime (RDTSC) [s],0.0057,
+Runtime unhalted [s],0.0031,
+Clock [MHz],1702.1017,
+CPI,0.3981,
+L3 load bandwidth [MBytes/s],299.9581,
+L3 load data volume [GBytes],0.0017,
+L3 evict bandwidth [MBytes/s],41.2965,
+L3 evict data volume [GBytes],0.0002,
+L3 bandwidth [MBytes/s],341.2546,
+L3 data volume [GBytes],0.0020,
+STRUCT,Info,3
+CPU name:,Intel(R) Core(TM) i5-3470 CPU @ 3.20GHz,
+CPU type:,Intel Core IvyBridge processor,
+CPU clock:,3.192532479 GHz,
+TABLE,Region RES,Group 1 Raw,L3,5
+Region Info,Core 1,
+RDTSC Runtime [s],0.005273,
+call count,11,
+Event,Counter,Core 1
+INSTR_RETIRED_ANY,FIXC0,20816830
+CPU_CLK_UNHALTED_CORE,FIXC1,9165766
+CPU_CLK_UNHALTED_REF,FIXC2,17099170
+L2_LINES_IN_ALL,PMC0,24729
+L2_LINES_OUT_DIRTY_ALL,PMC1,3799
+TABLE,Region RES,Group 1 Metric,L3,10
+Metric,Core 1,
+Runtime (RDTSC) [s],0.0053,
+Runtime unhalted [s],0.0029,
+Clock [MHz],1711.3115,
+CPI,0.4403,
+L3 load bandwidth [MBytes/s],300.1369,
+L3 load data volume [GBytes],0.0016,
+L3 evict bandwidth [MBytes/s],46.1086,
+L3 evict data volume [GBytes],0.0002,
+L3 bandwidth [MBytes/s],346.2456,
+L3 data volume [GBytes],0.0018,
+STRUCT,Info,3
+CPU name:,Intel(R) Core(TM) i5-3470 CPU @ 3.20GHz,
+CPU type:,Intel Core IvyBridge processor,
+CPU clock:,3.192532479 GHz,
+TABLE,Region SUM,Group 1 Raw,L3,5
+Region Info,Core 1,
+RDTSC Runtime [s],0.000083,
+call count,10,
+Event,Counter,Core 1
+INSTR_RETIRED_ANY,FIXC0,366224
+CPU_CLK_UNHALTED_CORE,FIXC1,269101
+CPU_CLK_UNHALTED_REF,FIXC2,498912
+L2_LINES_IN_ALL,PMC0,14619
+L2_LINES_OUT_DIRTY_ALL,PMC1,912
+TABLE,Region SUM,Group 1 Metric,L3,10
+Metric,Core 1,
+Runtime (RDTSC) [s],0.0001,
+Runtime unhalted [s],0.0001,
+Clock [MHz],1721.9744,
+CPI,0.7348,
+L3 load bandwidth [MBytes/s],11339.4310,
+L3 load data volume [GBytes],0.0009,
+L3 evict bandwidth [MBytes/s],707.4055,
+L3 evict data volume [GBytes],0.0001,
+L3 bandwidth [MBytes/s],12046.8365,
+L3 data volume [GBytes],0.0010,

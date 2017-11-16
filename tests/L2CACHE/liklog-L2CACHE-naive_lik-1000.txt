@@ -1,0 +1,69 @@
+STRUCT,Info,3
+CPU name:,Intel(R) Core(TM) i5-3470 CPU @ 3.20GHz,
+CPU type:,Intel Core IvyBridge processor,
+CPU clock:,3.192513657 GHz,
+TABLE,Region INV,Group 1 Raw,L2CACHE,5
+Region Info,Core 1,
+RDTSC Runtime [s],11.247800,
+call count,11,
+Event,Counter,Core 1
+INSTR_RETIRED_ANY,FIXC0,88374810000
+CPU_CLK_UNHALTED_CORE,FIXC1,40232160000
+CPU_CLK_UNHALTED_REF,FIXC2,35764690000
+L2_TRANS_ALL_REQUESTS,PMC0,5688994000
+L2_RQSTS_MISS,PMC1,1875407000
+TABLE,Region INV,Group 1 Metric,L2CACHE,7
+Metric,Core 1,
+Runtime (RDTSC) [s],11.2478,
+Runtime unhalted [s],12.6020,
+Clock [MHz],3591.2997,
+CPI,0.4552,
+L2 request rate,0.0644,
+L2 miss rate,0.0212,
+L2 miss ratio,0.3297,
+STRUCT,Info,3
+CPU name:,Intel(R) Core(TM) i5-3470 CPU @ 3.20GHz,
+CPU type:,Intel Core IvyBridge processor,
+CPU clock:,3.192513657 GHz,
+TABLE,Region RES,Group 1 Raw,L2CACHE,5
+Region Info,Core 1,
+RDTSC Runtime [s],9.680831,
+call count,11,
+Event,Counter,Core 1
+INSTR_RETIRED_ANY,FIXC0,77143170000
+CPU_CLK_UNHALTED_CORE,FIXC1,34662950000
+CPU_CLK_UNHALTED_REF,FIXC2,30812240000
+L2_TRANS_ALL_REQUESTS,PMC0,4904399000
+L2_RQSTS_MISS,PMC1,1447055000
+TABLE,Region RES,Group 1 Metric,L2CACHE,7
+Metric,Core 1,
+Runtime (RDTSC) [s],9.6808,
+Runtime unhalted [s],10.8576,
+Clock [MHz],3591.4929,
+CPI,0.4493,
+L2 request rate,0.0636,
+L2 miss rate,0.0188,
+L2 miss ratio,0.2951,
+STRUCT,Info,3
+CPU name:,Intel(R) Core(TM) i5-3470 CPU @ 3.20GHz,
+CPU type:,Intel Core IvyBridge processor,
+CPU clock:,3.192513657 GHz,
+TABLE,Region SUM,Group 1 Raw,L2CACHE,5
+Region Info,Core 1,
+RDTSC Runtime [s],0.166429,
+call count,10,
+Event,Counter,Core 1
+INSTR_RETIRED_ANY,FIXC0,80104130
+CPU_CLK_UNHALTED_CORE,FIXC1,596896600
+CPU_CLK_UNHALTED_REF,FIXC2,530574800
+L2_TRANS_ALL_REQUESTS,PMC0,49643290
+L2_RQSTS_MISS,PMC1,10353790
+TABLE,Region SUM,Group 1 Metric,L2CACHE,7
+Metric,Core 1,
+Runtime (RDTSC) [s],0.1664,
+Runtime unhalted [s],0.1870,
+Clock [MHz],3591.5776,
+CPI,7.4515,
+L2 request rate,0.6197,
+L2 miss rate,0.1293,
+L2 miss ratio,0.2086,

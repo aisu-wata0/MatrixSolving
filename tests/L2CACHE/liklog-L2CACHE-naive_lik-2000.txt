@@ -1,0 +1,69 @@
+STRUCT,Info,3
+CPU name:,Intel(R) Core(TM) i5-3470 CPU @ 3.20GHz,
+CPU type:,Intel Core IvyBridge processor,
+CPU clock:,3.192592808 GHz,
+TABLE,Region INV,Group 1 Raw,L2CACHE,5
+Region Info,Core 1,
+RDTSC Runtime [s],87.963960,
+call count,11,
+Event,Counter,Core 1
+INSTR_RETIRED_ANY,FIXC0,705497600000
+CPU_CLK_UNHALTED_CORE,FIXC1,314676700000
+CPU_CLK_UNHALTED_REF,FIXC2,279724200000
+L2_TRANS_ALL_REQUESTS,PMC0,52228160000
+L2_RQSTS_MISS,PMC1,16063430000
+TABLE,Region INV,Group 1 Metric,L2CACHE,7
+Metric,Core 1,
+Runtime (RDTSC) [s],87.9640,
+Runtime unhalted [s],98.5646,
+Clock [MHz],3591.5183,
+CPI,0.4460,
+L2 request rate,0.0740,
+L2 miss rate,0.0228,
+L2 miss ratio,0.3076,
+STRUCT,Info,3
+CPU name:,Intel(R) Core(TM) i5-3470 CPU @ 3.20GHz,
+CPU type:,Intel Core IvyBridge processor,
+CPU clock:,3.192592808 GHz,
+TABLE,Region RES,Group 1 Raw,L2CACHE,5
+Region Info,Core 1,
+RDTSC Runtime [s],78.428540,
+call count,11,
+Event,Counter,Core 1
+INSTR_RETIRED_ANY,FIXC0,616572300000
+CPU_CLK_UNHALTED_CORE,FIXC1,280849700000
+CPU_CLK_UNHALTED_REF,FIXC2,249654700000
+L2_TRANS_ALL_REQUESTS,PMC0,47974350000
+L2_RQSTS_MISS,PMC1,14281390000
+TABLE,Region RES,Group 1 Metric,L2CACHE,7
+Metric,Core 1,
+Runtime (RDTSC) [s],78.4285,
+Runtime unhalted [s],87.9692,
+Clock [MHz],3591.5155,
+CPI,0.4555,
+L2 request rate,0.0778,
+L2 miss rate,0.0232,
+L2 miss ratio,0.2977,
+STRUCT,Info,3
+CPU name:,Intel(R) Core(TM) i5-3470 CPU @ 3.20GHz,
+CPU type:,Intel Core IvyBridge processor,
+CPU clock:,3.192592808 GHz,
+TABLE,Region SUM,Group 1 Raw,L2CACHE,5
+Region Info,Core 1,
+RDTSC Runtime [s],0.817558,
+call count,10,
+Event,Counter,Core 1
+INSTR_RETIRED_ANY,FIXC0,320174500
+CPU_CLK_UNHALTED_CORE,FIXC1,2930335000
+CPU_CLK_UNHALTED_REF,FIXC2,2604765000
+L2_TRANS_ALL_REQUESTS,PMC0,306670600
+L2_RQSTS_MISS,PMC1,100782900
+TABLE,Region SUM,Group 1 Metric,L2CACHE,7
+Metric,Core 1,
+Runtime (RDTSC) [s],0.8176,
+Runtime unhalted [s],0.9179,
+Clock [MHz],3591.6355,
+CPI,9.1523,
+L2 request rate,0.9578,
+L2 miss rate,0.3148,
+L2 miss ratio,0.3286,

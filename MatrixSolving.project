@@ -23,6 +23,7 @@
     <File Name="createPoints.sh"/>
     <File Name="lik.sh"/>
     <File Name="likParse.sh"/>
+    <File Name="plot.sh"/>
   </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>

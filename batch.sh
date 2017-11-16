@@ -9,8 +9,8 @@ for size in $sizes; do
 		er make rebuild
 		er mv invmat invmat_${version}
 		for LIK_FLAG in "L2CACHE" "FLOPS_DP" "MEM"; do
-			args="-r$size -i10 -olog_${version}_${size}.txt"
-			er ./lik.sh "loglik_${LIK_FLAG}_${version}_${size}.txt" ${LIK_FLAG} "./invmat $args"
+			args="-r$size -i10 -olog-time-${version}-${size}.txt"
+			er ./lik.sh "loglik-${LIK_FLAG}-${version}-${size}.txt" ${LIK_FLAG} "./invmat $args"
 		done
 	done
 done

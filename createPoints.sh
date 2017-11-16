@@ -1,55 +1,66 @@
-# ./createPoints.sh points/ tests/*
-#                                 * = Every Flag (dir)
+# ./createPoints.sh points/ tests/
+
+er() { echo "\$ $@" ; "$@" ; }
+
 outDir=$1
+inDir=$2
 
 mkdir -p $outDir
 
-agrNum=0
-for flagDir in "$@"; do 
-	agrNum=$(($agrNum+1))
-	if [ $agrNum == "1" ]; then
-		continue
-	fi
-	
-	flag=$(echo $flagDir | rev | cut -d'/' -f1 | rev)
+for flagDir in $(ls $inDir); do
+	flag=$flagDir
 	
 	case "$flag" in
-		"L2CACHE") 
+		("L2CACHE") 
 			value="L2 miss ratio"
 			;;
-		"L3")
+		("L3")
 			value="L3 bandwidth [MBytes/s]"
 			;;
-		"FLOPS_DP")
+		("FLOPS_DP")
 			value="DP MFLOP/s"
 			;;
-		*)
+		(*)
 			value="err"
 			;;
 	esac
 	
-	for filename in $(ls $flagDir); do
-		x=$(echo $flagDir/$filename | cut -d'-' -f4 | cut -d'.' -f1)
-		ys=$(./likParse.sh $flagDir/$filename $value)
+	echo $flagDir
+	echo $value
+	
+	for filename in $(ls $inDir/$flagDir); do
+		filepath="$inDir/$flagDir/$filename"
+		
+		version=$(echo $filename | cut -d'-' -f3 | cut -d'.' -f1)
+		
+		x=$(echo $filename | cut -d'-' -f4 | cut -d'.' -f1)
+		echo "./likParse.sh \"$filepath\" \"$value\""
+		ys=$(./likParse.sh $filepath "$value")
+		echo $ys
 		
 		i=0
 		for y in $ys; do
 			case "$i" in
-				0)  re="INV"
+				0)  op="INV"
 					;;
 				
-				1)  re="RES"
+				1)  op="RES"
 					;;
 			
-				2)  re="SUM"
+				2)  op="SUM"
 					;;
 				
-				*)  re="err"
+				*)  op="err"
 					;;
 			esac
-			touch $outDir/$flag.txt
-			echo $x $y >> $outDir/$re-$flag-$version.dat
+			
+			echo $x $y >> $outDir/$op-$flag-$version.dat
 			i=$(($i+1))
 		done
 	done
+done
+
+for filename in $(ls $outDir); do
+	sort -k1 -n $outDir/$filename > $outDir/$filename.tmp
+	mv $outDir/$filename.tmp $outDir/$filename
 done

@@ -24,6 +24,7 @@
     <File Name="lik.sh"/>
     <File Name="likParse.sh"/>
     <File Name="plot.sh"/>
+    <File Name="plot.gp"/>
   </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>

@@ -55,11 +55,11 @@ int main(int argc, char **argv) {
 	
 	double lu_time = 0.0;
 	timer.start();
-	LIKWID_MARKER_START("LU");
+	//LIKWID_MARKER_START("LU");
 	
 	GaussEl(A, LU, P);
 	
-	LIKWID_MARKER_STOP("LU");
+	//LIKWID_MARKER_STOP("LU");
 	lu_time = timer.tick();
 	
 	MatrixColMajor<double> IA(size);

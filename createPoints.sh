@@ -1,36 +1,58 @@
-# ./createPoints.sh points/ tests/* 
+# ./createPoints.sh points/ tests/*
+#                                 * = Every Flag (dir)
 outDir=$1
 
 mkdir -p $outDir
 
 agrNum=0
-for filename in "$@"; do
+for flagDir in "$@"; do 
 	agrNum=$(($agrNum+1))
 	if [ $agrNum == "1" ]; then
 		continue
 	fi
-	x=$(echo $filename | cut -d'-' -f4 | cut -d'.' -f1)
-	ys=$(./missRatio.sh $filename)
 	
-	i=0
-	for y in $ys; do
-		case "$i" in
-			0)  flag="INV"
-				;;
-				
-			1)  flag="RES"
-				;;
-			
-			2)  flag="SUM"
-				;;
-				
-			*)  flag="err"
-				;;
-		esac
+	flag=$(echo $flagDir | rev | cut -d'/' -f1 | rev)
+	
+	case "$flag" in
+		"L2CACHE") 
+			value="L2 miss ratio"
+			;;
+		"L3")
+			value="L3 bandwidth [MBytes/s]"
+			;;
+		"FLOPS_DP")
+			value="DP MFLOP/s"
+			;;
+		*)
+			value="err"
+			;;
+	esac
+	
+	for filename in $(ls $flagDir); do
+		x=$(echo $flagDir/$filename | cut -d'-' -f4 | cut -d'.' -f1)
+		ys=$(./likParse.sh $flagDir/$filename $value)
 		
-		touch $outDir/$flag.txt
-		echo $x $y >> $outDir/$flag.txt
-		i=$(($i+1))
+		i=0
+		for y in $ys; do
+			case "$i" in
+				0)  flag="INV"
+					;;
+				
+				1)  flag="RES"
+					;;
+			
+				2)  flag="SUM"
+					;;
+				
+				*)  flag="err"
+					;;
+			esac
+			touch $outDir/$flag.txt
+			echo $x $y >> $outDir/$flag.txt
+			i=$(($i+1))
+		done
 	done
-
 done
+	
+	
+

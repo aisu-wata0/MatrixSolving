@@ -38,6 +38,8 @@
     <File Name=".gitignore"/>
     <File Name="batch.sh"/>
     <File Name="lik.sh"/>
+    <File Name="createPoints.sh"/>
+    <File Name="missRatio.sh"/>
   </VirtualDirectory>
   <Dependencies Name="Debug"/>
   <Dependencies Name="Release"/>

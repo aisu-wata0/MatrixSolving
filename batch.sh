@@ -4,15 +4,13 @@ er() { echo "\$ $@" ; "$@" ; }
 sizes="32 33 64 65 128 129 256 257 512 1000 2000"
 
 for size in $sizes; do
-	for version in "master" "optm" "tri" "loop_block" "mult_block"; do
-		echo er git checkout $version
-		echo er make rebuild
+	for version in "naive_lik" "mult_block_likwid"; do
+		er git checkout $version
+		er make rebuild
 		er mv invmat invmat_${version}
 		for LIK_FLAG in "CACHE" "FLOPS_DP" "MEM"; do
-			for ((i=0; i<2; i++)); do
-				args="-r$size -i3 -oout_${i}_${version}.txt"
-				echo er ./lik.sh "loglik${LIK_FLAG}_${version}_${i}.txt" ${LIK_FLAG} "./invmat $args"
-			done
+			args="-r$size -i10 -olog_${version}_${size}.txt"
+			er ./lik.sh "loglik_${LIK_FLAG}_${version}_${size}.txt" ${LIK_FLAG} "./invmat $args"
 		done
 	done
 done

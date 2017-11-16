@@ -15,8 +15,10 @@ for filename in $(ls $inDir); do
 	
 	if [ "${commandHash[$op-$flag]}" != "" ]; then
 		commandHash[$op-$flag]="${commandHash[$op-$flag]}, \"$inDir/$filename\" w l title \"$version\""
+		titles="$titles '$inDir/$filename'"
 	else
 		commandHash[$op-$flag]="\"$inDir/$filename\" w l title \"$version\""
+		titles="'$inDir/$filename'"
 	fi
 	
 	echo ${commandHash[$op-$flag]}
@@ -30,7 +32,8 @@ for index in ${!commandHash[@]}; do
 	op=$(echo $index | cut -d'-' -f1 | cut -d'.' -f1)
 	flag=$(echo $index | cut -d'-' -f2 | cut -d'.' -f1)
 	
-	echo ${command}
+	#gnuplot -c plot.gp "${command}" $outDir/$op-$flag.png
 	
-	gnuplot -c plot.gp "${command}" '$outDir/$op-$flag'
+	gnuplot -e "command='${command}'; filepath='$outDir/$op-$flag.png'" plot.gp
+	gnuplot -e "command='${command}'; filepath='$outDir/$op-$flag.png'" plot.gp
 done 

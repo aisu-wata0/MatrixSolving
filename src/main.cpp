@@ -240,11 +240,11 @@ int main(int argc, char **argv) {
 	vector<long> P(A.m_size);
 	
 	timer.start();
-	LIKWID_MARKER_START("LU");
+	//LIKWID_MARKER_START("LU");
 	
 	GaussEl(A, LU, P);
 	
-	LIKWID_MARKER_STOP("LU");
+	//LIKWID_MARKER_STOP("LU");
 	lu_time = timer.elapsed();
 
 	// Optm: iterating line by line

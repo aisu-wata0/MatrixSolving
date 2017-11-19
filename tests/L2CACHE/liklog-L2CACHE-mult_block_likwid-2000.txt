@@ -1,0 +1,69 @@
+STRUCT,Info,3
+CPU name:,Intel(R) Core(TM) i5-3470 CPU @ 3.20GHz,
+CPU type:,Intel Core IvyBridge processor,
+CPU clock:,3.192665086 GHz,
+TABLE,Region INV,Group 1 Raw,L2CACHE,5
+Region Info,Core 1,
+RDTSC Runtime [s],18.172710,
+call count,11,
+Event,Counter,Core 1
+INSTR_RETIRED_ANY,FIXC0,128412200000
+CPU_CLK_UNHALTED_CORE,FIXC1,65136100000
+CPU_CLK_UNHALTED_REF,FIXC2,57899050000
+L2_TRANS_ALL_REQUESTS,PMC0,2612329000
+L2_RQSTS_MISS,PMC1,729315900
+TABLE,Region INV,Group 1 Metric,L2CACHE,7
+Metric,Core 1,
+Runtime (RDTSC) [s],18.1727,
+Runtime unhalted [s],20.4018,
+Clock [MHz],3591.7300,
+CPI,0.5072,
+L2 request rate,0.0203,
+L2 miss rate,0.0057,
+L2 miss ratio,0.2792,
+STRUCT,Info,3
+CPU name:,Intel(R) Core(TM) i5-3470 CPU @ 3.20GHz,
+CPU type:,Intel Core IvyBridge processor,
+CPU clock:,3.192665086 GHz,
+TABLE,Region RES,Group 1 Raw,L2CACHE,5
+Region Info,Core 1,
+RDTSC Runtime [s],17.386780,
+call count,11,
+Event,Counter,Core 1
+INSTR_RETIRED_ANY,FIXC0,123140000000
+CPU_CLK_UNHALTED_CORE,FIXC1,62313830000
+CPU_CLK_UNHALTED_REF,FIXC2,55390370000
+L2_TRANS_ALL_REQUESTS,PMC0,2674008000
+L2_RQSTS_MISS,PMC1,727315500
+TABLE,Region RES,Group 1 Metric,L2CACHE,7
+Metric,Core 1,
+Runtime (RDTSC) [s],17.3868,
+Runtime unhalted [s],19.5178,
+Clock [MHz],3591.7288,
+CPI,0.5060,
+L2 request rate,0.0217,
+L2 miss rate,0.0059,
+L2 miss ratio,0.2720,
+STRUCT,Info,3
+CPU name:,Intel(R) Core(TM) i5-3470 CPU @ 3.20GHz,
+CPU type:,Intel Core IvyBridge processor,
+CPU clock:,3.192665086 GHz,
+TABLE,Region SUM,Group 1 Raw,L2CACHE,5
+Region Info,Core 1,
+RDTSC Runtime [s],0.093870,
+call count,10,
+Event,Counter,Core 1
+INSTR_RETIRED_ANY,FIXC0,165179400
+CPU_CLK_UNHALTED_CORE,FIXC1,336161500
+CPU_CLK_UNHALTED_REF,FIXC2,298828100
+L2_TRANS_ALL_REQUESTS,PMC0,47580630
+L2_RQSTS_MISS,PMC1,13974570
+TABLE,Region SUM,Group 1 Metric,L2CACHE,7
+Metric,Core 1,
+Runtime (RDTSC) [s],0.0939,
+Runtime unhalted [s],0.1053,
+Clock [MHz],3591.5333,
+CPI,2.0351,
+L2 request rate,0.2881,
+L2 miss rate,0.0846,
+L2 miss ratio,0.2937,

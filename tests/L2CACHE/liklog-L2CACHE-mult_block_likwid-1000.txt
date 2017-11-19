@@ -1,0 +1,69 @@
+STRUCT,Info,3
+CPU name:,Intel(R) Core(TM) i5-3470 CPU @ 3.20GHz,
+CPU type:,Intel Core IvyBridge processor,
+CPU clock:,3.192676073 GHz,
+TABLE,Region INV,Group 1 Raw,L2CACHE,5
+Region Info,Core 1,
+RDTSC Runtime [s],2.304976,
+call count,11,
+Event,Counter,Core 1
+INSTR_RETIRED_ANY,FIXC0,17187810000
+CPU_CLK_UNHALTED_CORE,FIXC1,8247339000
+CPU_CLK_UNHALTED_REF,FIXC2,7331586000
+L2_TRANS_ALL_REQUESTS,PMC0,363943000
+L2_RQSTS_MISS,PMC1,92485100
+TABLE,Region INV,Group 1 Metric,L2CACHE,7
+Metric,Core 1,
+Runtime (RDTSC) [s],2.3050,
+Runtime unhalted [s],2.5832,
+Clock [MHz],3591.4578,
+CPI,0.4798,
+L2 request rate,0.0212,
+L2 miss rate,0.0054,
+L2 miss ratio,0.2541,
+STRUCT,Info,3
+CPU name:,Intel(R) Core(TM) i5-3470 CPU @ 3.20GHz,
+CPU type:,Intel Core IvyBridge processor,
+CPU clock:,3.192676073 GHz,
+TABLE,Region RES,Group 1 Raw,L2CACHE,5
+Region Info,Core 1,
+RDTSC Runtime [s],2.268444,
+call count,11,
+Event,Counter,Core 1
+INSTR_RETIRED_ANY,FIXC0,15500130000
+CPU_CLK_UNHALTED_CORE,FIXC1,8135651000
+CPU_CLK_UNHALTED_REF,FIXC2,7231723000
+L2_TRANS_ALL_REQUESTS,PMC0,385641600
+L2_RQSTS_MISS,PMC1,95475580
+TABLE,Region RES,Group 1 Metric,L2CACHE,7
+Metric,Core 1,
+Runtime (RDTSC) [s],2.2684,
+Runtime unhalted [s],2.5482,
+Clock [MHz],3591.7441,
+CPI,0.5249,
+L2 request rate,0.0249,
+L2 miss rate,0.0062,
+L2 miss ratio,0.2476,
+STRUCT,Info,3
+CPU name:,Intel(R) Core(TM) i5-3470 CPU @ 3.20GHz,
+CPU type:,Intel Core IvyBridge processor,
+CPU clock:,3.192676073 GHz,
+TABLE,Region SUM,Group 1 Raw,L2CACHE,5
+Region Info,Core 1,
+RDTSC Runtime [s],0.022312,
+call count,10,
+Event,Counter,Core 1
+INSTR_RETIRED_ANY,FIXC0,41356880
+CPU_CLK_UNHALTED_CORE,FIXC1,80303640
+CPU_CLK_UNHALTED_REF,FIXC2,71381250
+L2_TRANS_ALL_REQUESTS,PMC0,12211630
+L2_RQSTS_MISS,PMC1,3544005
+TABLE,Region SUM,Group 1 Metric,L2CACHE,7
+Metric,Core 1,
+Runtime (RDTSC) [s],0.0223,
+Runtime unhalted [s],0.0252,
+Clock [MHz],3591.7487,
+CPI,1.9417,
+L2 request rate,0.2953,
+L2 miss rate,0.0857,
+L2 miss ratio,0.2902,

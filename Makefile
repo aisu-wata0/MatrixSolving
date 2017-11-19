@@ -66,7 +66,7 @@ set_debug:
 
 assembly: set_assembly all
 set_assembly:
-	$(eval CFLAGS = -S $(CFLAGS))
+	$(eval CFLAGS = -S -masm=intel $(CFLAGS))
 
 rebuild: clean all
 

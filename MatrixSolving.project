@@ -25,6 +25,7 @@
     <File Name="likParse.sh"/>
     <File Name="plot.sh"/>
     <File Name="plot.gp"/>
+    <File Name="createPointsTime.sh"/>
   </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>
